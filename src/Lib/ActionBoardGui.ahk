@@ -18,9 +18,9 @@ InitActionBoardEngine() {
     OnMessage(0x004E, MatrixOnWmNotify)
     OnMessage(0x0201, ActionBoardOnLButtonDown)
     
-    SetTimer(CheckPendingCommitmentClassifier, 6000)
-    SetTimer(CheckPendingPrioritizerMini, 30000)
-    SetTimer(CheckHighPriorityNudges, 60000)
+    SetTimer(CheckPendingCommitmentClassifier, 7200000)
+    SetTimer(CheckPendingPrioritizerMini, 10800000)
+    SetTimer(CheckHighPriorityNudges, 1800000)
 }
 
 ToggleActionBoard() {

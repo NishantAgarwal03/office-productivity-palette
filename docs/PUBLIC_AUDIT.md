@@ -22,12 +22,12 @@ Hashes are raw-file SHA-256 values. Line counts use text lines as read from each
 | Repository-relative path | Bytes | Lines | SHA-256 |
 |---|---:|---:|---|
 | `src/office_productivity_palette_v2.0.0.ahk` | 7,854 | 235 | `C7AD59BD61EE3A7F25AC73BB89AB940CE76B0638A09768BF310DFAAEEB23F7E2` |
-| `src/Lib/ActionBoardGui.ahk` | 17,234 | 402 | `38AFDEEA72D6B43E3E1ADA2B878248F199BC7D94DE8DAB17BD140FAE8EBA7422` |
+| `src/Lib/ActionBoardGui.ahk` | 17,242 | 402 | `AE729B81CEE3C49E8313883BAF23AF4B663CB43DCBBFE696A46D17CA38EF0107` |
 | `src/Lib/ActionBoardPills.ahk` | 11,486 | 269 | `654E0A646E78B0CDAA58DE366EBFB570D178AF1AAA2AF6B6CD4B152BA9DD5274` |
 | `src/Lib/Actions_Math.ahk` | 13,539 | 272 | `323A2A2E10CFBBA4B7F083C9C214194096E9802C03CCCF27B1BF69216B1F9142` |
 | `src/Lib/Actions_WindowPeek.ahk` | 1,229 | 14 | `317B7C3A84D24130C0D2797E88536E1B5A8DF5B70D6DC2BBF70E0E9FD4A2A774` |
 | `src/Lib/CSVParser.ahk` | 2,362 | 71 | `1CBFBA01D30A00B21EB4202BACE520AB9CA46AD7256361755DCEB06CDE29A243` |
-| **Aggregate** | **53,704** | **1,263** | — |
+| **Aggregate** | **53,712** | **1,263** | — |
 
 ### Approved private-source comparison
 
