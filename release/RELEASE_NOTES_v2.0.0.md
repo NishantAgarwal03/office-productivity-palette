@@ -49,7 +49,7 @@ Get-FileHash -Algorithm SHA256 -LiteralPath .\office_productivity_palette_v2.0.0
 Expected SHA-256:
 
 ```text
-1D51880EAEEDE855A139FB3C215882EC1138E101DDA1843963AF918EC728CCE7
+2CA9F72CAABF9EEADC90E7C44A93A2A4AAECB673399965AD625747562AFD7741
 ```
 
 The audited executable size is 1,753,088 bytes. If the computed hash differs, do not use the file as this audited v2.0.0 artifact.

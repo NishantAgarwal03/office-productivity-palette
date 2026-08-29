@@ -13,7 +13,7 @@ After publication, open this repository's **Releases** page, choose **v2.0.0**, 
 The release will be distributed as a standalone executable, not an installer. See [Security verification](#security-verification) before launching it.
 
 > [!WARNING]
-> **Phased preview:** Only six selected source files are included now. This incomplete subset cannot run the application, build it, or reproduce the EXE. The EXE is offered for evaluation and review, including feedback, suggestions, and discussion of improvements to the code. Complete corresponding source is planned for later phases but is not currently included. No assertion is made that the current EXE distribution is GPLv3-compliant; publishing remaining source later would not by itself establish corresponding-source compliance for the present distribution.
+> **Phased preview:** Only six selected source files are included now. This incomplete subset cannot run the application, build it, or reproduce the EXE. The EXE will be offered for evaluation and review, including feedback, suggestions, and discussion of improvements to the code. Complete corresponding source is planned for later phases but is not currently included. No assertion is made that the current EXE distribution is GPLv3-compliant; publishing remaining source later would not by itself establish corresponding-source compliance for the present distribution.
 
 > [!NOTE]
 > **Publication checklist:** When v2.0.0 is published, replace the pending language above with a working release/download link and confirm that it resolves to the release asset named `office_productivity_palette_v2.0.0.exe`. This is a maintainer checklist item, not a live download link.
@@ -105,7 +105,7 @@ Get-FileHash -Algorithm SHA256 -LiteralPath .\office_productivity_palette_v2.0.0
 Expected SHA-256:
 
 ```text
-1D51880EAEEDE855A139FB3C215882EC1138E101DDA1843963AF918EC728CCE7
+2CA9F72CAABF9EEADC90E7C44A93A2A4AAECB673399965AD625747562AFD7741
 ```
 
 If the computed hash differs, do not use the file as the audited v2.0.0 artifact.

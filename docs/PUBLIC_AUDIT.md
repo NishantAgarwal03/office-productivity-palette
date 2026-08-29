@@ -75,9 +75,9 @@ The main script declares **28** `#Include` directives. **5** targets are present
 
 ## Windows executable
 
-| Artifact | Bytes | Raw SHA-256 |
-|---|---:|---|
-| `office_productivity_palette_v2.0.0.exe` | 1,753,088 | `1D51880EAEEDE855A139FB3C215882EC1138E101DDA1843963AF918EC728CCE7` |
+| Artifact | Bytes | Last modified | Signature status | Raw SHA-256 |
+|---|---:|---|---|---|
+| `office_productivity_palette_v2.0.0.exe` | 1,753,088 | 2026-08-30 03:26:08 +05:30 | Not signed | `2CA9F72CAABF9EEADC90E7C44A93A2A4AAECB673399965AD625747562AFD7741` |
 
 During this pre-publication review, the EXE is intentionally outside Git history. After user approval and publication, the durable public verifier will be the v2.0.0 GitHub Release asset named `office_productivity_palette_v2.0.0.exe`. This is a future publication condition; this audit does not claim that the release asset already exists and does not provide a release URL.
 
@@ -91,12 +91,14 @@ Get-FileHash .\office_productivity_palette_v2.0.0.exe -Algorithm SHA256
 The expected `Length` is exactly **1,753,088 bytes**. The expected SHA-256 is exactly:
 
 ```text
-1D51880EAEEDE855A139FB3C215882EC1138E101DDA1843963AF918EC728CCE7
+2CA9F72CAABF9EEADC90E7C44A93A2A4AAECB673399965AD625747562AFD7741
 ```
 
 The executable is audited as a binary artifact. No claim is made that it can be rebuilt from the public source subset.
 
 ## Screenshot inventory
+
+The existing screenshots were captured from the earlier reviewed build and were not recaptured for the newly designated binary at the owner's direction. They are illustrative UI evidence, not attestation of this binary version.
 
 | Repository-relative path | Dimensions | SHA-256 |
 |---|---:|---|
