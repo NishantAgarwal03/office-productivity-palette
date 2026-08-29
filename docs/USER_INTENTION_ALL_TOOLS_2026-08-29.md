@@ -1,6 +1,6 @@
 # User Intention Document — Office Productivity Palette & Action Hub v2.0.0
 
-**Generated:** 2026-08-29 | Audit Date: 2026-08-29
+**Generated:** 2026-08-29 | **Audit Date:** 2026-08-29
 
 **Purpose:** This document captures the USER'S ORIGINAL INTENT for every tool
 registered in the codebase. Each entry describes WHAT the user wanted the
@@ -844,6 +844,7 @@ complexity. Always replaces ALL occurrences in the selection.
 
 **Intent:** User (a civil engineer) wants a universal natural-language converter
 that handles ALL engineering unit conversions in one place. Supports:
+
 - Length, Area, Volume, Mass, Force, Pressure, Density, Flow, Angle
 - Indian regional units: bigha, guntha, gaj, nali, katha, brass
 - Hindi/Hinglish keywords: sariya, tircha, karna, guniya, fall
