@@ -12,6 +12,9 @@ After publication, open this repository's **Releases** page, choose **v2.0.0**, 
 
 The release will be distributed as a standalone executable, not an installer. See [Security verification](#security-verification) before launching it.
 
+> [!NOTE]
+> **Known embedded-version mismatch:** Windows reports both the embedded `FileVersion` and `ProductVersion` as **2.0.26**, while the owner-designated release and filename remain **v2.0.0** and `office_productivity_palette_v2.0.0.exe`. This mismatch is not evidence of a different download and is not claimed to be fixed. Identify the reviewed artifact by its exact filename, size, and SHA-256 below.
+
 > [!WARNING]
 > **Phased preview:** Only six selected source files are included now. This incomplete subset cannot run the application, build it, or reproduce the EXE. The EXE will be offered for evaluation and review, including feedback, suggestions, and discussion of improvements to the code. Complete corresponding source is planned for later phases but is not currently included. No assertion is made that the current EXE distribution is GPLv3-compliant; publishing remaining source later would not by itself establish corresponding-source compliance for the present distribution.
 
@@ -111,6 +114,8 @@ Expected SHA-256:
 If the computed hash differs, do not use the file as the audited v2.0.0 artifact.
 
 A matching hash confirms that the downloaded bytes match the audited value. It does not independently establish publisher authenticity, code signing, or corresponding-source compliance.
+
+Windows may display embedded `FileVersion` and `ProductVersion` values of **2.0.26** for this owner-designated **v2.0.0** release artifact. Use the exact filename `office_productivity_palette_v2.0.0.exe`, size **1,753,088 bytes**, and SHA-256 above to identify the reviewed bytes; the known embedded-version mismatch is not evidence of a different download and is not claimed to be fixed.
 
 ## Troubleshooting
 

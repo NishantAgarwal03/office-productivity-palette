@@ -4,11 +4,18 @@ Office Productivity Palette v2.0.0 is a direct-use Windows executable that provi
 
 > **Limited-source warning:** The repository publishes only six selected AHK files. That subset is **not independently runnable or rebuildable** and **cannot reproduce the EXE**. It is not the complete application source.
 
+> **Phased-preview compliance warning:** Corresponding-source compliance for the distributed EXE remains unresolved because complete corresponding source is not currently published. No claim is made that the present binary distribution is GPLv3-compliant.
+
 ## System and artifact
 
 - Supported operating systems stated by the approved main source: Windows 10 and Windows 11.
 - Executable: `office_productivity_palette_v2.0.0.exe`
+- Owner-designated release/tag identity: **v2.0.0**.
+- Embedded Windows `FileVersion`: **2.0.26**.
+- Embedded Windows `ProductVersion`: **2.0.26**.
 - Distribution form: standalone executable; no installer is claimed.
+
+The embedded **2.0.26** values and owner-designated **v2.0.0** release/filename form a known metadata mismatch that is not claimed to be fixed. This is not evidence of a different download. Identify the reviewed artifact by the exact filename, size, and SHA-256 in these notes.
 
 ## Direct use
 
@@ -54,8 +61,10 @@ Expected SHA-256:
 
 The audited executable size is 1,753,088 bytes. If the computed hash differs, do not use the file as this audited v2.0.0 artifact.
 
+A matching checksum verifies byte identity and integrity against the audited value. It does not independently establish publisher authenticity.
+
 ## Source and license
 
-The project owner licenses the files published in this repository under the GNU General Public License v3.0 or later (**GPL-3.0-or-later**). See `LICENSE` for the complete GPLv3 terms. The public audit in `docs/PUBLIC_AUDIT.md` records the selected-source inventory, include coverage, executable checksum, screenshot evidence, scan summary, method, and limitations.
+The project owner licenses the files published in this repository under the GNU General Public License v3.0 or later (**GPL-3.0-or-later**). See [LICENSE](../LICENSE) for the complete GPLv3 terms. The [public audit](../docs/PUBLIC_AUDIT.md) records the selected-source inventory, include coverage, executable checksum, screenshot evidence, scan summary, method, and limitations.
 
 The public subset omits 23 of the main script’s 28 declared include targets. It therefore does not support an independent source run, a complete rebuild, or a reproducible build of `office_productivity_palette_v2.0.0.exe`.

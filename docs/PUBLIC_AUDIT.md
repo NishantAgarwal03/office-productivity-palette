@@ -12,6 +12,7 @@
 | Published AHK inventory, raw hashes, byte counts, line counts, includes, and screenshot hashes | Publicly reproducible now from repository files |
 | Comparison with the complete approved private-source reference set | Operator-local only; not publicly reproducible by design |
 | Executable size and hash during this pre-publication review | Operator-local only; the EXE is intentionally outside Git history |
+| Embedded executable version metadata | Operator-local evidence: Windows `FileVersion` and `ProductVersion` report 2.0.26, while the owner-designated release is v2.0.0 |
 | Executable size and hash after approved release publication | Publicly reproducible from the named v2.0.0 GitHub Release asset after it is published |
 
 ## Published AHK inventory
@@ -75,9 +76,11 @@ The main script declares **28** `#Include` directives. **5** targets are present
 
 ## Windows executable
 
-| Artifact | Bytes | Last modified | Signature status | Raw SHA-256 |
-|---|---:|---|---|---|
-| `office_productivity_palette_v2.0.0.exe` | 1,753,088 | 2026-08-30 03:26:08 +05:30 | Not signed | `2CA9F72CAABF9EEADC90E7C44A93A2A4AAECB673399965AD625747562AFD7741` |
+| Artifact | Owner-designated release | Embedded FileVersion | Embedded ProductVersion | Bytes | Last modified | Signature status | Raw SHA-256 |
+|---|---|---|---|---:|---|---|---|
+| `office_productivity_palette_v2.0.0.exe` | v2.0.0 | 2.0.26 | 2.0.26 | 1,753,088 | 2026-08-30 03:26:08 +05:30 | Not signed | `2CA9F72CAABF9EEADC90E7C44A93A2A4AAECB673399965AD625747562AFD7741` |
+
+The difference between the embedded **2.0.26** version values and the owner-designated **v2.0.0** release/filename is a known metadata mismatch and is not claimed to be fixed. It is not evidence of a different download. Readers should identify the reviewed artifact by the exact filename, size, and SHA-256 recorded above.
 
 During this pre-publication review, the EXE is intentionally outside Git history. After user approval and publication, the durable public verifier will be the v2.0.0 GitHub Release asset named `office_productivity_palette_v2.0.0.exe`. This is a future publication condition; this audit does not claim that the release asset already exists and does not provide a release URL.
 
@@ -129,4 +132,5 @@ The three PNG screenshots were separately inspected visually on 2026-08-30. That
 - Public AHK files were checked against corresponding approved-source files by raw SHA-256 and byte count using the relative-path mapping described above; the private side of that check is operator-local only.
 - The secret scan is heuristic and is not proof of absence. Screenshot pixels were manually inspected but not OCR-scanned. The binary EXE was hashed and sized but was not content-scanned.
 - The audit does not establish code signing, provenance beyond the stated comparisons, runtime correctness, complete-source availability, or reproducible builds.
+- The embedded `FileVersion` and `ProductVersion` are 2.0.26 even though the owner-designated release and filename are v2.0.0. This known metadata mismatch remains a limitation and is not claimed to be fixed; artifact identity rests on the exact filename, size, and SHA-256.
 - Because 23 declared dependencies are not published in the six-file subset, the subset cannot be used to run the main script, rebuild the product, or reproduce the executable.
