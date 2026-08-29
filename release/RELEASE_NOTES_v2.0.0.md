@@ -12,7 +12,7 @@ Office Productivity Palette v2.0.0 is a direct-use Windows executable that provi
 
 ## Direct use
 
-1. Download `office_productivity_palette_v2.0.0.exe` from the v2.0.0 release assets.
+1. After this release is published, download `office_productivity_palette_v2.0.0.exe` from the v2.0.0 release assets.
 2. Verify its SHA-256 checksum using the command below.
 3. Run the executable on Windows 10 or Windows 11.
 
@@ -56,6 +56,6 @@ The audited executable size is 1,753,088 bytes. If the computed hash differs, do
 
 ## Source and license
 
-The published material is provided under **GPL-3.0-or-later**; see `LICENSE`. The public audit in `docs/PUBLIC_AUDIT.md` records the selected-source inventory, include coverage, executable checksum, screenshot evidence, scan summary, method, and limitations.
+The project owner licenses the files published in this repository under the GNU General Public License v3.0 or later (**GPL-3.0-or-later**). See `LICENSE` for the complete GPLv3 terms. The public audit in `docs/PUBLIC_AUDIT.md` records the selected-source inventory, include coverage, executable checksum, screenshot evidence, scan summary, method, and limitations.
 
 The public subset omits 23 of the main script’s 28 declared include targets. It therefore does not support an independent source run, a complete rebuild, or a reproducible build of `office_productivity_palette_v2.0.0.exe`.
