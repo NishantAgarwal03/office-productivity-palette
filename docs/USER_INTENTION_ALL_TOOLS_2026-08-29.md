@@ -461,7 +461,7 @@ human-readable date format. Requires ≥9 digits to avoid false positives.
 
 **Design Decision:** Outputs as local time, not UTC. The user wants to see
 the time in their local timezone (IST).
-KNOWN ISSUE: DateAdd from epoch base 19700101 is UTC-based; FormatTime
+**Known Issue:** DateAdd from epoch base 19700101 is UTC-based; FormatTime
 does not add timezone offset. The result is in UTC, not IST.
 
 ## Tool 46: Number to Words (Indian Rupees)
@@ -609,7 +609,7 @@ Results are uppercased.
 ## Tool 59: Extract Indian PAN Numbers
 
 **Intent:** Pull 10-character PAN (Permanent Account Number) from text.
-Pattern: 5 letters + 4 digits + 1 letter.
+**Pattern:** 5 letters + 4 digits + 1 letter.
 
 **Design Decision:** May match non-PAN strings that happen to follow the same
 pattern. This is an acceptable false-positive trade-off for a quick
