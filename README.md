@@ -12,6 +12,12 @@ After publication, open this repository's **Releases** page, choose **v2.0.0**, 
 
 The release will be distributed as a standalone executable, not an installer. See [Security verification](#security-verification) before launching it.
 
+> [!WARNING]
+> **Phased preview:** Only six selected source files are included now. This incomplete subset cannot run the application, build it, or reproduce the EXE. The EXE is offered for evaluation and review, including feedback, suggestions, and discussion of improvements to the code. Complete corresponding source is planned for later phases but is not currently included. No assertion is made that the current EXE distribution is GPLv3-compliant; publishing remaining source later would not by itself establish corresponding-source compliance for the present distribution.
+
+> [!NOTE]
+> **Publication checklist:** When v2.0.0 is published, replace the pending language above with a working release/download link and confirm that it resolves to the release asset named `office_productivity_palette_v2.0.0.exe`. This is a maintainer checklist item, not a live download link.
+
 ## What it does
 
 - Searches and runs office-focused tools from a universal command palette.
@@ -38,7 +44,7 @@ For the approved intent and behavior of the tool catalog, see the [all-tools int
 
 ## Requirements
 
-- **EXE users:** Windows 10 or Windows 11. AutoHotkey is not required to run the published executable.
+- **EXE users:** Windows 10 or Windows 11. AutoHotkey will not be required to run the executable after it is published.
 - **Source reviewers:** AutoHotkey v2 is required to examine the source in its intended language environment. The published subset is incomplete and cannot be run independently; see [Published source scope](#published-source-scope).
 
 No compatibility is claimed for other operating systems or AutoHotkey v1.
@@ -47,10 +53,10 @@ No compatibility is claimed for other operating systems or AutoHotkey v1.
 
 1. After release publication, open the repository's Releases page and select **v2.0.0**.
 2. Download `office_productivity_palette_v2.0.0.exe` from the release assets.
-3. Optionally—but preferably—verify the SHA-256 checksum below.
+3. **Before running it, verify the SHA-256 checksum below.**
 4. Launch the executable. No installer step is required.
 
-Windows may show its normal security warning for a downloaded executable. Check that the filename and SHA-256 match this README, review the prompt, and proceed only if you trust the file. This project does not claim that the binary is code-signed.
+Windows may show its normal security warning for a downloaded executable. Check that the filename and SHA-256 match this README, review the prompt, and proceed only if you trust the file. The hash verifies file identity and integrity against the audited value; it does not independently establish who published the file or authenticate the publisher. This project does not claim that the binary is code-signed.
 
 ## Core shortcuts
 
@@ -90,7 +96,7 @@ The main script declares 28 includes, of which 23 are absent or excluded from th
 
 ## Security verification
 
-From PowerShell in the folder containing the downloaded executable, run:
+Before running the executable, open PowerShell in the folder containing the downloaded file and run:
 
 ```powershell
 Get-FileHash -Algorithm SHA256 -LiteralPath .\office_productivity_palette_v2.0.0.exe
@@ -104,6 +110,8 @@ Expected SHA-256:
 
 If the computed hash differs, do not use the file as the audited v2.0.0 artifact.
 
+A matching hash confirms that the downloaded bytes match the audited value. It does not independently establish publisher authenticity, code signing, or corresponding-source compliance.
+
 ## Troubleshooting
 
 - **A selection action does nothing:** Highlight text first, then retry the capture, statistics, case, or find-and-replace action.
@@ -116,3 +124,5 @@ If the computed hash differs, do not use the file as the audited v2.0.0 artifact
 ## License
 
 The project owner licenses the files published in this repository under the GNU General Public License v3.0 or later (**GPL-3.0-or-later**). See [LICENSE](LICENSE) for the complete terms.
+
+The EXE is a separate binary artifact in this phased preview. Its GPL corresponding-source compliance is unresolved because complete corresponding source for that EXE is not currently available. No claim is made that the current EXE distribution is GPLv3-compliant, and the plan to release additional source later does not by itself establish compliance for a present distribution. This statement does not invent or impose a proprietary license or EULA on the EXE.
