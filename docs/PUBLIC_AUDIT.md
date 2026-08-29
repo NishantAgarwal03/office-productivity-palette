@@ -5,6 +5,15 @@
 
 > **Important:** The published source is a limited subset. It is **not independently runnable or rebuildable**, and it **cannot reproduce the EXE**.
 
+## Evidence status
+
+| Evidence | Reproducibility status |
+|---|---|
+| Published AHK inventory, raw hashes, byte counts, line counts, includes, and screenshot hashes | Publicly reproducible now from repository files |
+| Comparison with the complete approved private-source reference set | Operator-local only; not publicly reproducible by design |
+| Executable size and hash during this pre-publication review | Operator-local only; the EXE is intentionally outside Git history |
+| Executable size and hash after approved release publication | Publicly reproducible from the named v2.0.0 GitHub Release asset after it is published |
+
 ## Published AHK inventory
 
 Hashes are raw-file SHA-256 values. Line counts use text lines as read from each unmodified file; bytes are raw file sizes.
@@ -19,7 +28,11 @@ Hashes are raw-file SHA-256 values. Line counts use text lines as read from each
 | `src/Lib/CSVParser.ahk` | 2,362 | 71 | `1CBFBA01D30A00B21EB4202BACE520AB9CA46AD7256361755DCEB06CDE29A243` |
 | **Aggregate** | **53,704** | **1,263** | — |
 
-Each of these six public blobs was compared by raw SHA-256 with its corresponding approved-source file and was byte-identical on the audit date.
+### Approved private-source comparison
+
+This comparison is **operator-local, not publicly reproducible by design** because the complete private source is intentionally excluded from publication. For each inventory row, the operator mapped the repository-relative approved file path beneath `src/` to the same relative path in the private-source reference set, then compared both the raw SHA-256 value and byte count. All six pairs matched on 2026-08-30.
+
+Public readers can independently verify the repository blobs, byte counts, and hashes in this audit. They cannot independently verify the excluded private reference set or repeat the private-side comparison.
 
 ## Runtime requirement
 
@@ -66,6 +79,21 @@ The main script declares **28** `#Include` directives. **5** targets are present
 |---|---:|---|
 | `office_productivity_palette_v2.0.0.exe` | 1,753,088 | `1D51880EAEEDE855A139FB3C215882EC1138E101DDA1843963AF918EC728CCE7` |
 
+During this pre-publication review, the EXE is intentionally outside Git history. After user approval and publication, the durable public verifier will be the v2.0.0 GitHub Release asset named `office_productivity_palette_v2.0.0.exe`. This is a future publication condition; this audit does not claim that the release asset already exists and does not provide a release URL.
+
+After downloading the published asset, run these commands from its containing directory:
+
+```powershell
+Get-Item .\office_productivity_palette_v2.0.0.exe
+Get-FileHash .\office_productivity_palette_v2.0.0.exe -Algorithm SHA256
+```
+
+The expected `Length` is exactly **1,753,088 bytes**. The expected SHA-256 is exactly:
+
+```text
+1D51880EAEEDE855A139FB3C215882EC1138E101DDA1843963AF918EC728CCE7
+```
+
 The executable is audited as a binary artifact. No claim is made that it can be rebuilt from the public source subset.
 
 ## Screenshot inventory
@@ -78,9 +106,17 @@ The executable is audited as a binary artifact. No claim is made that it can be 
 
 ## Secret-scan summary
 
-The scan covered repository publication text (`LICENSE`, Markdown, configuration, and the six AHK files) plus the corresponding six approved-source files. PNG contents were inventoried and hashed but were not OCR-scanned. Patterns covered common API-key and token labels and formats, authorization/bearer strings, private-key headers, password/secret terms, and absolute user-home paths.
+The textual scan used **ripgrep 15.2.0**. It covered repository publication text (`LICENSE`, Markdown, configuration, and the six AHK files), excluding `.git`, PNG screenshots, and executable files. The same expressions were applied operator-locally to the corresponding six approved private-source text files without recording their private root. From the repository root, the exact public scan command was:
 
-No credential material, private key, access token, or absolute user-home path was identified. Context-only matches were classified as false positives: names and descriptions for the password-generator feature, ordinary uses of “token” in documentation, and GPL text discussing authorization keys or passwords. No matched value is reproduced here.
+```powershell
+rg -n --hidden -g '!.git/**' -g '!docs/images/**' -g '!*.exe' -e '(?i)(api[_-]?key|secret|token|password)\s*[:=]\s*["'']?[^\s"'']+' -e '(?i)\bAuthorization\s*[:=]\s*\S+|\bBearer\s+\S+' -e '-----BEGIN [A-Z ]*PRIVATE KEY-----' -e '(?i)([A-Z]:\\Users\\[^\\\s]+|[A-Z]:\\)' .
+```
+
+These expressions cover API-key assignments, secret/token/password assignments, Authorization or Bearer material, private-key headers, Windows user-home paths, and Windows drive paths.
+
+The exact public command returned one contextual self-match: this audit's own sentence describing the pattern categories. It contained no credential value. A broader keyword-only review also produced false positives from password-generator feature text, ordinary uses of “token” in documentation, and GPL text discussing authorization keys or passwords. No credential material, private key, access token, or absolute user-home path was identified, and no matched value is reproduced here.
+
+The three PNG screenshots were separately inspected visually on 2026-08-30. That manual review found application UI and sample task/query content but no visible credential, username, user-home path, or machine identifier. This was a visual inspection, not OCR or a textual scan.
 
 ## Method and limitations
 
@@ -88,7 +124,7 @@ No credential material, private key, access token, or absolute user-home path wa
 - Text line counts were obtained by reading logical lines without normalizing file bytes.
 - Main-script includes were parsed from every `#Include` directive and resolved against the six published AHK paths for the public-subset count.
 - Screenshot dimensions were read from the PNG metadata; hashes cover the raw PNG files.
-- Public AHK files were checked against corresponding approved-source files by raw SHA-256.
-- The secret scan was pattern-based and is not proof that no sensitive information exists. Binary screenshot pixels were not OCR-scanned.
+- Public AHK files were checked against corresponding approved-source files by raw SHA-256 and byte count using the relative-path mapping described above; the private side of that check is operator-local only.
+- The secret scan is heuristic and is not proof of absence. Screenshot pixels were manually inspected but not OCR-scanned. The binary EXE was hashed and sized but was not content-scanned.
 - The audit does not establish code signing, provenance beyond the stated comparisons, runtime correctness, complete-source availability, or reproducible builds.
 - Because 23 declared dependencies are not published in the six-file subset, the subset cannot be used to run the main script, rebuild the product, or reproduce the executable.
