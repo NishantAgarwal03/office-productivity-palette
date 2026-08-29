@@ -1,0 +1,19 @@
+# Release binaries belong in GitHub Releases, not Git history
+*.exe
+*.msi
+*.zip
+
+# AutoHotkey compiler output and temporary files
+*.bin
+*.tmp
+*.bak
+*~
+
+# Windows metadata
+Thumbs.db
+Desktop.ini
+
+# Local runtime data and logs
+*.log
+logs/
+data/
