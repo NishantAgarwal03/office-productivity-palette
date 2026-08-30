@@ -86,12 +86,28 @@ try {
     AssertTrue("Contract_Uniformity", "CivilRebar schema val prop", rRebar.HasOwnProp("val") && Abs(rRebar.val - 0.887) <= 0.01)
     AssertTrue("Contract_Uniformity", "CivilRebar schema unit prop", rRebar.HasOwnProp("unit") && rRebar.unit == "kg/m")
 
+    ; CivilUnits Direct 1D Contract
+    uM := CivilUnits.ResolveUnit("m")
+    uFt := CivilUnits.ResolveUnit("ft")
+    rDirect := CivilUnits.EvaluateDirect(10, uM, uFt)
+    AssertTrue("Contract_Uniformity", "CivilUnits.EvaluateDirect returns object", IsObject(rDirect))
+    AssertTrue("Contract_Uniformity", "CivilUnits.EvaluateDirect schema success prop", rDirect.HasOwnProp("success") && rDirect.success == true)
+    AssertTrue("Contract_Uniformity", "CivilUnits.EvaluateDirect schema val prop", rDirect.HasOwnProp("val") && Abs(rDirect.val - 32.808) <= 0.01)
+    AssertTrue("Contract_Uniformity", "CivilUnits.EvaluateDirect schema unit prop", rDirect.HasOwnProp("unit") && rDirect.unit == "ft")
+
+    ; CivilSurvey Contract
+    rSurvey := CivilSurvey.Evaluate("fall 100mm in 10m")
+    AssertTrue("Contract_Uniformity", "CivilSurvey returns object", IsObject(rSurvey))
+    AssertTrue("Contract_Uniformity", "CivilSurvey schema success prop", rSurvey.HasOwnProp("success") && rSurvey.success == true)
+    AssertTrue("Contract_Uniformity", "CivilSurvey schema val prop", rSurvey.HasOwnProp("val") && Abs(rSurvey.val - 1.0) <= 0.01)
+    AssertTrue("Contract_Uniformity", "CivilSurvey schema unit prop", rSurvey.HasOwnProp("unit") && rSurvey.unit == "%")
+
+
     rCross := CivilCrossPhysics.Evaluate("10 m to sqft")
     AssertTrue("Contract_Uniformity", "CivilCrossPhysics returns object", IsObject(rCross))
     AssertTrue("Contract_Uniformity", "CivilCrossPhysics schema success prop", rCross.HasOwnProp("success") && rCross.success == true)
     AssertTrue("Contract_Uniformity", "CivilCrossPhysics schema val prop", rCross.HasOwnProp("val") && Abs(rCross.val - 1076.391) <= 0.05)
     AssertTrue("Contract_Uniformity", "CivilCrossPhysics schema unit prop", rCross.HasOwnProp("unit") && rCross.unit == "sq ft")
-
 
     rConv := CivilConverterEngine.Evaluate("10 m to ft")
     AssertTrue("Contract_Uniformity", "CivilConverterEngine returns object", IsObject(rConv))
@@ -109,6 +125,7 @@ try {
     rErrPyth := CivilPythagoras.Evaluate("single_word_invalid")
     AssertTrue("Contract_Uniformity", "Invalid Pythagoras returns success=false", rErrPyth.HasOwnProp("success") && rErrPyth.success == false)
     AssertTrue("Contract_Uniformity", "Invalid Pythagoras provides explanatory message", rErrPyth.HasOwnProp("message") && StrLen(rErrPyth.message) > 0)
+
 
     ; ==================================================================================================================
     ; 2. Side-Effect Freedom Tests (Pure Compute Invariant: Zero clipboard/GUI side-effects)
@@ -148,6 +165,24 @@ try {
     ; CivilEstimator uses CivilUnits for area dimension parsing
     rEstSqft := CivilEstimator.Evaluate("1200 sqft house cost")
     AssertTrue("Symbiotic_Bridges", "CivilEstimator inherits area unit via CivilUnits", rEstSqft.success && rEstSqft.val > 0)
+
+    ; CivilConverterEngine 5-Way Facade Routing Hub Tests
+    rFacPyth := CivilConverterEngine.Evaluate("pythagoras 3 4")
+    AssertTrue("Facade_Routing", "Facade routes to CivilPythagoras", rFacPyth.success && rFacPyth.val == 5.0)
+
+    rFacRebar := CivilConverterEngine.Evaluate("12mm bar weight")
+    AssertTrue("Facade_Routing", "Facade routes to CivilRebar", rFacRebar.success && Abs(rFacRebar.val - 0.887) <= 0.01)
+
+    rFacSurvey := CivilConverterEngine.Evaluate("fall 100mm in 10m")
+    AssertTrue("Facade_Routing", "Facade routes to CivilSurvey", rFacSurvey.success && Abs(rFacSurvey.val - 1.0) <= 0.01)
+
+
+    rFacEst := CivilConverterEngine.Evaluate("cost 1500 sqft house")
+    AssertTrue("Facade_Routing", "Facade routes to CivilEstimator", rFacEst.success && rFacEst.val > 0)
+
+    rFacCross := CivilConverterEngine.Evaluate("10 m to sqft")
+    AssertTrue("Facade_Routing", "Facade routes to CivilCrossPhysics", rFacCross.success && Abs(rFacCross.val - 1076.391) <= 0.05)
+
 
     ; ==================================================================================================================
     ; 4. Shared Primitive Reuse & Anti-Duplication Tests
