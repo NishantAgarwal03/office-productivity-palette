@@ -1,0 +1,10 @@
+﻿id,task,created,commitmentType,priority,done,archivedDate
+7,"Date Difference Calculator
+Calculate calendar days, working days, months or years between dates
+Useful for deadline",2026-08-22 21:36,Assigned,Q1,true,2026-08-24
+8,"Percentage Change vs Percentage-Point Change
+Clearly calculate and label both measures
+Prevents a common reporting and research error",2026-08-23 06:02,Assigned,Q1,true,2026-08-24
+9,"export to csv",2026-08-23 06:03,Assigned,Q1,true,2026-08-24
+1,"Check with vishal prabuji for pwd letter signing updates",2026-08-24 18:50,Promise,Q1,true,2026-08-25
+2,"Meeting at 7 PM today",2026-08-24 18:50,Assigned,Q1,true,2026-08-25

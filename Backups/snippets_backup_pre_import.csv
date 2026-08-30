@@ -1,0 +1,4 @@
+﻿trigger,replacement,enabled
+myemail,john.doe@example.com,true
+myphone,+1 (555) 123-4567,true
+myaddr,"123 Main Street\nAnytown, ST 12345\nUSA",true
