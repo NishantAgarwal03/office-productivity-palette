@@ -19,7 +19,7 @@ The embedded **2.0.26** values and owner-designated **v2.0.0** release/filename 
 
 ## Direct use
 
-1. After this release is published, download `office_productivity_palette_v2.0.0.exe` from the v2.0.0 release assets.
+1. [Download `office_productivity_palette_v2.0.0.exe`](https://github.com/NishantAgarwal03/office-productivity-palette/releases/download/v2.0.0/office_productivity_palette_v2.0.0.exe) from the [v2.0.0 release](https://github.com/NishantAgarwal03/office-productivity-palette/releases/tag/v2.0.0).
 2. Verify its SHA-256 checksum using the command below.
 3. Run the executable on Windows 10 or Windows 11.
 

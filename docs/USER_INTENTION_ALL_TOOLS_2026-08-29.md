@@ -137,7 +137,6 @@ for weekly status reports and planning headers.
 just ended). This is intentional — the user considers the completed week as
 the "current" context until a new work week starts on Monday.
 
-
 ---
 
 **Section 2: EMAIL TEMPLATES (10 Tools)**
@@ -221,7 +220,6 @@ are assigned to email templates. The user accesses them exclusively through
 the Command Palette by typing keywords like "pfa", "ack", "ooo", etc.
 This is intentional to avoid hotkey clutter — these are used occasionally,
 not dozens of times per day like date/time tools.
-
 
 ---
 
@@ -349,7 +347,6 @@ Strips existing numbering before re-applying for clean renumbering.
 **Trigger:** Leader Key chord "x"
 Strips existing checkboxes/bullets before re-applying.
 
-
 ---
 
 **Section 4: MATH TOOLS (11 Tools)**
@@ -476,7 +473,6 @@ Thousand Only"). Supports paise for fractional amounts.
 
 **Output:** Indian format words with "Rupees ... and ... Paise Only"
 
-
 ---
 
 **Section 5: FINANCE TOOLS (8 Tools)**
@@ -559,7 +555,6 @@ user may be formatting non-monetary numbers (quantities, measurements).
 **Intent:** Format a raw number with international 3-digit grouping
 (1,234,567.89). Always includes 2 decimal places.
 
-
 ---
 
 **Section 6: EXTRACTION TOOLS (7 Tools)**
@@ -638,7 +633,6 @@ are between two dates. Used for project planning and deadline tracking.
 multi-line informational report. Does not account for public holidays —
 this is intentional for a lightweight tool. Full holiday support would
 require a locale-aware calendar database.
-
 
 ---
 
@@ -738,7 +732,6 @@ can customize material densities, rates, and other engineering defaults.
 **Design Decision:** Registered in BOTH Utility and Civil categories for
 discoverability. This duplicate is intentional.
 
-
 ---
 
 **Section 8: WINDOW PEEK & X-RAY TOOLS (3 Tools)**
@@ -770,7 +763,6 @@ This is a physical-keyboard-only feature by design.
 **Intent:** User wants to customize how transparent X-Ray makes windows.
 Accepts 5-90% opacity value (clamped for safety — below 5% makes windows
 nearly invisible and unusable).
-
 
 ---
 
@@ -810,7 +802,6 @@ a colleague or from a previous installation). Deduplicates by description.
 
 **Design Decision:** Import MERGES — never replaces existing tasks.
 
-
 ---
 
 **Section 10: FIND & REPLACE (1 Tool)**
@@ -832,7 +823,6 @@ missing feature in many text editors.
 **Design Decision:** Uses literal StrReplace (case-insensitive, no regex).
 This is intentional — the user wants simple text replacement, not regex
 complexity. Always replaces ALL occurrences in the selection.
-
 
 ---
 
@@ -895,7 +885,6 @@ If all 3 tiers converge within 5% variance → VERIFIED estimate.
 
 (Duplicate of Tool 73 — registered in Civil category for discoverability)
 
-
 ---
 
 **Section 12: HOTSTRINGS & TEXT EXPANSION (14 Triggers)**
@@ -921,7 +910,6 @@ If all 3 tiers converge within 5% variance → VERIFIED estimate.
 prompt hotstrings are used when composing queries in ChatGPT, Claude, etc.
 The user types the abbreviation + space and the full text expands.
 
-
 ---
 
 **Section 13: SNIPPET MANAGER (GUI-based)**
@@ -939,7 +927,6 @@ corrupted CSV files. Master backup preserves ALL snippet history including
 disabled/superseded entries. External file watcher reloads changes made
 in Notepad/Excel within 2 seconds.
 
-
 ---
 
 **Section 14: TELEMETRY & DIAGNOSTICS**
@@ -954,11 +941,9 @@ palette searches return zero results (indicating missing features).
 Stored in INI files in %APPDATA%\OfficeProductivityHub. The export
 report is designed for the user's own introspection and debugging.
 
-
 ---
 
 **Section 15: GLOBAL INFRASTRUCTURE INTENTS**
-
 
 **COMMAND PALETTE:** Double-tap Shift (JetBrains style) or Ctrl+Space.
 

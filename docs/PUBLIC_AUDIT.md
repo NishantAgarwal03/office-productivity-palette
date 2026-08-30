@@ -11,9 +11,9 @@
 |---|---|
 | Published AHK inventory, raw hashes, byte counts, line counts, includes, and screenshot hashes | Publicly reproducible now from repository files |
 | Comparison with the complete approved private-source reference set | Operator-local only; not publicly reproducible by design |
-| Executable size and hash during this pre-publication review | Operator-local only; the EXE is intentionally outside Git history |
+| Executable size and hash in the publication-state review | Operator-local evidence; the EXE remains intentionally outside Git history |
 | Embedded executable version metadata | Operator-local evidence: Windows `FileVersion` and `ProductVersion` report 2.0.26, while the owner-designated release is v2.0.0 |
-| Executable size and hash after approved release publication | Publicly reproducible from the named v2.0.0 GitHub Release asset after it is published |
+| Designated public executable location | [v2.0.0 release page](https://github.com/NishantAgarwal03/office-productivity-palette/releases/tag/v2.0.0) and [`office_productivity_palette_v2.0.0.exe` asset](https://github.com/NishantAgarwal03/office-productivity-palette/releases/download/v2.0.0/office_productivity_palette_v2.0.0.exe); public availability and downloaded-byte identity require post-upload verification |
 
 ## Published AHK inventory
 
@@ -82,7 +82,7 @@ The main script declares **28** `#Include` directives. **5** targets are present
 
 The difference between the embedded **2.0.26** version values and the owner-designated **v2.0.0** release/filename is a known metadata mismatch and is not claimed to be fixed. It is not evidence of a different download. Readers should identify the reviewed artifact by the exact filename, size, and SHA-256 recorded above.
 
-During this pre-publication review, the EXE is intentionally outside Git history. After user approval and publication, the durable public verifier will be the v2.0.0 GitHub Release asset named `office_productivity_palette_v2.0.0.exe`. This is a future publication condition; this audit does not claim that the release asset already exists and does not provide a release URL.
+The EXE is intentionally outside Git history. Its designated publication locations are the [v2.0.0 GitHub Release](https://github.com/NishantAgarwal03/office-productivity-palette/releases/tag/v2.0.0) and the direct [`office_productivity_palette_v2.0.0.exe` asset URL](https://github.com/NishantAgarwal03/office-productivity-palette/releases/download/v2.0.0/office_productivity_palette_v2.0.0.exe). This audit does not claim that an upload has already been verified: public availability, exact asset naming, size, and downloaded SHA-256 remain post-upload checks.
 
 After downloading the published asset, run these commands from its containing directory:
 

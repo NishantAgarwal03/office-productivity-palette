@@ -4,22 +4,15 @@ Office Productivity Palette is a Windows 10/11 productivity hub that brings a se
 
 ## Download
 
-> **Publication status:** Release publication is pending user approval during local review. The executable is not claimed to be available yet.
+**[Download `office_productivity_palette_v2.0.0.exe`](https://github.com/NishantAgarwal03/office-productivity-palette/releases/download/v2.0.0/office_productivity_palette_v2.0.0.exe)**
 
-After publication, open this repository's **Releases** page, choose **v2.0.0**, and download:
-
-`office_productivity_palette_v2.0.0.exe`
-
-The release will be distributed as a standalone executable, not an installer. See [Security verification](#security-verification) before launching it.
+See the [v2.0.0 release page](https://github.com/NishantAgarwal03/office-productivity-palette/releases/tag/v2.0.0) for release details. The file is a standalone executable, not an installer. See [Security verification](#security-verification) before launching it.
 
 > [!NOTE]
 > **Known embedded-version mismatch:** Windows reports both the embedded `FileVersion` and `ProductVersion` as **2.0.26**, while the owner-designated release and filename remain **v2.0.0** and `office_productivity_palette_v2.0.0.exe`. This mismatch is not evidence of a different download and is not claimed to be fixed. Identify the reviewed artifact by its exact filename, size, and SHA-256 below.
 
 > [!WARNING]
 > **Phased preview:** Only six selected source files are included now. This incomplete subset cannot run the application, build it, or reproduce the EXE. The EXE will be offered for evaluation and review, including feedback, suggestions, and discussion of improvements to the code. Complete corresponding source is planned for later phases but is not currently included. No assertion is made that the current EXE distribution is GPLv3-compliant; publishing remaining source later would not by itself establish corresponding-source compliance for the present distribution.
-
-> [!NOTE]
-> **Publication checklist:** When v2.0.0 is published, replace the pending language above with a working release/download link and confirm that it resolves to the release asset named `office_productivity_palette_v2.0.0.exe`. This is a maintainer checklist item, not a live download link.
 
 ## What it does
 
@@ -47,15 +40,15 @@ For the approved intent and behavior of the tool catalog, see the [all-tools int
 
 ## Requirements
 
-- **EXE users:** Windows 10 or Windows 11. AutoHotkey will not be required to run the executable after it is published.
+- **EXE users:** Windows 10 or Windows 11. AutoHotkey is not required to run the executable.
 - **Source reviewers:** AutoHotkey v2 is required to examine the source in its intended language environment. The published subset is incomplete and cannot be run independently; see [Published source scope](#published-source-scope).
 
 No compatibility is claimed for other operating systems or AutoHotkey v1.
 
 ## Install and run
 
-1. After release publication, open the repository's Releases page and select **v2.0.0**.
-2. Download `office_productivity_palette_v2.0.0.exe` from the release assets.
+1. Open the [v2.0.0 release page](https://github.com/NishantAgarwal03/office-productivity-palette/releases/tag/v2.0.0).
+2. [Download `office_productivity_palette_v2.0.0.exe`](https://github.com/NishantAgarwal03/office-productivity-palette/releases/download/v2.0.0/office_productivity_palette_v2.0.0.exe) from the release assets.
 3. **Before running it, verify the SHA-256 checksum below.**
 4. Launch the executable. No installer step is required.
 
@@ -123,7 +116,7 @@ Windows may display embedded `FileVersion` and `ProductVersion` values of **2.0.
 - **A Word-style shortcut does nothing in Microsoft Word:** This is intentional. Date, time, statistics, and case-cycling parity shortcuts are disabled while `WINWORD.EXE` is active so Word can keep its native behavior.
 - **The double-tap shortcut does not open or capture:** Tap the same modifier twice promptly without pressing another key, or use `Ctrl+Space` for the palette and `Ctrl+Shift+T` for task capture.
 - **A window remains open:** Press `Esc` while an Office Productivity Palette interface is visible.
-- **The source does not start:** The published source is an audited limited subset with missing dependencies; use the released EXE after publication for direct use.
+- **The source does not start:** The published source is an audited limited subset with missing dependencies; use the released EXE for direct use.
 - **Windows warns about the download:** Confirm the exact filename and checksum above, then decide whether to run it. No code-signing claim is made.
 
 ## License
