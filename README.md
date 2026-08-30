@@ -12,7 +12,7 @@ See the [v2.0.0 release page](https://github.com/NishantAgarwal03/office-product
 > **Known embedded-version mismatch:** Windows reports both the embedded `FileVersion` and `ProductVersion` as **2.0.26**, while the owner-designated release and filename remain **v2.0.0** and `office_productivity_palette_v2.0.0.exe`. This mismatch is not evidence of a different download and is not claimed to be fixed. Identify the reviewed artifact by its exact filename, size, and SHA-256 below.
 
 > [!WARNING]
-> **Phased preview:** Only six selected source files are included now. This incomplete subset cannot run the application, build it, or reproduce the EXE. The EXE will be offered for evaluation and review, including feedback, suggestions, and discussion of improvements to the code. Complete corresponding source is planned for later phases but is not currently included. No assertion is made that the current EXE distribution is GPLv3-compliant; publishing remaining source later would not by itself establish corresponding-source compliance for the present distribution.
+> **Phased preview:** Only six selected source files are included now. This incomplete subset cannot run the application, build it, or reproduce the EXE. The EXE is offered for evaluation and review, including feedback, suggestions, and discussion of improvements to the code. Complete corresponding source is planned for later phases but is not currently included. No assertion is made that the current EXE distribution is GPLv3-compliant; publishing remaining source later would not by itself establish corresponding-source compliance for the present distribution.
 
 ## What it does
 
