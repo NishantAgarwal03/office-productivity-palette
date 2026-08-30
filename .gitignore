@@ -1,6 +1,10 @@
 # Test Sandboxes & Transient Outputs
 _test_sandbox/
 master_test_summary.json
+results.json
+*_results.log
+Tests/results.json
+Tests/*_results.log
 
 # Python Cache
 __pycache__/
@@ -9,4 +13,5 @@ __pycache__/
 # Temp & Editor
 *.tmp
 *.bak
+
 

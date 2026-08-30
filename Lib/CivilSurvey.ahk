@@ -23,6 +23,23 @@ class CivilSurvey {
     }
 
     ; ------------------------------------------------------------------------------------------------------------------
+    ; Unified Evaluator Entry Point (Contract Uniformity)
+    ; ------------------------------------------------------------------------------------------------------------------
+    static Evaluate(str, param := "", cfg := "") {
+        if (!IsObject(cfg)) {
+            cfg := (IsSet(CivilConverterEngine) && HasMethod(CivilConverterEngine, "LoadConfig")) ? CivilConverterEngine.LoadConfig() : Map("SlopeDefaultRunM", 10.0)
+        }
+        if (CivilSurvey.IsAngleDmsRequest(str))
+            return CivilSurvey.EvaluateAngleDms(str)
+        if (CivilSurvey.IsConcreteGradeRequest(str, &mGrade))
+            return CivilSurvey.EvaluateConcreteGrade(str, mGrade)
+        if (CivilSurvey.IsSlopeRequest(str))
+            return CivilSurvey.EvaluateSlope(str, param, cfg)
+        return {success: false, message: "Unrecognized survey, slope or angle query"}
+    }
+
+
+    ; ------------------------------------------------------------------------------------------------------------------
     ; 2. Slope, Fall & Gradient Subsystem
     ; ------------------------------------------------------------------------------------------------------------------
     static EvaluateSlope(str, param, cfg) {

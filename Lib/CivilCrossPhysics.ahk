@@ -102,6 +102,16 @@ class CivilCrossPhysics {
     }
 
     ; ------------------------------------------------------------------------------------------------------------------
+    ; Unified Evaluator Entry Point (Contract Uniformity)
+    ; ------------------------------------------------------------------------------------------------------------------
+    static Evaluate(str, secondaryParam := "", cfg := "") {
+        if (!IsObject(cfg)) {
+            cfg := (IsSet(CivilConverterEngine) && HasMethod(CivilConverterEngine, "LoadConfig")) ? CivilConverterEngine.LoadConfig() : Map("Steel", 7850.0, "Concrete_RCC", 2400.0, "Water", 1000.0)
+        }
+        return this.EvaluatePhysicalTransformation(str, secondaryParam, cfg)
+    }
+
+    ; ------------------------------------------------------------------------------------------------------------------
     ; 2. Transformation Dispatcher Pipeline
     ; ------------------------------------------------------------------------------------------------------------------
     static EvaluatePhysicalTransformation(str, secondaryParam, cfg) {

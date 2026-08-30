@@ -22,7 +22,10 @@ class CivilRebar {
     ; ------------------------------------------------------------------------------------------------------------------
     ; 2. Evaluation Engine
     ; ------------------------------------------------------------------------------------------------------------------
-    static Evaluate(str, param, cfg) {
+    static Evaluate(str, param := "", cfg := "") {
+        if (!IsObject(cfg)) {
+            cfg := (IsSet(CivilConverterEngine) && HasMethod(CivilConverterEngine, "LoadConfig")) ? CivilConverterEngine.LoadConfig() : Map("RebarSpacingPitchRoundMM", 5.0)
+        }
         ; 1. Rebar Spacing Substitution: "10mm @ 150 to 12mm", "10 dia @ 200 replace with 12 dia"
         if (RegExMatch(str, "i)(?:change|replace)?\s*(\d+)\s*(?:mm|dia|Ø)?\s*@\s*(\d+)(?:\s*(?:c\/c|c-c|spacing|mm))?\s*(?:to|by|replace\s*with|se)?\s*(\d+)?(?:\s*(?:mm|dia|Ø))?", &mSub)) {
             d1 := Float(mSub[1])

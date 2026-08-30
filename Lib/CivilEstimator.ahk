@@ -41,6 +41,21 @@ class CivilEstimator {
     }
 
     ; ------------------------------------------------------------------------------------------------------------------
+    ; Unified Evaluator Entry Point (Contract Uniformity)
+    ; ------------------------------------------------------------------------------------------------------------------
+    static Evaluate(str, cfg := "") {
+        if (!IsObject(cfg)) {
+            cfg := (IsSet(CivilConverterEngine) && HasMethod(CivilConverterEngine, "LoadConfig")) ? CivilConverterEngine.LoadConfig() : Map("Steel", 7850.0, "Sand_Dry", 1600.0, "Aggregate_Coarse", 1500.0, "Concrete_RCC", 2400.0, "Concrete_PCC", 2300.0, "Cement_Bulk", 1440.0, "Diesel", 840.0, "Petrol", 740.0, "Water", 1000.0, "BasicCostPerSqFt", 1500.0, "StandardCostPerSqFt", 1800.0, "PremiumCostPerSqFt", 2400.0)
+        }
+        if (CivilEstimator.IsThumbRuleRequest(str))
+            return CivilEstimator.EvaluateThumbRuleCost(str, cfg)
+        if (CivilEstimator.IsRateRequest(str))
+            return CivilEstimator.EvaluateRateConversion(str, "", cfg)
+        return {success: false, message: "Unrecognized estimator or rate query"}
+    }
+
+
+    ; ------------------------------------------------------------------------------------------------------------------
     ; 2. Enhanced Construction Rate & Unit Price Converter (Categories C, D, E & 1-Param Progressive Bridges)
     ; ------------------------------------------------------------------------------------------------------------------
     static EvaluateRateConversion(str, secondaryParam := "", cfg := "") {

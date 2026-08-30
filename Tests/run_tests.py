@@ -39,7 +39,8 @@ ALLOWLIST_SUITES = [
     "test_suite_runner.ahk",
     "test_integration_runner.ahk",
     "test_civil_converter.ahk",
-    "test_civil_all_units_exhaustive.ahk"
+    "test_civil_all_units_exhaustive.ahk",
+    "test_modularity_runner.ahk"
 ]
 
 PROTECTED_PRODUCTION_FILES = [
@@ -48,6 +49,7 @@ PROTECTED_PRODUCTION_FILES = [
     ROOT_DIR / "office_tasks_archive.csv",
     ROOT_DIR / "CivilEngineeringDefaults.ini",
     ROOT_DIR / "office_productivity_palette_v2.0.0.ahk",
+    ROOT_DIR / "office_productivity_palette_v2.0.1.ahk",
 ]
 
 # Add all files under Lib/ to protected manifest
