@@ -5,12 +5,11 @@
 #Requires AutoHotkey v2.0
 
 RegisterMathActions() {
-    RegisterAction("Evaluate Math Expression", "🧮 Math", "[Needs Selection] Computes formula (e.g. 1500 * 1.18 + 450)", "calc, math, evaluate, formula, compute", (*) => EvaluateMathSelection(), "c")
+    RegisterAction("Evaluate Math Expression", "🧮 Math", "[Needs Selection] Computes formula (e.g. 1500 * 1.18 + 450)", "calc, math, evaluate, formula, compute, scale, lakh, crore, thousand, million, billion", (*) => EvaluateMathSelection(), "c")
     RegisterAction("GST / Tax Breakdown (18%)", "🧮 Math", "[Needs Selection] Calculates Base + 18% Tax + Total on number", "gst, tax, 18%, vat, breakdown", (*) => CalculateTaxBreakdown(18))
-    RegisterAction("Percentage Difference Calculator", "🧮 Math", "[Needs Selection] Calculates % change between two numbers", "percent, percentage, change, growth, delta", (*) => CalculatePercentageDelta())
+    RegisterAction("Percentage Change & Growth Calculator", "🧮 Math", "[Needs Selection] Calculates relative change & symmetric difference between two numbers", "percent, percentage, change, growth, delta, symmetric, difference", (*) => CalculatePercentageDelta())
     RegisterAction("Generate 16-Char Secure Password", "🧮 Math", "Generates & inserts random secure password (also copied to clipboard)", "password, secure, random, pass, generate", (*) => InsertText(GenerateSecurePassword(16)), "p")
     RegisterAction("Generate UUID / GUID v4", "🧮 Math", "Generates & inserts standard UUID v4 (also copied to clipboard)", "uuid, guid, id, unique", (*) => InsertText(GenerateUUID()))
-    RegisterAction("Format Number with Commas", "🧮 Math", "[Needs Selection] Formats 1000000 -> 1,000,000", "comma, format, number, digits, currency", (*) => TransformSelectedText((txt) => FormatInternationalCommas(txt, false)))
     RegisterAction("Round Number to 2 Decimals", "🧮 Math", "[Needs Selection] Rounds float number to 2 decimal places", "round, decimal, precision, float", (*) => TransformSelectedText((txt) => RoundNumber(txt, 2)))
     RegisterAction("Sum Column of Selected Numbers", "🧮 Math", "[Needs Selection] Sums all numbers in highlighted text", "sum, total, add, column, numbers", (*) => SumSelectedNumbers())
     RegisterAction("Unix Timestamp to Readable Date", "🧮 Math", "[Needs Selection] Converts Unix epoch seconds to readable date/time", "unix, epoch, convert, time, timestamp", (*) => ConvertUnixTimestamp())
@@ -63,19 +62,36 @@ CalculatePercentageDelta() {
         ib := OfficeInputBox("Enter two numbers (e.g. 100 125 or 1L 1.25L):", "Percentage Delta")
         if (ib.Result != "OK" || Trim(ib.Value) = "")
             return
-        nums := ExtractAllNumbers(ib.Value)
-        if (nums.Length < 2)
-            return
+        sel := ib.Value
     }
+    res := ComputePercentageChange(sel)
+    ShowCalculationResult("Percentage Change & Growth", res["summary"])
+}
+
+ComputePercentageChange(text) {
+    nums := ExtractAllNumbers(text)
+    if (nums.Length < 2)
+        throw Error("Percentage Change: Expected 2 numbers in input text (e.g. '100 to 125')")
     oldVal := nums[1]
     newVal := nums[2]
-    if (oldVal = 0) {
-        ShowToast("⚠️ Initial value cannot be 0", 2500)
-        return
-    }
-    delta := ((newVal - oldVal) / oldVal) * 100
-    out := Format("{:0.2f} -> {:0.2f} ({:+0.2f}%)", oldVal, newVal, delta)
-    ShowCalculationResult("Delta (" . oldVal . " -> " . newVal . ")", out)
+    if (oldVal = 0 && newVal = 0)
+        throw Error("Percentage Change: Both values cannot be 0")
+
+    relPct := (oldVal != 0) ? (((newVal - oldVal) / oldVal) * 100) : 0.0
+    avgVal := (Abs(oldVal) + Abs(newVal)) / 2.0
+    symmDiff := (avgVal > 0) ? (Abs(newVal - oldVal) / avgVal) * 100 : 0.0
+
+    relStr := (oldVal != 0) ? Format("Change ({:0.2f} -> {:0.2f}): {:+0.2f}%", oldVal, newVal, relPct) : Format("Change ({:0.2f} -> {:0.2f}): N/A (Base is 0)", oldVal, newVal)
+    symmStr := Format("Symm Difference: {:0.2f}% (|A-B| / Avg)", symmDiff)
+    summary := relStr . "`n" . symmStr
+
+    return Map(
+        "relative_change", relPct,
+        "symmetric_change", symmDiff,
+        "summary", summary,
+        "result", summary,
+        "text", summary
+    )
 }
 
 GenerateSecurePassword(length := 16) {

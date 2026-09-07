@@ -4,15 +4,26 @@ Office Productivity Palette is a Windows 10/11 productivity hub that brings a se
 
 ## Download
 
-**[Download `office_productivity_palette_v2.0.0.exe`](https://github.com/NishantAgarwal03/office-productivity-palette/releases/download/v2.0.0/office_productivity_palette_v2.0.0.exe)**
+**[Download `office_productivity_palette_v2.0.1.exe`](https://github.com/NishantAgarwal03/office-productivity-palette/releases/download/v2.0.1/office_productivity_palette_v2.0.1.exe)**
 
-See the [v2.0.0 release page](https://github.com/NishantAgarwal03/office-productivity-palette/releases/tag/v2.0.0) for release details. The file is a standalone executable, not an installer. See [Security verification](#security-verification) before launching it.
+See the [v2.0.1 release page](https://github.com/NishantAgarwal03/office-productivity-palette/releases/tag/v2.0.1) for release details. The file is a standalone executable, not an installer. See [Security verification](#security-verification) before launching it.
 
 > [!NOTE]
-> **Known embedded-version mismatch:** Windows reports both the embedded `FileVersion` and `ProductVersion` as **2.0.26**, while the owner-designated release and filename remain **v2.0.0** and `office_productivity_palette_v2.0.0.exe`. This mismatch is not evidence of a different download and is not claimed to be fixed. Identify the reviewed artifact by its exact filename, size, and SHA-256 below.
+> **Known embedded-version mismatch:** Windows reports both the embedded `FileVersion` and `ProductVersion` as **2.0.26**, while the owner-designated release and filename are **v2.0.1** and `office_productivity_palette_v2.0.1.exe`. Identify the reviewed artifact by its exact filename, size, and SHA-256 below.
 
 > [!WARNING]
-> **Phased preview:** Only six selected source files are included now. This incomplete subset cannot run the application, build it, or reproduce the EXE. The EXE is offered for evaluation and review, including feedback, suggestions, and discussion of improvements to the code. Complete corresponding source is planned for later phases but is not currently included. No assertion is made that the current EXE distribution is GPLv3-compliant; publishing remaining source later would not by itself establish corresponding-source compliance for the present distribution.
+> **Expanded source preview:** This release opens the complete 46-file `Lib` folder for focused review, suggestions, and improvement while keeping the v2.0.1 launcher and other build-required files for later phases. The preview is substantially broader than v2.0.0, but it cannot run independently, build the application, or reproduce the EXE. No assertion is made that the current EXE distribution is GPLv3-compliant.
+
+## What's improved in v2.0.1
+
+- Build reusable multi-step recipes with the new Workflow Composer and Pipeline Runner.
+- Preview workflow steps without normal clipboard, notification, or history side effects, and inspect step inputs and outputs.
+- Convert dates through nine common formats with clearer previews and a remembered default.
+- Use improved civil-engineering calculations and practical 3-4-5/Guniya guidance.
+- Type numeric palette queries freely; use `Alt+1` through `Alt+9` to execute visible results.
+- Get more reliable Action Board selection, clearer percentage-growth results, explicit Indian/international number formatting, run history, and stronger recipe validation.
+
+A fresh pre-release run completed **1,294/1,294 assertions across eight suites**, with all ten integrity invariants passing. Automated tests cover asserted cases; they are not a guarantee of defect-free behavior.
 
 ## What it does
 
@@ -25,6 +36,8 @@ See the [v2.0.0 release page](https://github.com/NishantAgarwal03/office-product
 For the approved intent and behavior of the tool catalog, see the [all-tools intention document](docs/USER_INTENTION_ALL_TOOLS_2026-08-29.md).
 
 ## Screenshots
+
+These representative screenshots are retained from the earlier publication and were not recaptured for v2.0.1.
 
 ![Command palette filtered by the word query](docs/images/command-palette-query.png)
 
@@ -47,8 +60,8 @@ No compatibility is claimed for other operating systems or AutoHotkey v1.
 
 ## Install and run
 
-1. Open the [v2.0.0 release page](https://github.com/NishantAgarwal03/office-productivity-palette/releases/tag/v2.0.0).
-2. [Download `office_productivity_palette_v2.0.0.exe`](https://github.com/NishantAgarwal03/office-productivity-palette/releases/download/v2.0.0/office_productivity_palette_v2.0.0.exe) from the release assets.
+1. Open the [v2.0.1 release page](https://github.com/NishantAgarwal03/office-productivity-palette/releases/tag/v2.0.1).
+2. [Download `office_productivity_palette_v2.0.1.exe`](https://github.com/NishantAgarwal03/office-productivity-palette/releases/download/v2.0.1/office_productivity_palette_v2.0.1.exe) from the release assets.
 3. **Before running it, verify the SHA-256 checksum below.**
 4. Launch the executable. No installer step is required.
 
@@ -56,7 +69,7 @@ Windows may show its normal security warning for a downloaded executable. Check 
 
 ## Core shortcuts
 
-These bindings are verified from the published main source. Actions that capture or transform text require a selection. The final four Word-parity shortcuts are intentionally inactive while Microsoft Word is the active application.
+These established bindings are documented from the previously published v2.0.0 main source. The v2.0.1 launcher is not part of this source preview. Actions that capture or transform text require a selection. The final four Word-parity shortcuts are intentionally inactive while Microsoft Word is the active application.
 
 | Shortcut | Action | Context |
 |---|---|---|
@@ -80,14 +93,15 @@ These bindings are verified from the published main source. Actions that capture
 
 ## Published source scope
 
-> **Important:** This repository publishes a limited subset of six selected AutoHotkey files. It is **not the complete application source**, is **not independently runnable or rebuildable**, and **cannot reproduce the EXE**.
+> **Important:** The v2.0.1 preview publishes the complete current `Lib` folder but not the v2.0.1 main script or every build-required file. It is **not the complete application source**, is **not independently runnable or rebuildable**, and **cannot reproduce the EXE**.
 
-The main script declares 28 includes, of which 23 are absent or excluded from the public subset. The executable is audited as a separate binary artifact. Review the [public audit](docs/PUBLIC_AUDIT.md) for the exact inventory, include coverage, hashes, evidence, and limitations.
+The repository retains the previously published v2.0.0 main script and now expands the review surface to 46 current library modules. The v2.0.1 executable is verified as a separate binary artifact. Review the [public audit](docs/PUBLIC_AUDIT.md) for inventory, evidence, and limitations.
 
 ## Documentation and audit
 
 - [Approved intent for all tools](docs/USER_INTENTION_ALL_TOOLS_2026-08-29.md)
-- [Public audit for v2.0.0](docs/PUBLIC_AUDIT.md)
+- [Public audit summary for v2.0.1](docs/PUBLIC_AUDIT.md)
+- [Release notes for v2.0.1](release/RELEASE_NOTES_v2.0.1.md)
 - [Release notes for v2.0.0](release/RELEASE_NOTES_v2.0.0.md)
 
 ## Security verification
@@ -95,20 +109,20 @@ The main script declares 28 includes, of which 23 are absent or excluded from th
 Before running the executable, open PowerShell in the folder containing the downloaded file and run:
 
 ```powershell
-Get-FileHash -Algorithm SHA256 -LiteralPath .\office_productivity_palette_v2.0.0.exe
+Get-FileHash -Algorithm SHA256 -LiteralPath .\office_productivity_palette_v2.0.1.exe
 ```
 
 Expected SHA-256:
 
 ```text
-2CA9F72CAABF9EEADC90E7C44A93A2A4AAECB673399965AD625747562AFD7741
+A9E6F71BB62419006633126F1206699A7814A43D12DCEB0F03CE058F3CC7060B
 ```
 
-If the computed hash differs, do not use the file as the audited v2.0.0 artifact.
+If the computed hash differs, do not use the file as the reviewed v2.0.1 artifact.
 
 A matching hash confirms that the downloaded bytes match the audited value. It does not independently establish publisher authenticity, code signing, or corresponding-source compliance.
 
-Windows may display embedded `FileVersion` and `ProductVersion` values of **2.0.26** for this owner-designated **v2.0.0** release artifact. Use the exact filename `office_productivity_palette_v2.0.0.exe`, size **1,753,088 bytes**, and SHA-256 above to identify the reviewed bytes; the known embedded-version mismatch is not evidence of a different download and is not claimed to be fixed.
+Windows displays embedded `FileVersion` and `ProductVersion` values of **2.0.26** for this owner-designated **v2.0.1** release artifact. Use the exact filename `office_productivity_palette_v2.0.1.exe`, size **1,924,096 bytes**, and SHA-256 above to identify the reviewed bytes.
 
 ## Troubleshooting
 
@@ -116,11 +130,11 @@ Windows may display embedded `FileVersion` and `ProductVersion` values of **2.0.
 - **A Word-style shortcut does nothing in Microsoft Word:** This is intentional. Date, time, statistics, and case-cycling parity shortcuts are disabled while `WINWORD.EXE` is active so Word can keep its native behavior.
 - **The double-tap shortcut does not open or capture:** Tap the same modifier twice promptly without pressing another key, or use `Ctrl+Space` for the palette and `Ctrl+Shift+T` for task capture.
 - **A window remains open:** Press `Esc` while an Office Productivity Palette interface is visible.
-- **The source does not start:** The published source is an audited limited subset with missing dependencies; use the released EXE for direct use.
+- **The source does not start:** The expanded source preview intentionally omits the v2.0.1 launcher and other build-required files; use the released EXE for direct use.
 - **Windows warns about the download:** Confirm the exact filename and checksum above, then decide whether to run it. No code-signing claim is made.
 
 ## License
 
 The project owner licenses the files published in this repository under the GNU General Public License v3.0 or later (**GPL-3.0-or-later**). See [LICENSE](LICENSE) for the complete terms.
 
-The EXE is a separate binary artifact in this phased preview. Its GPL corresponding-source compliance is unresolved because complete corresponding source for that EXE is not currently available. No claim is made that the current EXE distribution is GPLv3-compliant, and the plan to release additional source later does not by itself establish compliance for a present distribution. This statement does not invent or impose a proprietary license or EULA on the EXE.
+The EXE is a separate binary artifact in this expanded preview. Its GPL corresponding-source compliance is unresolved because complete corresponding source for that EXE is not currently available. No claim is made that the current EXE distribution is GPLv3-compliant, and the plan to release additional source later does not by itself establish compliance for a present distribution. This statement does not invent or impose a proprietary license or EULA on the EXE.
