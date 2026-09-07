@@ -32,6 +32,8 @@ ToggleActionBoard() {
         }
         ActionBoardGui.Show()
         RefreshMatrixBoard()
+        if IsObject(InputTaskBox)
+            InputTaskBox.Focus()
         return
     }
     CreateActionBoardGui()
@@ -85,6 +87,11 @@ CreateActionBoardGui() {
     LV_Q3.OnEvent("ItemSelect", (ctrl, item, selected) => OnTaskItemSelect(LV_Q3, item, selected))
     LV_Q4.OnEvent("ItemSelect", (ctrl, item, selected) => OnTaskItemSelect(LV_Q4, item, selected))
     
+    LV_Q1.OnEvent("Click", (ctrl, *) => ctrl.Focus())
+    LV_Q2.OnEvent("Click", (ctrl, *) => ctrl.Focus())
+    LV_Q3.OnEvent("Click", (ctrl, *) => ctrl.Focus())
+    LV_Q4.OnEvent("Click", (ctrl, *) => ctrl.Focus())
+
     LV_Q1.OnEvent("DoubleClick", (*) => MatrixViewOrToggle(LV_Q1))
     LV_Q2.OnEvent("DoubleClick", (*) => MatrixViewOrToggle(LV_Q2))
     LV_Q3.OnEvent("DoubleClick", (*) => MatrixViewOrToggle(LV_Q3))
@@ -102,6 +109,8 @@ CreateActionBoardGui() {
     CenterGuiOnActiveMonitor(ActionBoardGui, 850, 485)
     ActionBoardGui.Show("w850 h485")
     RefreshMatrixBoard()
+    if IsObject(InputTaskBox)
+        InputTaskBox.Focus()
 }
 
 RefreshMatrixBoard(filter := "") {
@@ -179,6 +188,7 @@ OnTaskItemSelect(lvCtrl, itemIndex, isSelected) {
     if !isSelected
         return
         
+    lvCtrl.Focus()
     LastActiveLV := lvCtrl
     taskId := Integer(lvCtrl.GetText(itemIndex, 2))
     

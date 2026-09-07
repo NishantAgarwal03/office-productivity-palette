@@ -128,15 +128,15 @@ class CivilSurvey {
         ; Case A: DMS to Decimal Degree (e.g. 45° 30' 15", 45-30-15, 45 30 15)
         if (RegExMatch(str, "i)^(\d+)(?:°|[\-\s])\s*(\d+)(?:\x27|[\-\s])\s*(\d+(?:\.\d+)?)(?:\x22|\s*)?", &mDMS)) {
             deg := Float(mDMS[1])
-            min := Float(mDMS[2])
+            minVal := Float(mDMS[2])
             sec := Float(mDMS[3])
-            decDeg := deg + (min / 60.0) + (sec / 3600.0)
+            decDeg := deg + (minVal / 60.0) + (sec / 3600.0)
             rad := decDeg * (3.141592653589793 / 180.0)
 
             return {
                 success: true,
                 category: "🌐 Angle / Survey DMS -> Decimal",
-                displayExpr: Format("{1}° {2}' {3} DMS", deg, min, sec),
+                displayExpr: Format("{1}° {2}' {3} DMS", deg, minVal, sec),
                 resultStr: Format("{:0.5f}° (Radians: {:0.6f} rad)", decDeg, rad),
                 val: decDeg,
                 unit: "°"
@@ -148,14 +148,14 @@ class CivilSurvey {
             decDeg := Float(mDec[1])
             deg := Floor(decDeg)
             remMin := (decDeg - deg) * 60.0
-            min := Floor(remMin)
-            sec := (remMin - min) * 60.0
+            minVal := Floor(remMin)
+            sec := (remMin - minVal) * 60.0
 
             return {
                 success: true,
                 category: "🌐 Angle Decimal -> Survey DMS",
                 displayExpr: Format("{:0.5f}° -> DMS", decDeg),
-                resultStr: Format("{1}° {2}' {3:0.2f}`" (DMS)", deg, min, sec),
+                resultStr: Format("{1}° {2}' {3:0.2f}`" (DMS)", deg, minVal, sec),
                 val: decDeg,
                 unit: "DMS"
             }

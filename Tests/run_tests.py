@@ -11,9 +11,9 @@ Enforces the 10 Aerospace-Grade Verification Invariants:
 5. total == passed + failed, failed == 0, and total > 0 for each required suite.
 6. All reported suite names match the expected allowlist.
 7. Every write resolves inside that suite's unique sandbox.
-8. The protected production manifest has no additions, deletions or modifications.
+8. The closed-world production manifest has zero additions, deletions, mutations, or file leaks.
 9. No unexpected modal window or unhandled stderr error is detected.
-10. Aggregate totals reconcile with all individual results.
+10. Aggregate totals reconcile with all individual results, and all static #Includes are hermetic.
 ========================================================================================
 """
 
@@ -24,15 +24,17 @@ import json
 import shutil
 import hashlib
 import subprocess
+import re
 from pathlib import Path
 from datetime import datetime
 
 # --------------------------------------------------------------------------------------
-# 1. Configuration & Canonical Allowlist
+# 1. Configuration & Canonical Allowlist (All 8 Test Suites)
 # --------------------------------------------------------------------------------------
 SCRIPT_DIR = Path(__file__).resolve().parent
 ROOT_DIR = SCRIPT_DIR.parent
 LIB_DIR = ROOT_DIR / "Lib"
+WORKSPACE_ROOT = ROOT_DIR.parent.resolve()
 SANDBOX_BASE = SCRIPT_DIR / "_test_sandbox"
 
 ALLOWLIST_SUITES = [
@@ -40,7 +42,10 @@ ALLOWLIST_SUITES = [
     "test_integration_runner.ahk",
     "test_civil_converter.ahk",
     "test_civil_all_units_exhaustive.ahk",
-    "test_modularity_runner.ahk"
+    "test_modularity_runner.ahk",
+    "test_workflow_composer.ahk",
+    "test_regression_defects.ahk",
+    "test_ui_interaction_runner.ahk",
 ]
 
 PROTECTED_PRODUCTION_FILES = [
@@ -57,6 +62,13 @@ if LIB_DIR.exists():
     for f in LIB_DIR.glob("**/*"):
         if f.is_file():
             PROTECTED_PRODUCTION_FILES.append(f)
+
+EXCLUDED_MANIFEST_PATTERNS = [
+    "_test_sandbox",
+    ".git",
+    "__pycache__",
+    "master_test_summary.json",
+]
 
 SUITE_TIMEOUT_SECONDS = 60
 
@@ -86,10 +98,10 @@ def resolve_autohotkey_exe() -> Path:
     )
 
 # --------------------------------------------------------------------------------------
-# 3. Cryptographic Manifest Integrity
+# 3. Closed-World Cryptographic Manifest Integrity (Bidirectional)
 # --------------------------------------------------------------------------------------
 def compute_sha256(file_path: Path) -> str:
-    if not file_path.exists():
+    if not file_path.exists() or not file_path.is_file():
         return ""
     hasher = hashlib.sha256()
     with open(file_path, "rb") as f:
@@ -97,28 +109,128 @@ def compute_sha256(file_path: Path) -> str:
             hasher.update(chunk)
     return hasher.hexdigest()
 
-def snapshot_production_manifest() -> dict[Path, str]:
+def is_tracked_file(p: Path) -> bool:
+    s = str(p).replace("\\", "/")
+    for ex in EXCLUDED_MANIFEST_PATTERNS:
+        if ex in s:
+            return False
+    return True
+
+def snapshot_closed_world_manifest() -> dict[Path, str]:
     manifest = {}
-    for p in PROTECTED_PRODUCTION_FILES:
-        if p.exists():
+    for p in ROOT_DIR.glob("**/*"):
+        if p.is_file() and is_tracked_file(p):
             manifest[p] = compute_sha256(p)
     return manifest
 
-def verify_production_manifest(baseline: dict[Path, str]) -> list[str]:
+def verify_closed_world_manifest(baseline: dict[Path, str]) -> list[str]:
     violations = []
+    
+    # 1. Detect deletions and content mutations
     for p, original_hash in baseline.items():
         if not p.exists():
-            violations.append(f"PROTECTED FILE DELETED: {p.name}")
+            violations.append(f"CLOSED-WORLD VIOLATION [FILE DELETED]: {p.relative_to(ROOT_DIR)}")
             continue
         current_hash = compute_sha256(p)
         if current_hash != original_hash:
             violations.append(
-                f"PROTECTED FILE MUTATED: {p.name} (Original: {original_hash[:8]}..., Current: {current_hash[:8]}...)"
+                f"CLOSED-WORLD VIOLATION [FILE MUTATED]: {p.relative_to(ROOT_DIR)} "
+                f"(Baseline: {original_hash[:8]}..., Current: {current_hash[:8]}...)"
             )
+            
+    # 2. Detect unauthorized file additions / leaks outside sandbox
+    current_tracked = set()
+    for p in ROOT_DIR.glob("**/*"):
+        if p.is_file() and is_tracked_file(p):
+            current_tracked.add(p)
+            
+    baseline_set = set(baseline.keys())
+    leaked_files = current_tracked - baseline_set
+    for p in sorted(leaked_files):
+        violations.append(f"CLOSED-WORLD VIOLATION [UNAUTHORIZED FILE ADDITION/LEAK]: {p.relative_to(ROOT_DIR)}")
+        
     return violations
 
 # --------------------------------------------------------------------------------------
-# 4. Tree-Kill Process Helper
+# 4. Static #Include Dependency Tree & Hermeticity Auditor
+# --------------------------------------------------------------------------------------
+def get_production_and_test_ahk_files() -> list[Path]:
+    files = []
+    for p in ROOT_DIR.glob("*.ahk"):
+        files.append(p)
+    for p in (ROOT_DIR / "Lib").glob("**/*.ahk"):
+        files.append(p)
+    for p in SCRIPT_DIR.glob("*.ahk"):
+        if "_test_sandbox" not in str(p):
+            files.append(p)
+    return sorted(files)
+
+def audit_include_dependencies() -> list[str]:
+    """
+    Statically analyzes all production and test .ahk files.
+    Enforces:
+    1. Zero external / machine-local <LibName> standard library inclusions.
+    2. All relative #Include paths must resolve to an existing file on disk.
+    3. All resolved paths must remain strictly within the workspace root boundary.
+    """
+    violations = []
+    files_to_check = get_production_and_test_ahk_files()
+    
+    re_angle = re.compile(r'^\s*#Include\s+<([^>]+)>', re.IGNORECASE)
+    re_path = re.compile(r'^\s*#Include(?:\s+\*i)?\s+["\']?([^"\'\r\n<>]+)["\']?', re.IGNORECASE)
+    
+    for ahk_file in files_to_check:
+        try:
+            content = ahk_file.read_text(encoding="utf-8-sig", errors="replace")
+        except Exception as e:
+            violations.append(f"STATIC AUDIT [READ ERROR]: {ahk_file.name} - {e}")
+            continue
+            
+        for line_num, line in enumerate(content.splitlines(), 1):
+            line_str = line.strip()
+            if not line_str.lower().startswith("#include"):
+                continue
+                
+            # Check 1: Reject angle-bracket includes <LibName>
+            m_angle = re_angle.match(line_str)
+            if m_angle:
+                lib_target = m_angle.group(1)
+                violations.append(
+                    f"STATIC AUDIT [EXTERNAL <LIB> LEAK]: {ahk_file.relative_to(ROOT_DIR)}:L{line_num} "
+                    f"includes external machine-local <{lib_target}>"
+                )
+                continue
+                
+            # Check 2: Validate relative file includes
+            m_path = re_path.match(line_str)
+            if m_path:
+                raw_inc = m_path.group(1).strip()
+                if not raw_inc:
+                    continue
+                norm_inc = raw_inc.replace("/", "\\")
+                target_path = (ahk_file.parent / norm_inc).resolve()
+                
+                # Check target file exists
+                if not target_path.exists() or not target_path.is_file():
+                    violations.append(
+                        f"STATIC AUDIT [MISSING INCLUDE]: {ahk_file.relative_to(ROOT_DIR)}:L{line_num} "
+                        f"-> '{raw_inc}' resolves to non-existent file: {target_path}"
+                    )
+                    continue
+                    
+                # Check target file is within workspace root
+                try:
+                    target_path.relative_to(WORKSPACE_ROOT)
+                except ValueError:
+                    violations.append(
+                        f"STATIC AUDIT [OUT-OF-BOUNDS LEAK]: {ahk_file.relative_to(ROOT_DIR)}:L{line_num} "
+                        f"-> '{raw_inc}' points outside workspace root: {target_path}"
+                    )
+                    
+    return violations
+
+# --------------------------------------------------------------------------------------
+# 5. Tree-Kill Process Helper
 # --------------------------------------------------------------------------------------
 def kill_process_tree(pid: int):
     if os.name == "nt":
@@ -128,7 +240,7 @@ def kill_process_tree(pid: int):
         os.kill(pid, signal.SIGKILL)
 
 # --------------------------------------------------------------------------------------
-# 5. Suite Execution Engine
+# 6. Suite Execution Engine
 # --------------------------------------------------------------------------------------
 def run_suite(ahk_exe: Path, suite_filename: str) -> dict:
     suite_path = SCRIPT_DIR / suite_filename
@@ -260,7 +372,7 @@ def run_suite(ahk_exe: Path, suite_filename: str) -> dict:
     return suite_result
 
 # --------------------------------------------------------------------------------------
-# 6. Master Runner Entrypoint & Presentation Matrix
+# 7. Master Runner Entrypoint & Presentation Matrix
 # --------------------------------------------------------------------------------------
 def main():
     print("=" * 88)
@@ -270,13 +382,26 @@ def main():
     ahk_exe = resolve_autohotkey_exe()
     print(f"[*] AutoHotkey Executable : {ahk_exe}")
     print(f"[*] Project Root Dir      : {SCRIPT_DIR}")
+    print(f"[*] Workspace Root Dir    : {WORKSPACE_ROOT}")
     print(f"[*] Total Suites Allowlist: {len(ALLOWLIST_SUITES)}")
     print("-" * 88)
     
-    # Snapshot baseline production manifest (Invariant 8)
-    print("[*] Taking cryptographic SHA-256 snapshot of production manifest...")
-    manifest_baseline = snapshot_production_manifest()
-    print(f"[+] Protected {len(manifest_baseline)} production files from mutation.")
+    # 1. Run Static #Include Dependency Tree & Hermeticity Audit
+    print("[*] Running Static #Include Dependency Tree & Hermeticity Audit...")
+    include_violations = audit_include_dependencies()
+    production_files = get_production_and_test_ahk_files()
+    if include_violations:
+        print(f"[!] {len(include_violations)} Static #Include violations found across {len(production_files)} files:")
+        for v in include_violations:
+            print(f"    - {v}")
+    else:
+        print(f"[+] Verified {len(production_files)} production & test AHK files: 0 external <Lib> leaks, all paths valid.")
+    print("-" * 88)
+    
+    # 2. Snapshot Closed-World Repository Baseline (Invariant 8)
+    print("[*] Taking cryptographic SHA-256 baseline snapshot of repository...")
+    manifest_baseline = snapshot_closed_world_manifest()
+    print(f"[+] Sealed {len(manifest_baseline)} files in closed-world manifest.")
     print("-" * 88)
     
     suite_results = []
@@ -291,12 +416,18 @@ def main():
     
     overall_duration_ms = int((time.perf_counter() - overall_start_time) * 1000)
     
-    # Verify production manifest immutability (Invariant 8)
+    # 3. Verify Closed-World Manifest Immutability & File Leak Absence (Invariant 8)
     print("-" * 88)
-    print("[*] Verifying cryptographic production manifest immutability...")
-    manifest_violations = verify_production_manifest(manifest_baseline)
+    print("[*] Verifying closed-world manifest immutability & checking for file additions/leaks...")
+    manifest_violations = verify_closed_world_manifest(manifest_baseline)
+    if manifest_violations:
+        print(f"[!] {len(manifest_violations)} closed-world manifest violations detected:")
+        for mv in manifest_violations:
+            print(f"    - {mv}")
+    else:
+        print("[+] Closed-world manifest verified: 0 additions, 0 deletions, 0 mutations, 0 leaks.")
     
-    # Aggregate Reconciliation (Invariant 10)
+    # 4. Aggregate Reconciliation (Invariant 10)
     grand_total = sum(r["total"] for r in suite_results)
     grand_passed = sum(r["passed"] for r in suite_results)
     grand_failed = sum(r["failed"] for r in suite_results)
@@ -304,6 +435,7 @@ def main():
     for r in suite_results:
         all_errors.extend(r["errors"])
     all_errors.extend(manifest_violations)
+    all_errors.extend(include_violations)
     
     # Render Master Report Table
     print("\n" + "=" * 88)
@@ -320,7 +452,7 @@ def main():
     print("=" * 88)
     
     # Check 10-point contract compliance
-    is_success = (len(all_errors) == 0 and grand_failed == 0 and grand_total > 0 and len(manifest_violations) == 0)
+    is_success = (len(all_errors) == 0 and grand_failed == 0 and grand_total > 0)
     
     # Save Master JSON summary
     summary_data = {
@@ -334,6 +466,7 @@ def main():
         "grand_failed": grand_failed,
         "pass_rate_percent": grand_rate,
         "manifest_violations": manifest_violations,
+        "include_violations": include_violations,
         "suites": suite_results
     }
     

@@ -25,6 +25,23 @@ GlobalTestErrorHandler(err, mode) {
 }
 
 ; --------------------------------------------------------------------------------------------------
+; 1B. Clipboard Snapshot & Bitwise Restoration (Zero Host Mutation)
+; --------------------------------------------------------------------------------------------------
+global TestHarnessInitialClipboard := ""
+try TestHarnessInitialClipboard := ClipboardAll()
+
+OnExit(TestHarnessRestoreClipboard)
+
+TestHarnessRestoreClipboard(exitReason, exitCode) {
+    global TestHarnessInitialClipboard
+    try {
+        if IsObject(TestHarnessInitialClipboard) {
+            A_Clipboard := TestHarnessInitialClipboard
+        }
+    }
+}
+
+; --------------------------------------------------------------------------------------------------
 ; 2. JSON Test Results Emitter & Schema v1.0.0 Serializer
 ; --------------------------------------------------------------------------------------------------
 EmitTestResults(suiteName, total, passed, failed, durationMs, testLogs, failureDetails) {

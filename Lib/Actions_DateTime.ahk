@@ -18,7 +18,68 @@ RegisterDateTimeActions() {
     RegisterAction("Yesterday's Date", "📅 Date/Time", "Inserts yesterday's date: " . GetOffsetDate(-1), "yesterday, past, prev, date", (*) => InsertText(GetOffsetDate(-1)))
     RegisterAction("Current ISO Week Number", "📅 Date/Time", "Inserts " . GetIsoWeekInfo().formatted, "week, iso, sprint, workweek", (*) => InsertText(GetIsoWeekInfo().formatted))
     RegisterAction("Current Month & Year", "📅 Date/Time", "Inserts " . FormatTime(A_Now, "MMMM yyyy"), "month, year, period", (*) => InsertText(FormatTime(A_Now, "MMMM yyyy")))
-    RegisterAction("Work Week Date Range", "📅 Date/Time", "Inserts Monday to Friday: " . GetCurrentWorkWeekRange(), "range, week, monday, friday", (*) => InsertText(GetCurrentWorkWeekRange()))
+    RegisterAction("Convert Date Format", "📅 Date/Time", "Replaces Indian date with remembered default (or prompts if unselected)", "date, convert, format, transform, indian, standard", (*) => ConvertSelectedDateInPlace())
+    RegisterAction("Configure Default Date Format", "⚙️ Settings", "Set everyday default format (saved to office_productivity_settings.ini)", "default date, defaults date, preset date, initial date, starting date, base date, standard date, selected date, suggested date, automatic date, predefined date, initialised date, reference date, assigned date, preselected date, date standard", (*) => (IsSet(ShowDateFormatSettingsGui) ? ShowDateFormatSettingsGui() : ""))
+    RegisterAction("Cycle Date Format (9 Formats)", "📅 Date/Time", "[Needs Selection] Cycles DD/MM/YYYY -> DD-MM-YYYY -> DD.MM.YYYY -> DD Month YYYY ...", "date, cycle, format, switch, convert", (*) => TransformSelectedText((txt) => DateFormatConverter.Cycle(txt)))
+}
+
+ConvertSelectedDateInPlace() {
+    global DefaultDateFormatId
+    rawInput := SafeGetSelection(0.4)
+    wasInputBox := false
+
+    ; Fallback: If no text was selected, prompt user via OfficeInputBox
+    if (Trim(rawInput) == "") {
+        clipVal := Trim(A_Clipboard)
+        defaultPromptVal := ""
+        if (clipVal != "" && DateFormatConverter.ParseIndianDate(clipVal).valid) {
+            defaultPromptVal := clipVal
+        }
+
+        ib := OfficeInputBox("Enter date to convert (e.g. 5sept2026, 15/08/2026):", "Convert Date Format", defaultPromptVal)
+        if (ib.Result != "OK" || Trim(ib.Value) == "")
+            return
+        rawInput := Trim(ib.Value)
+        wasInputBox := true
+    }
+
+    ; Ensure default format ID is valid
+    targetFmt := (IsSet(DefaultDateFormatId) && DefaultDateFormatId >= 1 && DefaultDateFormatId <= 9) ? DefaultDateFormatId : 6
+
+    converted := ""
+    ; Direct standalone date parse
+    parsed := DateFormatConverter.ParseIndianDate(rawInput)
+    if (parsed.valid) {
+        converted := DateFormatConverter.Format(parsed, targetFmt)
+    } else {
+        ; Batch replacement in selected text block if dates exist within text
+        batchConverted := DateFormatConverter.ConvertAllInText(rawInput, targetFmt)
+        if (batchConverted != rawInput) {
+            converted := batchConverted
+        }
+    }
+
+    ; Non-destructive: if no valid date found, notify if from input box, or leave user text untouched
+    if (converted == "") {
+        if (wasInputBox)
+            ShowToast("⚠️ Invalid Date: Could not recognize format", 2000)
+        return
+    }
+
+    ; Output Routing: Non-pasteable window (PDF, Browser, Read-Only, Explorer) vs Editable document
+    if (!CanPasteToTargetWindow()) {
+        A_Clipboard := converted
+        ShowCursorTooltip("📋 Copied to Clipboard: " . converted)
+    } else {
+        if (wasInputBox) {
+            A_Clipboard := converted
+            InsertText(converted)
+            ShowCursorTooltip("📋 Converted & Inserted: " . converted)
+        } else {
+            ; Everyday selection in editable document: Silent in-place replacement (Zero toast, Zero HUD)
+            InsertText(converted)
+        }
+    }
 }
 
 GetIsoWeekInfo(dt := "") {

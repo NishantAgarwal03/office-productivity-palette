@@ -201,6 +201,9 @@ try {
     skuPreserved := CleanToMachineNumber("SKU-12-34-56")
     AssertTrue("Primitive_Reuse", "CleanToMachineNumber preserves alphanumeric data", skuPreserved == "SKU-12-34-56")
 
+    ; CanPasteToTargetWindow shared primitive availability
+    AssertTrue("Primitive_Reuse", "CanPasteToTargetWindow primitive is callable", HasMethod(CanPasteToTargetWindow))
+
     ; ==================================================================================================================
     ; 5. Presentation Decoupling Tests (Pure numeric .val separated from localized .resultStr)
     ; ==================================================================================================================

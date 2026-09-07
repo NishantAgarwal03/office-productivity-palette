@@ -408,9 +408,15 @@ try {
     ; Inverse Pythagoras: Known Hypotenuse + Leg -> Solve Missing Leg
     r := CivilConverterEngine.Evaluate("5m diagonal 3m side")
     AssertNear("Pythagoras", "5m diagonal 3m side (Inverse) -> 4.0", r, 4.0)
+    AssertTrue("Pythagoras", "5m diagonal 3m side detects 3-4-5 (3:5)", InStr(r.resultStr, "True 3-4-5 Triangle"))
 
     r := CivilConverterEngine.Evaluate("hyp 10 base 6")
     AssertNear("Pythagoras", "hyp 10 base 6 (Inverse) -> 8.0", r, 8.0)
+    AssertTrue("Pythagoras", "hyp 10 base 6 detects 3-4-5 (3:5)", InStr(r.resultStr, "True 3-4-5 Triangle"))
+
+    rInv45 := CivilConverterEngine.Evaluate("5m diagonal 4m side")
+    AssertNear("Pythagoras", "5m diagonal 4m side (Inverse) -> 3.0", rInv45, 3.0)
+    AssertTrue("Pythagoras", "5m diagonal 4m side detects 3-4-5 (4:5)", InStr(rInv45.resultStr, "True 3-4-5 Triangle"))
 
     ; 80/20 Non-Destructive Parsing & Dimension 90 Preservation Tests
     r := CivilConverterEngine.Evaluate("pythagoras 90 120")
@@ -437,9 +443,19 @@ try {
     r := CivilConverterEngine.Evaluate("right tri 120 100")
     AssertNear("Pythagoras", "right tri 120 100 -> 156.205", r, 156.205)
 
-    ; 3-Dimension Rejection (3D Space Diagonal strictly out of scope)
-    r := CivilConverterEngine.Evaluate("pythagoras 90 90 120")
-    AssertTrue("Pythagoras", "pythagoras 90 90 120 rejected as 3D out-of-scope", !r.success && (r.message == "2D planar only"))
+    ; 3-Side Guniya Verification Tests
+    rGunMatch := CivilConverterEngine.Evaluate("pythagoras 3m 4m 5m")
+    AssertTrue("Pythagoras", "pythagoras 3m 4m 5m is Guniya match", rGunMatch.success && rGunMatch.isMatched && InStr(rGunMatch.resultStr, "Guniya Match"))
+
+    rGunOut := CivilConverterEngine.Evaluate("diagonal 8m 10m 13.2m")
+    AssertTrue("Pythagoras", "diagonal 8m 10m 13.2m detects out-of-square", rGunOut.success && !rGunOut.isMatched && InStr(rGunOut.resultStr, "OFF") && InStr(rGunOut.resultStr, "3-4-5 Fix"))
+
+    rGunInv := CivilConverterEngine.Evaluate("pythagoras 5000 4000 4")
+    AssertTrue("Pythagoras", "pythagoras 5000 4000 4 rejected as impossible triangle", !rGunInv.success && InStr(rGunInv.message, "Invalid triangle"))
+
+    ; >3 Dimension Rejection (>3 dimensions strictly out of scope)
+    r4D := CivilConverterEngine.Evaluate("pythagoras 90 90 120 150")
+    AssertTrue("Pythagoras", "pythagoras 90 90 120 150 rejected as >3D out-of-scope", !r4D.success && InStr(r4D.message, "2D planar only"))
 
     ; 15.1 Math Evaluator (Leader c) Compatibility Bridge Tests
     mEval := SafeEvaluateMath("pythagoras 3 4")
@@ -474,7 +490,7 @@ try {
     ; 17. Thumb Rule Cost Estimator Tests
     ; ------------------------------------------------------------------------------------------------------------------
     r := CivilConverterEngine.Evaluate("cost 1500 sqft house")
-    AssertNear("CostEstimator", "cost 1500 sqft (@ 1800/sqft)", r, 2720020.83)
+    AssertNear("CostEstimator", "cost 1500 sqft (@ 1800/sqft)", r, 2737970.89, 1.0)
 
 } catch as err {
     FailCount++

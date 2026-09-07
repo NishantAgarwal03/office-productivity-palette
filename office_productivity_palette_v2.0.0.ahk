@@ -184,25 +184,25 @@ F12::ShowFindReplaceModal()
 #HotIf
 
 #HotIf HasPaletteResults()
-    1::PaletteExecuteSelection(1)
-    2::PaletteExecuteSelection(2)
-    3::PaletteExecuteSelection(3)
-    4::PaletteExecuteSelection(4)
-    5::PaletteExecuteSelection(5)
-    6::PaletteExecuteSelection(6)
-    7::PaletteExecuteSelection(7)
-    8::PaletteExecuteSelection(8)
-    9::PaletteExecuteSelection(9)
+    !1::PaletteExecuteSelection(1)
+    !2::PaletteExecuteSelection(2)
+    !3::PaletteExecuteSelection(3)
+    !4::PaletteExecuteSelection(4)
+    !5::PaletteExecuteSelection(5)
+    !6::PaletteExecuteSelection(6)
+    !7::PaletteExecuteSelection(7)
+    !8::PaletteExecuteSelection(8)
+    !9::PaletteExecuteSelection(9)
 
-    Numpad1::PaletteExecuteSelection(1)
-    Numpad2::PaletteExecuteSelection(2)
-    Numpad3::PaletteExecuteSelection(3)
-    Numpad4::PaletteExecuteSelection(4)
-    Numpad5::PaletteExecuteSelection(5)
-    Numpad6::PaletteExecuteSelection(6)
-    Numpad7::PaletteExecuteSelection(7)
-    Numpad8::PaletteExecuteSelection(8)
-    Numpad9::PaletteExecuteSelection(9)
+    !Numpad1::PaletteExecuteSelection(1)
+    !Numpad2::PaletteExecuteSelection(2)
+    !Numpad3::PaletteExecuteSelection(3)
+    !Numpad4::PaletteExecuteSelection(4)
+    !Numpad5::PaletteExecuteSelection(5)
+    !Numpad6::PaletteExecuteSelection(6)
+    !Numpad7::PaletteExecuteSelection(7)
+    !Numpad8::PaletteExecuteSelection(8)
+    !Numpad9::PaletteExecuteSelection(9)
 #HotIf
 
 #HotIf IsPaletteActive()
@@ -231,4 +231,13 @@ F12::ShowFindReplaceModal()
 
 #HotIf IsInputTaskBoxFocused()
     Enter::HandleMatrixEnterKey()
+    Down:: {
+        global LastActiveLV, LV_Q1
+        targetLV := IsObject(LastActiveLV) ? LastActiveLV : LV_Q1
+        if IsObject(targetLV) {
+            targetLV.Focus()
+            if (targetLV.GetNext() == 0 && targetLV.GetCount() > 0)
+                targetLV.Modify(1, "Select Focus")
+        }
+    }
 #HotIf

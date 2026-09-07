@@ -1,0 +1,42 @@
+﻿{
+  "category": "🔄 Recipe",
+  "description": "Extracts all emails from messy text or logs, removes duplicates, and joins with newlines",
+  "id": "recipe_extract_clean_emails",
+  "input_source": "selection",
+  "name": "Extract & Clean Email List",
+  "sink": "clipboard",
+  "steps": [
+    {
+      "bindings": {
+        "text": "input.text"
+      },
+      "id": "step_1",
+      "settings": {},
+      "tool_id": "extract_emails",
+      "tool_version": 1
+    },
+    {
+      "bindings": {
+        "items": "step_1.items"
+      },
+      "id": "step_2",
+      "settings": {
+        "match_case": 0
+      },
+      "tool_id": "primitive_dedupe",
+      "tool_version": 1
+    },
+    {
+      "bindings": {
+        "items": "step_2.items"
+      },
+      "id": "step_3",
+      "settings": {
+        "delimiter": "\\n"
+      },
+      "tool_id": "primitive_join",
+      "tool_version": 1
+    }
+  ],
+  "version": 1
+}

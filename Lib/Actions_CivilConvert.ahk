@@ -10,7 +10,7 @@ RegisterCivilActions() {
         "Civil & Construction Instant Converter",
         "🏗️ Civil",
         "[Needs Selection or Prompts] Multi-unit converter for Length, Area, Volume, Weight, Force, Pressure, Rebar, Density & Flow",
-        "civil, convert, units, construction, rebar, cft, cum, bigha, gaj, mpa, kn, slope, steel, cement",
+        "civil, convert, units, construction, sqft, sqm, cft, m3, cum, ft, meter, inch, rebar, bigha, gaj, mpa, kn, slope, steel, cement",
         (*) => ShowCivilConverter(),
         "u",
         "^+u"
@@ -20,7 +20,7 @@ RegisterCivilActions() {
         "Pythagoras & Plot Diagonal Calculator",
         "🏗️ Civil",
         "[Needs Selection or Prompts] Solves 3-4-5 rule, right triangles, plot corners & diagonals (e.g. 20ft 30ft)",
-        "pythagoras, diagonal, hypotenuse, 3-4-5, right angle, corner, survey, triangle",
+        "pythagoras, diagonal, hypotenuse, 3-4-5, 345, guniya, gunia, 90, 90 degree, tircha, karna, right angle, corner, survey, triangle",
         (*) => PromptPythagorasCalculator()
     )
 
@@ -35,8 +35,8 @@ RegisterCivilActions() {
     RegisterAction(
         "Thumb Rule Cost & Material Estimator",
         "🏗️ Civil",
-        "[Needs Selection or Prompts] Estimates construction cost & materials (Cement, Steel, Sand, Aggregates, Bricks) from area",
-        "cost, estimate, thumb rule, material, cement bags, steel kg, bricks, builtup area, house cost, boq",
+        "[Needs Selection or Prompts] Estimates construction cost, materials (Cement, Steel, Bricks) & deep manpower from area",
+        "cost, estimate, thumb rule, material, manpower, labor, mandays, wages, mason, barbender, carpenter, cement bags, steel kg, bricks, builtup area, house cost, boq",
         (*) => PromptThumbRuleEstimator()
     )
 
@@ -62,12 +62,12 @@ OpenCivilDefaultsFile() {
 PromptPythagorasCalculator() {
     sel := SafeGetSelection(0.2)
     if (Trim(sel) == "" || !RegExMatch(sel, "[\d\.]+")) {
-        ib := OfficeInputBox("Enter two sides of plot/room (e.g. '3 4' or '20ft 30ft' or '30x50'):", "📐 Pythagoras & Plot Diagonal")
+        ib := OfficeInputBox("Enter 2 sides for diagonal (e.g. '20ft 30ft') or 3 sides to check Guniya (e.g. '8m 10m 13.2m'):", "📐 Pythagoras & Guniya Check")
         if (ib.Result != "OK" || Trim(ib.Value) == "")
             return
         sel := ib.Value
     }
-    query := (InStr(sel, "pythagoras") || InStr(sel, "diagonal") || InStr(sel, "hyp")) ? sel : ("diagonal " . sel)
+    query := (InStr(sel, "pythagoras") || InStr(sel, "diagonal") || InStr(sel, "hyp") || InStr(sel, "guniya")) ? sel : ("diagonal " . sel)
     ShowCivilConverter(query)
 }
 

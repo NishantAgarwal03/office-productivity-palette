@@ -1,3 +1,5 @@
-﻿id,task,created,commitmentType,priority,done
-5,"place new task",2026-08-25 04:36,Deadline,Q2,false
-6,"go to iskcon tomorrow",2026-08-25 19:09,Follow-Up,Q2,false
+﻿id,task,created,commitmentType,priority,done,doneDate
+7,"Office Productivity Palette v2.0.1 — Combined\nLogic and UI/UX Audit\nmake a workflow and execulte directly like evaluate math then convertowords and more...(1,2)",2026-09-02 10:05,Task,Q4,false,
+9,"AHK can maintain multiple clipboard buffers.",2026-09-03 15:53,Unassigned,Q4,false,
+11,"Chains actions with per-step preview for\nselection, clipboard, files, or rows; supports\nsaved recipes and failure routing.\nExamples: extract emails → dedupe →\nformat → copy; parse numbers → sum →\nformat; capture task → classify → prioritize.",2026-09-03 19:47,Task,Q2,false,
+12,"passport apply in online application and status check",2026-09-06 12:19,Task,Q1,false,

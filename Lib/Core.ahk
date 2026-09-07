@@ -115,7 +115,7 @@ SafeIsWindowVisible(guiObj) {
 }
 
 IsAnyOfficeUIVisible() {
-    global PaletteGui, ActionBoardGui, SnippetGui, ClassifierGui, PrioritizerMiniGui, NudgeHudGui, YellowHudGui, ToastHudGui, FindReplaceGui, CivilPromptGui, CivilResultHudGui
+    global PaletteGui, ActionBoardGui, SnippetGui, ClassifierGui, PrioritizerMiniGui, NudgeHudGui, YellowHudGui, ToastHudGui, FindReplaceGui, CivilPromptGui, CivilResultHudGui, WorkflowComposerGui, RunHistoryGui, DateFormatGui
     return SafeIsWindowVisible(PaletteGui)
         || SafeIsWindowVisible(ActionBoardGui)
         || SafeIsWindowVisible(SnippetGui)
@@ -127,10 +127,13 @@ IsAnyOfficeUIVisible() {
         || SafeIsWindowVisible(FindReplaceGui)
         || SafeIsWindowVisible(CivilPromptGui)
         || SafeIsWindowVisible(CivilResultHudGui)
+        || SafeIsWindowVisible(WorkflowComposerGui)
+        || SafeIsWindowVisible(RunHistoryGui)
+        || SafeIsWindowVisible(DateFormatGui)
 }
 
 CloseAllOfficeUIs() {
-    global PaletteGui, ActionBoardGui, SnippetGui, ClassifierGui, PrioritizerMiniGui, NudgeHudGui, YellowHudGui, ToastHudGui, FindReplaceGui, CivilPromptGui, CivilResultHudGui
+    global PaletteGui, ActionBoardGui, SnippetGui, ClassifierGui, PrioritizerMiniGui, NudgeHudGui, YellowHudGui, ToastHudGui, FindReplaceGui, CivilPromptGui, CivilResultHudGui, WorkflowComposerGui, RunHistoryGui, DateFormatGui
     
     if IsSet(CloseCommandPalette)
         CloseCommandPalette()
@@ -159,7 +162,12 @@ CloseAllOfficeUIs() {
         try YellowHudGui.Destroy()
     }
     if IsObject(ToastHudGui) {
-        try ToastHudGui.Destroy()
+        if IsSet(DismissToastHud)
+            DismissToastHud()
+        else {
+            try ToastHudGui.Destroy()
+            ToastHudGui := ""
+        }
     }
     if IsObject(FindReplaceGui) {
         try FindReplaceGui.Destroy()
@@ -172,7 +180,22 @@ CloseAllOfficeUIs() {
         try CivilResultHudGui.Destroy()
         CivilResultHudGui := ""
     }
-    ToolTip()
+    if IsObject(WorkflowComposerGui) {
+        try WorkflowComposerGui.Destroy()
+        WorkflowComposerGui := ""
+    }
+    if IsObject(RunHistoryGui) {
+        try RunHistoryGui.Destroy()
+        RunHistoryGui := ""
+    }
+    if IsObject(DateFormatGui) {
+        try DateFormatGui.Destroy()
+        DateFormatGui := ""
+    }
+    if IsSet(DismissCursorTooltip)
+        DismissCursorTooltip(1)
+    else
+        ToolTip()
 }
 
 ResolveCurrentFilePath() {

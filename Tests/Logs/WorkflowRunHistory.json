@@ -1,0 +1,1252 @@
+﻿[
+  {
+    "duration_ms": 0,
+    "error_message": "",
+    "failed_step": "",
+    "input_snapshot": "  hello world  ",
+    "output_snapshot": "hello world",
+    "recipe_id": "recipe_none_sink",
+    "recipe_name": "None Sink Recipe",
+    "recipe_version": 1,
+    "run_id": "20260906_125753_7737",
+    "status": "success",
+    "step_snapshots": [
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "text": "  hello world  "
+        },
+        "outputs": {
+          "text": "hello world"
+        },
+        "status": "success",
+        "step_id": "step_n1"
+      }
+    ],
+    "timestamp": "2026-09-06 12:57:53"
+  },
+  {
+    "duration_ms": 0,
+    "error_message": "",
+    "failed_step": "",
+    "input_snapshot": "1000",
+    "output_snapshot": "Base: ₹1,000.00 | GST (28%): ₹280.00 (CGST: ₹140.00 | SGST: ₹140.00) | Total: ₹1,280.00",
+    "recipe_id": "recipe_defect_custom",
+    "recipe_name": "Custom Settings Recipe",
+    "recipe_version": 1,
+    "run_id": "20260906_125753_7643",
+    "status": "success",
+    "step_snapshots": [
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "text": "1000"
+        },
+        "outputs": {
+          "is_valid": 1,
+          "number": 1000
+        },
+        "status": "success",
+        "step_id": "step_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "amount": 1000
+        },
+        "outputs": {
+          "base": 1000,
+          "cgst": 140,
+          "gst": 280,
+          "record": {
+            "base": 1000,
+            "cgst": 140,
+            "gst": 280,
+            "rate": 28,
+            "sgst": 140,
+            "summary": "Base: ₹1,000.00 | GST (28%): ₹280.00 (CGST: ₹140.00 | SGST: ₹140.00) | Total: ₹1,280.00",
+            "total": 1280
+          },
+          "sgst": 140,
+          "summary": "Base: ₹1,000.00 | GST (28%): ₹280.00 (CGST: ₹140.00 | SGST: ₹140.00) | Total: ₹1,280.00",
+          "text": "Base: ₹1,000.00 | GST (28%): ₹280.00 (CGST: ₹140.00 | SGST: ₹140.00) | Total: ₹1,280.00",
+          "total": 1280
+        },
+        "status": "success",
+        "step_id": "step_2"
+      }
+    ],
+    "timestamp": "2026-09-06 12:57:53"
+  },
+  {
+    "duration_ms": 16,
+    "error_message": "",
+    "failed_step": "",
+    "input_snapshot": "X\nY\nZ",
+    "output_snapshot": "VAL:X|VAL:Y|VAL:Z",
+    "recipe_id": "recipe_defect_loop",
+    "recipe_name": "Defect Loop Test",
+    "recipe_version": 1,
+    "run_id": "20260906_125753_3285",
+    "status": "success",
+    "step_snapshots": [
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "text": "X\nY\nZ"
+        },
+        "outputs": {
+          "count": 3,
+          "items": [
+            "X",
+            "Y",
+            "Z"
+          ]
+        },
+        "status": "success",
+        "step_id": "step_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {},
+        "outputs": {
+          "text": "VAL:X"
+        },
+        "status": "success",
+        "step_id": "step_2_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {},
+        "outputs": {
+          "text": "VAL:Y"
+        },
+        "status": "success",
+        "step_id": "step_2_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {},
+        "outputs": {
+          "text": "VAL:Z"
+        },
+        "status": "success",
+        "step_id": "step_2_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "items_count": 3
+        },
+        "outputs": {
+          "count": 3,
+          "items": [
+            "VAL:X",
+            "VAL:Y",
+            "VAL:Z"
+          ]
+        },
+        "status": "success",
+        "step_id": "step_2"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "items": [
+            "VAL:X",
+            "VAL:Y",
+            "VAL:Z"
+          ]
+        },
+        "outputs": {
+          "text": "VAL:X|VAL:Y|VAL:Z"
+        },
+        "status": "success",
+        "step_id": "step_3"
+      }
+    ],
+    "timestamp": "2026-09-06 12:57:53"
+  },
+  {
+    "duration_ms": 0,
+    "error_message": "Parse Number: Unable to parse numeric value from 'not a valid number'",
+    "failed_step": "step_1",
+    "input_snapshot": "not a valid number",
+    "output_snapshot": "",
+    "recipe_id": "recipe_failing_test",
+    "recipe_name": "Failing Test Recipe",
+    "recipe_version": 1,
+    "run_id": "20260906_125626_5018",
+    "status": "failed",
+    "step_snapshots": [
+      {
+        "duration_ms": 0,
+        "error": "Parse Number: Unable to parse numeric value from 'not a valid number'",
+        "inputs": {
+          "text": "not a valid number"
+        },
+        "status": "failed",
+        "step_id": "step_1"
+      }
+    ],
+    "timestamp": "2026-09-06 12:56:26"
+  },
+  {
+    "duration_ms": 0,
+    "error_message": "",
+    "failed_step": "",
+    "input_snapshot": "Reach out to admin@example.com, support@company.com, or ADMIN@EXAMPLE.COM.",
+    "output_snapshot": "admin@example.com\nsupport@company.com",
+    "recipe_id": "recipe_extract_clean_emails",
+    "recipe_name": "Extract & Clean Email List",
+    "recipe_version": 1,
+    "run_id": "20260906_125626_4787",
+    "status": "success",
+    "step_snapshots": [
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "text": "Reach out to admin@example.com, support@company.com, or ADMIN@EXAMPLE.COM."
+        },
+        "outputs": {
+          "count": 2,
+          "items": [
+            "admin@example.com",
+            "support@company.com"
+          ]
+        },
+        "status": "success",
+        "step_id": "step_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "items": [
+            "admin@example.com",
+            "support@company.com"
+          ]
+        },
+        "outputs": {
+          "count": 2,
+          "items": [
+            "admin@example.com",
+            "support@company.com"
+          ],
+          "removed_count": 0
+        },
+        "status": "success",
+        "step_id": "step_2"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "items": [
+            "admin@example.com",
+            "support@company.com"
+          ]
+        },
+        "outputs": {
+          "text": "admin@example.com\nsupport@company.com"
+        },
+        "status": "success",
+        "step_id": "step_3"
+      }
+    ],
+    "timestamp": "2026-09-06 12:56:26"
+  },
+  {
+    "duration_ms": 0,
+    "error_message": "",
+    "failed_step": "",
+    "input_snapshot": "50000",
+    "output_snapshot": "Base: ₹50,000.00 | GST (18%): ₹9,000.00 (CGST: ₹4,500.00 | SGST: ₹4,500.00) | Total: ₹59,000.00\nAmount in Words: Rupees Fifty-Nine Thousand Only",
+    "recipe_id": "recipe_forward_gst_words",
+    "recipe_name": "Normal Forward GST & Words",
+    "recipe_version": 1,
+    "run_id": "20260906_125626_1107",
+    "status": "success",
+    "step_snapshots": [
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "text": "50000"
+        },
+        "outputs": {
+          "count": 1,
+          "items": [
+            "50000"
+          ]
+        },
+        "status": "success",
+        "step_id": "step_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "text": "50000"
+        },
+        "outputs": {
+          "is_valid": 1,
+          "number": 50000
+        },
+        "status": "success",
+        "step_id": "step_2_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "amount": 50000
+        },
+        "outputs": {
+          "base": 50000,
+          "cgst": 4500,
+          "gst": 9000,
+          "record": {
+            "base": 50000,
+            "cgst": 4500,
+            "gst": 9000,
+            "rate": 18,
+            "sgst": 4500,
+            "summary": "Base: ₹50,000.00 | GST (18%): ₹9,000.00 (CGST: ₹4,500.00 | SGST: ₹4,500.00) | Total: ₹59,000.00",
+            "total": 59000
+          },
+          "sgst": 4500,
+          "summary": "Base: ₹50,000.00 | GST (18%): ₹9,000.00 (CGST: ₹4,500.00 | SGST: ₹4,500.00) | Total: ₹59,000.00",
+          "text": "Base: ₹50,000.00 | GST (18%): ₹9,000.00 (CGST: ₹4,500.00 | SGST: ₹4,500.00) | Total: ₹59,000.00",
+          "total": 59000
+        },
+        "status": "success",
+        "step_id": "step_2_2"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "number": 59000
+        },
+        "outputs": {
+          "text": "Rupees Fifty-Nine Thousand Only",
+          "words": "Rupees Fifty-Nine Thousand Only"
+        },
+        "status": "success",
+        "step_id": "step_2_3"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {},
+        "outputs": {
+          "text": "Base: ₹50,000.00 | GST (18%): ₹9,000.00 (CGST: ₹4,500.00 | SGST: ₹4,500.00) | Total: ₹59,000.00\nAmount in Words: Rupees Fifty-Nine Thousand Only"
+        },
+        "status": "success",
+        "step_id": "step_2_4"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "items_count": 1
+        },
+        "outputs": {
+          "count": 1,
+          "items": [
+            "Base: ₹50,000.00 | GST (18%): ₹9,000.00 (CGST: ₹4,500.00 | SGST: ₹4,500.00) | Total: ₹59,000.00\nAmount in Words: Rupees Fifty-Nine Thousand Only"
+          ]
+        },
+        "status": "success",
+        "step_id": "step_2"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "items": [
+            "Base: ₹50,000.00 | GST (18%): ₹9,000.00 (CGST: ₹4,500.00 | SGST: ₹4,500.00) | Total: ₹59,000.00\nAmount in Words: Rupees Fifty-Nine Thousand Only"
+          ]
+        },
+        "outputs": {
+          "text": "Base: ₹50,000.00 | GST (18%): ₹9,000.00 (CGST: ₹4,500.00 | SGST: ₹4,500.00) | Total: ₹59,000.00\nAmount in Words: Rupees Fifty-Nine Thousand Only"
+        },
+        "status": "success",
+        "step_id": "step_3"
+      }
+    ],
+    "timestamp": "2026-09-06 12:56:26"
+  },
+  {
+    "duration_ms": 0,
+    "error_message": "",
+    "failed_step": "",
+    "input_snapshot": "12500\n45000\n999",
+    "output_snapshot": "12500 : Rupees Twelve Thousand Five Hundred Only\n45000 : Rupees Forty-Five Thousand Only\n999 : Rupees Nine Hundred Ninety-Nine Only",
+    "recipe_id": "recipe_numbers_to_words",
+    "recipe_name": "Numbers to Words (Row by Row)",
+    "recipe_version": 1,
+    "run_id": "20260906_125626_2342",
+    "status": "success",
+    "step_snapshots": [
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "text": "12500\n45000\n999"
+        },
+        "outputs": {
+          "count": 3,
+          "items": [
+            "12500",
+            "45000",
+            "999"
+          ]
+        },
+        "status": "success",
+        "step_id": "step_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "text": "12500"
+        },
+        "outputs": {
+          "is_valid": 1,
+          "number": 12500
+        },
+        "status": "success",
+        "step_id": "step_2_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "number": 12500
+        },
+        "outputs": {
+          "text": "Rupees Twelve Thousand Five Hundred Only",
+          "words": "Rupees Twelve Thousand Five Hundred Only"
+        },
+        "status": "success",
+        "step_id": "step_2_2"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {},
+        "outputs": {
+          "text": "12500 : Rupees Twelve Thousand Five Hundred Only"
+        },
+        "status": "success",
+        "step_id": "step_2_3"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "text": "45000"
+        },
+        "outputs": {
+          "is_valid": 1,
+          "number": 45000
+        },
+        "status": "success",
+        "step_id": "step_2_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "number": 45000
+        },
+        "outputs": {
+          "text": "Rupees Forty-Five Thousand Only",
+          "words": "Rupees Forty-Five Thousand Only"
+        },
+        "status": "success",
+        "step_id": "step_2_2"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {},
+        "outputs": {
+          "text": "45000 : Rupees Forty-Five Thousand Only"
+        },
+        "status": "success",
+        "step_id": "step_2_3"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "text": "999"
+        },
+        "outputs": {
+          "is_valid": 1,
+          "number": 999
+        },
+        "status": "success",
+        "step_id": "step_2_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "number": 999
+        },
+        "outputs": {
+          "text": "Rupees Nine Hundred Ninety-Nine Only",
+          "words": "Rupees Nine Hundred Ninety-Nine Only"
+        },
+        "status": "success",
+        "step_id": "step_2_2"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {},
+        "outputs": {
+          "text": "999 : Rupees Nine Hundred Ninety-Nine Only"
+        },
+        "status": "success",
+        "step_id": "step_2_3"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "items_count": 3
+        },
+        "outputs": {
+          "count": 3,
+          "items": [
+            "12500 : Rupees Twelve Thousand Five Hundred Only",
+            "45000 : Rupees Forty-Five Thousand Only",
+            "999 : Rupees Nine Hundred Ninety-Nine Only"
+          ]
+        },
+        "status": "success",
+        "step_id": "step_2"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "items": [
+            "12500 : Rupees Twelve Thousand Five Hundred Only",
+            "45000 : Rupees Forty-Five Thousand Only",
+            "999 : Rupees Nine Hundred Ninety-Nine Only"
+          ]
+        },
+        "outputs": {
+          "text": "12500 : Rupees Twelve Thousand Five Hundred Only\n45000 : Rupees Forty-Five Thousand Only\n999 : Rupees Nine Hundred Ninety-Nine Only"
+        },
+        "status": "success",
+        "step_id": "step_3"
+      }
+    ],
+    "timestamp": "2026-09-06 12:56:26"
+  },
+  {
+    "duration_ms": 0,
+    "error_message": "Parse Number: Unable to parse numeric value from 'not a valid number'",
+    "failed_step": "step_1",
+    "input_snapshot": "not a valid number",
+    "output_snapshot": "",
+    "recipe_id": "recipe_failing_test",
+    "recipe_name": "Failing Test Recipe",
+    "recipe_version": 1,
+    "run_id": "20260906_125613_3486",
+    "status": "failed",
+    "step_snapshots": [
+      {
+        "duration_ms": 0,
+        "error": "Parse Number: Unable to parse numeric value from 'not a valid number'",
+        "inputs": {
+          "text": "not a valid number"
+        },
+        "status": "failed",
+        "step_id": "step_1"
+      }
+    ],
+    "timestamp": "2026-09-06 12:56:13"
+  },
+  {
+    "duration_ms": 0,
+    "error_message": "",
+    "failed_step": "",
+    "input_snapshot": "Reach out to admin@example.com, support@company.com, or ADMIN@EXAMPLE.COM.",
+    "output_snapshot": "admin@example.com\nsupport@company.com",
+    "recipe_id": "recipe_extract_clean_emails",
+    "recipe_name": "Extract & Clean Email List",
+    "recipe_version": 1,
+    "run_id": "20260906_125613_9024",
+    "status": "success",
+    "step_snapshots": [
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "text": "Reach out to admin@example.com, support@company.com, or ADMIN@EXAMPLE.COM."
+        },
+        "outputs": {
+          "count": 2,
+          "items": [
+            "admin@example.com",
+            "support@company.com"
+          ]
+        },
+        "status": "success",
+        "step_id": "step_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "items": [
+            "admin@example.com",
+            "support@company.com"
+          ]
+        },
+        "outputs": {
+          "count": 2,
+          "items": [
+            "admin@example.com",
+            "support@company.com"
+          ],
+          "removed_count": 0
+        },
+        "status": "success",
+        "step_id": "step_2"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "items": [
+            "admin@example.com",
+            "support@company.com"
+          ]
+        },
+        "outputs": {
+          "text": "admin@example.com\nsupport@company.com"
+        },
+        "status": "success",
+        "step_id": "step_3"
+      }
+    ],
+    "timestamp": "2026-09-06 12:56:13"
+  },
+  {
+    "duration_ms": 0,
+    "error_message": "",
+    "failed_step": "",
+    "input_snapshot": "50000",
+    "output_snapshot": "Base: ₹50,000.00 | GST (18%): ₹9,000.00 (CGST: ₹4,500.00 | SGST: ₹4,500.00) | Total: ₹59,000.00\nAmount in Words: Rupees Fifty-Nine Thousand Only",
+    "recipe_id": "recipe_forward_gst_words",
+    "recipe_name": "Normal Forward GST & Words",
+    "recipe_version": 1,
+    "run_id": "20260906_125613_6793",
+    "status": "success",
+    "step_snapshots": [
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "text": "50000"
+        },
+        "outputs": {
+          "count": 1,
+          "items": [
+            "50000"
+          ]
+        },
+        "status": "success",
+        "step_id": "step_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "text": "50000"
+        },
+        "outputs": {
+          "is_valid": 1,
+          "number": 50000
+        },
+        "status": "success",
+        "step_id": "step_2_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "amount": 50000
+        },
+        "outputs": {
+          "base": 50000,
+          "cgst": 4500,
+          "gst": 9000,
+          "record": {
+            "base": 50000,
+            "cgst": 4500,
+            "gst": 9000,
+            "rate": 18,
+            "sgst": 4500,
+            "summary": "Base: ₹50,000.00 | GST (18%): ₹9,000.00 (CGST: ₹4,500.00 | SGST: ₹4,500.00) | Total: ₹59,000.00",
+            "total": 59000
+          },
+          "sgst": 4500,
+          "summary": "Base: ₹50,000.00 | GST (18%): ₹9,000.00 (CGST: ₹4,500.00 | SGST: ₹4,500.00) | Total: ₹59,000.00",
+          "text": "Base: ₹50,000.00 | GST (18%): ₹9,000.00 (CGST: ₹4,500.00 | SGST: ₹4,500.00) | Total: ₹59,000.00",
+          "total": 59000
+        },
+        "status": "success",
+        "step_id": "step_2_2"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "number": 59000
+        },
+        "outputs": {
+          "text": "Rupees Fifty-Nine Thousand Only",
+          "words": "Rupees Fifty-Nine Thousand Only"
+        },
+        "status": "success",
+        "step_id": "step_2_3"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {},
+        "outputs": {
+          "text": "Base: ₹50,000.00 | GST (18%): ₹9,000.00 (CGST: ₹4,500.00 | SGST: ₹4,500.00) | Total: ₹59,000.00\nAmount in Words: Rupees Fifty-Nine Thousand Only"
+        },
+        "status": "success",
+        "step_id": "step_2_4"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "items_count": 1
+        },
+        "outputs": {
+          "count": 1,
+          "items": [
+            "Base: ₹50,000.00 | GST (18%): ₹9,000.00 (CGST: ₹4,500.00 | SGST: ₹4,500.00) | Total: ₹59,000.00\nAmount in Words: Rupees Fifty-Nine Thousand Only"
+          ]
+        },
+        "status": "success",
+        "step_id": "step_2"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "items": [
+            "Base: ₹50,000.00 | GST (18%): ₹9,000.00 (CGST: ₹4,500.00 | SGST: ₹4,500.00) | Total: ₹59,000.00\nAmount in Words: Rupees Fifty-Nine Thousand Only"
+          ]
+        },
+        "outputs": {
+          "text": "Base: ₹50,000.00 | GST (18%): ₹9,000.00 (CGST: ₹4,500.00 | SGST: ₹4,500.00) | Total: ₹59,000.00\nAmount in Words: Rupees Fifty-Nine Thousand Only"
+        },
+        "status": "success",
+        "step_id": "step_3"
+      }
+    ],
+    "timestamp": "2026-09-06 12:56:13"
+  },
+  {
+    "duration_ms": 15,
+    "error_message": "",
+    "failed_step": "",
+    "input_snapshot": "12500\n45000\n999",
+    "output_snapshot": "12500 : Rupees Twelve Thousand Five Hundred Only\n45000 : Rupees Forty-Five Thousand Only\n999 : Rupees Nine Hundred Ninety-Nine Only",
+    "recipe_id": "recipe_numbers_to_words",
+    "recipe_name": "Numbers to Words (Row by Row)",
+    "recipe_version": 1,
+    "run_id": "20260906_125612_9101",
+    "status": "success",
+    "step_snapshots": [
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "text": "12500\n45000\n999"
+        },
+        "outputs": {
+          "count": 3,
+          "items": [
+            "12500",
+            "45000",
+            "999"
+          ]
+        },
+        "status": "success",
+        "step_id": "step_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "text": "12500"
+        },
+        "outputs": {
+          "is_valid": 1,
+          "number": 12500
+        },
+        "status": "success",
+        "step_id": "step_2_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "number": 12500
+        },
+        "outputs": {
+          "text": "Rupees Twelve Thousand Five Hundred Only",
+          "words": "Rupees Twelve Thousand Five Hundred Only"
+        },
+        "status": "success",
+        "step_id": "step_2_2"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {},
+        "outputs": {
+          "text": "12500 : Rupees Twelve Thousand Five Hundred Only"
+        },
+        "status": "success",
+        "step_id": "step_2_3"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "text": "45000"
+        },
+        "outputs": {
+          "is_valid": 1,
+          "number": 45000
+        },
+        "status": "success",
+        "step_id": "step_2_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "number": 45000
+        },
+        "outputs": {
+          "text": "Rupees Forty-Five Thousand Only",
+          "words": "Rupees Forty-Five Thousand Only"
+        },
+        "status": "success",
+        "step_id": "step_2_2"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {},
+        "outputs": {
+          "text": "45000 : Rupees Forty-Five Thousand Only"
+        },
+        "status": "success",
+        "step_id": "step_2_3"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "text": "999"
+        },
+        "outputs": {
+          "is_valid": 1,
+          "number": 999
+        },
+        "status": "success",
+        "step_id": "step_2_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "number": 999
+        },
+        "outputs": {
+          "text": "Rupees Nine Hundred Ninety-Nine Only",
+          "words": "Rupees Nine Hundred Ninety-Nine Only"
+        },
+        "status": "success",
+        "step_id": "step_2_2"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {},
+        "outputs": {
+          "text": "999 : Rupees Nine Hundred Ninety-Nine Only"
+        },
+        "status": "success",
+        "step_id": "step_2_3"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "items_count": 3
+        },
+        "outputs": {
+          "count": 3,
+          "items": [
+            "12500 : Rupees Twelve Thousand Five Hundred Only",
+            "45000 : Rupees Forty-Five Thousand Only",
+            "999 : Rupees Nine Hundred Ninety-Nine Only"
+          ]
+        },
+        "status": "success",
+        "step_id": "step_2"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "items": [
+            "12500 : Rupees Twelve Thousand Five Hundred Only",
+            "45000 : Rupees Forty-Five Thousand Only",
+            "999 : Rupees Nine Hundred Ninety-Nine Only"
+          ]
+        },
+        "outputs": {
+          "text": "12500 : Rupees Twelve Thousand Five Hundred Only\n45000 : Rupees Forty-Five Thousand Only\n999 : Rupees Nine Hundred Ninety-Nine Only"
+        },
+        "status": "success",
+        "step_id": "step_3"
+      }
+    ],
+    "timestamp": "2026-09-06 12:56:12"
+  },
+  {
+    "duration_ms": 0,
+    "error_message": "",
+    "failed_step": "",
+    "input_snapshot": "X\nY\nZ",
+    "output_snapshot": "VAL:X|VAL:Y|VAL:Z",
+    "recipe_id": "recipe_defect_loop",
+    "recipe_name": "Defect Loop Test",
+    "recipe_version": 1,
+    "run_id": "20260906_020532_1796",
+    "status": "success",
+    "step_snapshots": [
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "text": "X\nY\nZ"
+        },
+        "outputs": {
+          "count": 3,
+          "items": [
+            "X",
+            "Y",
+            "Z"
+          ]
+        },
+        "status": "success",
+        "step_id": "step_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {},
+        "outputs": {
+          "text": "VAL:X"
+        },
+        "status": "success",
+        "step_id": "step_2_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {},
+        "outputs": {
+          "text": "VAL:Y"
+        },
+        "status": "success",
+        "step_id": "step_2_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {},
+        "outputs": {
+          "text": "VAL:Z"
+        },
+        "status": "success",
+        "step_id": "step_2_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "items_count": 3
+        },
+        "outputs": {
+          "count": 3,
+          "items": [
+            "VAL:X",
+            "VAL:Y",
+            "VAL:Z"
+          ]
+        },
+        "status": "success",
+        "step_id": "step_2"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "items": [
+            "VAL:X",
+            "VAL:Y",
+            "VAL:Z"
+          ]
+        },
+        "outputs": {
+          "text": "VAL:X|VAL:Y|VAL:Z"
+        },
+        "status": "success",
+        "step_id": "step_3"
+      }
+    ],
+    "timestamp": "2026-09-06 02:05:32"
+  },
+  {
+    "duration_ms": 15,
+    "error_message": "",
+    "failed_step": "",
+    "input_snapshot": "X\nY\nZ",
+    "output_snapshot": "VAL:X|VAL:Y|VAL:Z",
+    "recipe_id": "recipe_defect_loop",
+    "recipe_name": "Defect Loop Test",
+    "recipe_version": 1,
+    "run_id": "20260906_020353_5605",
+    "status": "success",
+    "step_snapshots": [
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "text": "X\nY\nZ"
+        },
+        "outputs": {
+          "count": 3,
+          "items": [
+            "X",
+            "Y",
+            "Z"
+          ]
+        },
+        "status": "success",
+        "step_id": "step_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {},
+        "outputs": {
+          "text": "VAL:X"
+        },
+        "status": "success",
+        "step_id": "step_2_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {},
+        "outputs": {
+          "text": "VAL:Y"
+        },
+        "status": "success",
+        "step_id": "step_2_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {},
+        "outputs": {
+          "text": "VAL:Z"
+        },
+        "status": "success",
+        "step_id": "step_2_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "items_count": 3
+        },
+        "outputs": {
+          "count": 3,
+          "items": [
+            "VAL:X",
+            "VAL:Y",
+            "VAL:Z"
+          ]
+        },
+        "status": "success",
+        "step_id": "step_2"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "items": [
+            "VAL:X",
+            "VAL:Y",
+            "VAL:Z"
+          ]
+        },
+        "outputs": {
+          "text": "VAL:X|VAL:Y|VAL:Z"
+        },
+        "status": "success",
+        "step_id": "step_3"
+      }
+    ],
+    "timestamp": "2026-09-06 02:03:53"
+  },
+  {
+    "duration_ms": 15,
+    "error_message": "",
+    "failed_step": "",
+    "input_snapshot": "X\nY\nZ",
+    "output_snapshot": "VAL:X|VAL:Y|VAL:Z",
+    "recipe_id": "recipe_defect_loop",
+    "recipe_name": "Defect Loop Test",
+    "recipe_version": 1,
+    "run_id": "20260906_020328_3228",
+    "status": "success",
+    "step_snapshots": [
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "text": "X\nY\nZ"
+        },
+        "outputs": {
+          "count": 3,
+          "items": [
+            "X",
+            "Y",
+            "Z"
+          ]
+        },
+        "status": "success",
+        "step_id": "step_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {},
+        "outputs": {
+          "text": "VAL:X"
+        },
+        "status": "success",
+        "step_id": "step_2_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {},
+        "outputs": {
+          "text": "VAL:Y"
+        },
+        "status": "success",
+        "step_id": "step_2_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {},
+        "outputs": {
+          "text": "VAL:Z"
+        },
+        "status": "success",
+        "step_id": "step_2_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "items_count": 3
+        },
+        "outputs": {
+          "count": 3,
+          "items": [
+            "VAL:X",
+            "VAL:Y",
+            "VAL:Z"
+          ]
+        },
+        "status": "success",
+        "step_id": "step_2"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "items": [
+            "VAL:X",
+            "VAL:Y",
+            "VAL:Z"
+          ]
+        },
+        "outputs": {
+          "text": "VAL:X|VAL:Y|VAL:Z"
+        },
+        "status": "success",
+        "step_id": "step_3"
+      }
+    ],
+    "timestamp": "2026-09-06 02:03:28"
+  },
+  {
+    "duration_ms": 0,
+    "error_message": "",
+    "failed_step": "",
+    "input_snapshot": "X\nY\nZ",
+    "output_snapshot": "VAL:X|VAL:Y|VAL:Z",
+    "recipe_id": "recipe_defect_loop",
+    "recipe_name": "Defect Loop Test",
+    "recipe_version": 1,
+    "run_id": "20260906_020301_1184",
+    "status": "success",
+    "step_snapshots": [
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "text": "X\nY\nZ"
+        },
+        "outputs": {
+          "count": 3,
+          "items": [
+            "X",
+            "Y",
+            "Z"
+          ]
+        },
+        "status": "success",
+        "step_id": "step_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {},
+        "outputs": {
+          "text": "VAL:X"
+        },
+        "status": "success",
+        "step_id": "step_2_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {},
+        "outputs": {
+          "text": "VAL:Y"
+        },
+        "status": "success",
+        "step_id": "step_2_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {},
+        "outputs": {
+          "text": "VAL:Z"
+        },
+        "status": "success",
+        "step_id": "step_2_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "items_count": 3
+        },
+        "outputs": {
+          "count": 3,
+          "items": [
+            "VAL:X",
+            "VAL:Y",
+            "VAL:Z"
+          ]
+        },
+        "status": "success",
+        "step_id": "step_2"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "items": [
+            "VAL:X",
+            "VAL:Y",
+            "VAL:Z"
+          ]
+        },
+        "outputs": {
+          "text": "VAL:X|VAL:Y|VAL:Z"
+        },
+        "status": "success",
+        "step_id": "step_3"
+      }
+    ],
+    "timestamp": "2026-09-06 02:03:01"
+  }
+]

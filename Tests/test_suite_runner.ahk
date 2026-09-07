@@ -22,6 +22,8 @@ ShowCivilConverter(*) => ""
 #Include "..\Lib\Actions_Text.ahk"
 #Include "..\Lib\Actions_Finance.ahk"
 #Include "..\Lib\Actions_Extraction.ahk"
+#Include "..\Lib\DateFormatConverter.ahk"
+#Include "..\Lib\DateFormatGui.ahk"
 #Include "..\Lib\Actions_WindowPeek.ahk"
 #Include "..\Lib\CivilConverterEngine.ahk"
 #Include "..\Lib\Actions_CivilConvert.ahk"
@@ -188,6 +190,7 @@ AssertEqual("MathEval", "Nested Braces with Unicode Minus (50−{20÷[2×(3+2)]}
 AssertEqual("MathEval", "Nested Brackets with Unicode Minus (50−{20÷[2×5]}+18)", SafeEvaluateMath("50−{20÷[2×5]}+18").resultStr, "66")
 AssertEqual("MathEval", "BODMAS 'of' Keyword (7823-128 ÷16 of 4 -3973)", SafeEvaluateMath("7823-128 ÷16 of 4 -3973").resultStr, "3818")
 AssertEqual("MathEval", "Scale Suffix Lakh & k (1.5 Lakh * 12 - 20k)", SafeEvaluateMath("1.5 Lakh * 12 - 20k").resultStr, "1780000")
+AssertEqual("MathEval", "Scale Division Binding (25lakh/50thousand)", SafeEvaluateMath("25lakh/50thousand").resultStr, "50")
 AssertEqual("MathEval", "Percentage 'of' Keyword (18% of 50000)", SafeEvaluateMath("18% of 50000").resultStr, "9000")
 AssertEqual("MathEval", "Scale Suffix Crore (2.5 Cr / 5)", SafeEvaluateMath("2.5 Cr / 5").resultStr, "5000000")
 
@@ -419,6 +422,150 @@ AssertTrue("Leader_c_Bridge", "Leader c 'tircha 5 side 3' val = 4", Abs(mEv6.res
 mEv7 := SafeEvaluateMath("3m side 5m diagonal")
 AssertTrue("Leader_c_Bridge", "Leader c '3m side 5m diagonal' success", mEv7.success)
 AssertTrue("Leader_c_Bridge", "Leader c '3m side 5m diagonal' val = 4", Abs(mEv7.result - 4.0) <= 0.01)
+
+; ======================================================================================================================
+; 14. Universal Bidirectional Date Format Converter Tests (9 Canonical Formats & Wild Indian Standards)
+; ======================================================================================================================
+
+canonicalFormats := [
+    "05/09/2026",
+    "05-09-2026",
+    "05.09.2026",
+    "05/09/26",
+    "05-09-26",
+    "05 September 2026",
+    "September 05, 2026",
+    "05 September, 2026",
+    "Saturday, 05 September 2026"
+]
+
+; 1. 81-Pair Cross-Conversion Matrix (9x9)
+for fromIdx, srcDate in canonicalFormats {
+    for toIdx, targetExpected in canonicalFormats {
+        testTitle := Format("Convert F{1} to F{2}", fromIdx, toIdx)
+        convRes := DateFormatConverter.Convert(srcDate, toIdx)
+        AssertEqual("DateConvert_81Pair", testTitle, convRes, targetExpected)
+    }
+}
+
+; 2. Round-Trip Identity Invariant (Fi -> Fj -> Fi == Fi)
+for i, f1 in canonicalFormats {
+    for j, f2 in canonicalFormats {
+        rt := DateFormatConverter.Convert(DateFormatConverter.Convert(f1, j), i)
+        AssertEqual("DateConvert_RoundTrip", Format("F{1}->F{2}->F{1}", i, j), rt, f1)
+    }
+}
+
+; 3. Wild Indian-Standard Ingestion Matrix -> Output format 6 ("05 September 2026") and 9
+wildIndianInputs := [
+    "05/09/2026", "5/9/2026", "05/9/26", "5/09/26",
+    "05-09-2026", "5-9-2026", "5-09-26", "05-9-26",
+    "05.09.2026", "5.9.2026", "05.9.26",
+    "05 09 2026", "5 9 2026", "05_09_2026", "05\09\2026",
+    "05 Sep 2026", "5 Sept 2026", "5 September 2026", "05-Sep-2026", "5.Sep.26",
+    "5sept2026", "5sept26", "05September2026",
+    "september5 26", "sept5 2026", "september5, 2026",
+    "5th September 2026", "5th of September 2026", "5th of Sep 2026",
+    "Saturday, 05 September 2026", "Sat, 05/09/2026", "Sat 5-Sep-26"
+]
+
+for idx, wildInput in wildIndianInputs {
+    AssertEqual("DateConvert_WildIndian", Format("Wild '{1}' -> DD Month YYYY", wildInput), DateFormatConverter.Convert(wildInput, 6), "05 September 2026")
+    AssertEqual("DateConvert_WildIndian", Format("Wild '{1}' -> DDDD, dd Month YYYY", wildInput), DateFormatConverter.Convert(wildInput, 9), "Saturday, 05 September 2026")
+}
+
+; 4. Strict DD-MM Indian Rule (01/02/2026 must be 1st Feb, NOT 2nd Jan)
+AssertEqual("DateConvert_IndianRule", "01/02/2026 is 01 Feb", DateFormatConverter.Convert("01/02/2026", 6), "01 February 2026")
+AssertEqual("DateConvert_IndianRule", "12/03/2026 is 12 March", DateFormatConverter.Convert("12/03/2026", 6), "12 March 2026")
+
+; 5. Negative Boundary Rejection (sept526 must be rejected as invalid date)
+AssertFalse("DateConvert_Boundary", "sept526 rejected as invalid", DateFormatConverter.ParseIndianDate("sept526").valid)
+AssertFalse("DateConvert_Boundary", "sept1226 rejected as invalid", DateFormatConverter.ParseIndianDate("sept1226").valid)
+AssertFalse("DateConvert_Boundary", "Empty rejected", DateFormatConverter.ParseIndianDate("").valid)
+
+; 6. Leap Year & Calendar Boundaries
+AssertEqual("DateConvert_Calendar", "Leap Year 29/02/2024 to F9", DateFormatConverter.Convert("29/02/2024", 9), "Thursday, 29 February 2024")
+AssertFalse("DateConvert_Calendar", "Non-leap year 29/02/2026 rejected", DateFormatConverter.ParseIndianDate("29/02/2026").valid)
+AssertFalse("DateConvert_Calendar", "31/04/2026 rejected (Apr 30 days)", DateFormatConverter.ParseIndianDate("31/04/2026").valid)
+AssertEqual("DateConvert_Calendar", "Year-end 31/12/2026 to F3", DateFormatConverter.Convert("31/12/2026", 3), "31.12.2026")
+
+; 7. Format Cycling (1 -> 2 -> 3 -> 4 -> 5 -> 6 -> 7 -> 8 -> 9 -> 1)
+cDate := "05/09/2026"
+expectedCycle := [
+    "05-09-2026", "05.09.2026", "05/09/26", "05-09-26", 
+    "05 September 2026", "September 05, 2026", "05 September, 2026", 
+    "Saturday, 05 September 2026", "05/09/2026"
+]
+for step, expInCycle in expectedCycle {
+    cDate := DateFormatConverter.Cycle(cDate)
+    AssertEqual("DateConvert_Cycle", Format("Step {1} in cycle", step), cDate, expInCycle)
+}
+
+; 8. In-Text Batch Replacement
+sampleText := "The inspection is on 05.09.2026 and billing closes on 12/09/2026."
+batchRes := DateFormatConverter.ConvertAllInText(sampleText, 6)
+AssertEqual("DateConvert_Batch", "Batch in-text conversion", batchRes, "The inspection is on 05 September 2026 and billing closes on 12 September 2026.")
+
+; 9. Symbiotic Extraction Engine Upgrade (ExtractDates & ParseAnyDateToYyyyMmDd)
+AssertEqual("DateExtraction_Upgrade", "ParseAnyDateToYyyyMmDd dot format", ParseAnyDateToYyyyMmDd("05.09.2026"), "20260905")
+AssertEqual("DateExtraction_Upgrade", "ParseAnyDateToYyyyMmDd weekday format", ParseAnyDateToYyyyMmDd("Saturday, 05 September 2026"), "20260905")
+AssertEqual("DateExtraction_Upgrade", "ParseAnyDateToYyyyMmDd 5sept2026", ParseAnyDateToYyyyMmDd("5sept2026"), "20260905")
+AssertTrue("DateExtraction_Upgrade", "IsValidCalendarDate 05.09.2026", IsValidCalendarDate("05.09.2026"))
+AssertTrue("DateExtraction_Upgrade", "IsValidCalendarDate 5sept2026", IsValidCalendarDate("5sept2026"))
+AssertFalse("DateExtraction_Upgrade", "IsValidCalendarDate sept526 is false", IsValidCalendarDate("sept526"))
+
+; 10. Date Format Settings & Persistence Invariants (office_productivity_settings.ini)
+LoadAppSettings()
+AssertEqual("DateFormat_Settings", "DefaultFormatId is integer 1-9", (DefaultDateFormatId >= 1 && DefaultDateFormatId <= 9), "1")
+origDefault := DefaultDateFormatId
+
+AssertTrue("DateFormat_Settings", "SaveDefaultDateFormat to 2", SaveDefaultDateFormat(2))
+AssertEqual("DateFormat_Settings", "DefaultFormatId updated to 2", DefaultDateFormatId, 2)
+AssertEqual("DateFormat_Settings", "GetDefaultDateFormatName for 2", GetDefaultDateFormatName(), "DD-MM-YYYY")
+
+AssertFalse("DateFormat_Settings", "SaveDefaultDateFormat reject 0", SaveDefaultDateFormat(0))
+AssertFalse("DateFormat_Settings", "SaveDefaultDateFormat reject 10", SaveDefaultDateFormat(10))
+AssertEqual("DateFormat_Settings", "DefaultFormatId unchanged after invalid save", DefaultDateFormatId, 2)
+
+; Restore original default
+SaveDefaultDateFormat(origDefault)
+AssertEqual("DateFormat_Settings", "DefaultFormatId restored", DefaultDateFormatId, origDefault)
+
+; 11. CanPasteToTargetWindow & Read-Only / PDF Detection Invariants
+testGuiEditable := Gui(, "Editable Note")
+testGuiEditable.Add("Edit", "w100 h30", "Test")
+testGuiEditable.Show("Hide")
+AssertTrue("Window_Pasteability", "Editable window returns true", CanPasteToTargetWindow(testGuiEditable.Hwnd))
+
+testGuiReadOnlyTitle := Gui(, "Financial_Statement [Read-Only]")
+testGuiReadOnlyTitle.Add("Edit", "w100 h30", "Test")
+testGuiReadOnlyTitle.Show("Hide")
+AssertFalse("Window_Pasteability", "Read-Only title returns false", CanPasteToTargetWindow(testGuiReadOnlyTitle.Hwnd))
+
+testGuiProtectedView := Gui(, "Invoice [Protected View]")
+testGuiProtectedView.Show("Hide")
+AssertFalse("Window_Pasteability", "Protected View title returns false", CanPasteToTargetWindow(testGuiProtectedView.Hwnd))
+
+testGuiPdfTitle := Gui(, "Tax_Invoice_2026.pdf - Acrobat")
+testGuiPdfTitle.Show("Hide")
+AssertFalse("Window_Pasteability", "PDF title returns false", CanPasteToTargetWindow(testGuiPdfTitle.Hwnd))
+
+testGuiReadOnlyEdit := Gui(, "Report Viewer")
+roEdit := testGuiReadOnlyEdit.Add("Edit", "+ReadOnly w100 h30", "Locked")
+testGuiReadOnlyEdit.Show("Hide")
+roEdit.Focus()
+AssertFalse("Window_Pasteability", "ReadOnly Edit control returns false", CanPasteToTargetWindow(testGuiReadOnlyEdit.Hwnd))
+
+; TargetWindowHwnd global routing test
+TargetWindowHwnd := testGuiReadOnlyTitle.Hwnd
+AssertFalse("Window_Pasteability", "TargetWindowHwnd routing detects read-only", CanPasteToTargetWindow())
+TargetWindowHwnd := 0
+
+testGuiEditable.Destroy()
+testGuiReadOnlyTitle.Destroy()
+testGuiProtectedView.Destroy()
+testGuiPdfTitle.Destroy()
+testGuiReadOnlyEdit.Destroy()
 } catch as globalErr {
     FailCount++
     TestLogs.Push(Format("[FAIL] GlobalFatalException | {1} at Line {2}", globalErr.Message, globalErr.Line))

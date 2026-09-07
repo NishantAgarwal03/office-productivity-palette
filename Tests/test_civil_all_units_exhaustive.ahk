@@ -260,9 +260,9 @@ try {
     ; 12. Rates & Thumb Rule Estimators
     AssertEvaluates("Rates", "Rs 500 per sqft to sqm", 5381.96)
     AssertEvaluates("Rates", "4500 per cum to cft", 127.43)
-    AssertEvaluates("Estimator", "1000 sqft construction cost", 1813305.0)
-    AssertEvaluates("Estimator", "cost 1000 sqft house", 1813305.0)
-    AssertEvaluates("Estimator", "thumb rule 1000 sqft", 1813305.0)
+    AssertEvaluates("Estimator", "1000 sqft construction cost", 1825271.70, 1.0)
+    AssertEvaluates("Estimator", "cost 1000 sqft house", 1825271.70, 1.0)
+    AssertEvaluates("Estimator", "thumb rule 1000 sqft", 1825271.70, 1.0)
 } catch as err {
     TestsFailed++
     TestLogs.Push("[FATAL] Execution Error: " . err.Message . " at Line " . err.Line)

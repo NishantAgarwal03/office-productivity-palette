@@ -189,20 +189,21 @@ PreprocessMathExpression(rawExpr) {
     ; Divisions
     expr := RegExReplace(expr, "[÷:]", " / ")
 
-    ; 5. Scale Suffix Expansion (Lakh, Cr, k, M, B)
-    expr := RegExReplace(expr, "i)(?<=\d)\s*(?:lakhs|lakh|lacs|lac|l)\b", " * 100000")
-    expr := RegExReplace(expr, "i)(?<=\d)\s*(?:crores|crore|cr)\b", " * 10000000")
-    expr := RegExReplace(expr, "i)(?<=\d)\s*(?:thousand|k)\b", " * 1000")
-    expr := RegExReplace(expr, "i)(?<=\d)\s*(?:million|m)\b", " * 1000000")
-    expr := RegExReplace(expr, "i)(?<=\d)\s*(?:billion|b)\b", " * 1000000000")
+    ; 5. Scale Suffix Expansion (Lakh, Cr, k, M, B) - Parenthesized to preserve operand binding in division
+    expr := RegExReplace(expr, "i)(\d+(?:\.\d+)?)\s*(?:lakhs|lakh|lacs|lac|l)\b", "($1 * 100000)")
+    expr := RegExReplace(expr, "i)(\d+(?:\.\d+)?)\s*(?:crores|crore|cr)\b", "($1 * 10000000)")
+    expr := RegExReplace(expr, "i)(\d+(?:\.\d+)?)\s*(?:thousand|k)\b", "($1 * 1000)")
+    expr := RegExReplace(expr, "i)(\d+(?:\.\d+)?)\s*(?:million|m)\b", "($1 * 1000000)")
+    expr := RegExReplace(expr, "i)(\d+(?:\.\d+)?)\s*(?:billion|b)\b", "($1 * 1000000000)")
 
     ; 6. Real-World Percentage Calculations
     expr := RegExReplace(expr, "(\d+(?:\.\d+)?|\([^\(\)]+\))\s*([\+\-])\s*(\d+(?:\.\d+)?)\s*%", "$1 $2 ($1 * ($3 / 100))")
     expr := RegExReplace(expr, "(\d+(?:\.\d+)?)\s*%", "($1 / 100)")
 
     ; 7. Implicit Multiplication (e.g. 2(3+4) -> 2*(3+4) and (2)(3) -> (2)*(3))
-    expr := RegExReplace(expr, "(?<=\d|\))\s*(?=\()", " * ")
+    expr := RegExReplace(expr, "(?<=\d)\s*(?=\()", " * ")
     expr := RegExReplace(expr, "(?<=\))\s*(?=\d)", " * ")
+    expr := RegExReplace(expr, "(?<=\))\s*(?=\()", " * ")
 
     ; 8. Final Whitelist Filter (Only valid math tokens permitted)
     exprClean := RegExReplace(expr, "[^\d\+\-\*/\.\(\)\s\^]", "")

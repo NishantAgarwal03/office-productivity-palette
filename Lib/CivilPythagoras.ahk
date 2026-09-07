@@ -6,6 +6,13 @@
 #Requires AutoHotkey v2.0
 
 ; ======================================================================================================================
+; ARCHITECTURAL DESIGN INTENT: STRICT HOMOGENEOUS UNITS ONLY (NO MIXED UNITS)
+; 1. Single Unit System: Civil site measurements (diagonals, plot corners, room guniya) must be 
+;    expressed in a single uniform unit (e.g., both in meters or both in feet).
+; 2. No Silent Cross-Unit Conversion: The tool intentionally does NOT cross-convert mixed units 
+;    (e.g., '10m 20ft'). Silently mixing disparate systems risks masking site layout entry errors.
+; 3. User Responsibility: Both legs/sides must be provided in the identical dimensional unit.
+; ======================================================================================================================
 ; SCOPE & DESIGN BOUNDARY [2D PLANAR GEOMETRY ONLY - 3D SPACE DIAGONAL STRICTLY OUT OF SCOPE]:
 ; 1. 2D Planar Scope: Strictly designed for 2D Planar Right-Angle Geometry (Base, Height, Hypotenuse,
 ;    Room/Plot/Slab 2D Diagonals, and Indian Site Guniya / 3-4-5 Rule Verification).
@@ -112,20 +119,18 @@ class CivilPythagoras {
         }
 
         if (isInverse) {
+            ; Solve missing leg
             missingSide := Sqrt(hypVal*hypVal - sideVal*sideVal)
-            extraDisplay := ""
-            if (unitLabel = "ft" || unitLabel = "'") {
-                ftPart := Floor(missingSide)
-                inPart := (missingSide - ftPart) * 12
-                extraDisplay := Format(" ({1}\x27-{2:0.2f}\x22)", ftPart, inPart)
-                extraDisplay := StrReplace(StrReplace(extraDisplay, "\x27", "'"), "\x22", '"')
-            }
+            ; Check 3-4-5 ratio
+            t345 := CivilPythagoras.Detect345(sideVal, missingSide, hypVal)
+            ; Build clean result
+            resText := CivilPythagoras.Format345Result("Missing Side", missingSide, unitLabel, t345, true)
 
             return {
                 success: true,
                 category: "📐 Pythagoras (Missing Side / Inverse)",
                 displayExpr: Format("√( {1}² - {2}² )", hypVal, sideVal),
-                resultStr: Format("Missing Side (Base/Height): {:0.3f} {}{}", missingSide, unitLabel, extraDisplay),
+                resultStr: resText,
                 val: missingSide,
                 unit: unitLabel
             }
@@ -164,43 +169,166 @@ class CivilPythagoras {
             }
         }
 
-        ; Arity Enforcement: Exactly 2 dimensions required for 2D planar geometry
+        ; Arity Enforcement: 2 dimensions for Diagonal / Hypotenuse, or 3 dimensions for Guniya Verification
         if (nums.Length < 2) {
-            return {success: false, message: "Pythagoras / Diagonal requires 2 dimensions (e.g. 'pythagoras 3 4', '10x8 diag', 'diagonal 20ft 30ft', '3m base 4m height', '3m side 5m diagonal')"}
+            return {success: false, message: "Pythagoras requires 2 dimensions for diagonal or 3 dimensions to check Guniya (e.g. '8m 10m 13.2m')"}
         }
-        if (nums.Length > 2) {
-            return {success: false, message: "2D planar only"}
+        if (nums.Length > 3) {
+            return {success: false, message: "2D planar only (maximum 3 dimensions for Guniya check)"}
         }
 
-        a := nums[1]
-        b := nums[2]
+        ; Route 3-Dimension Inputs to Guniya Verification & 3-4-5 Alignment Engine
+        if (nums.Length == 3) {
+            return CivilPythagoras.EvaluateGuniyaCheck(nums, unitLabel)
+        }
+
+        ; Solve diagonal
+        a := nums[1], b := nums[2]
         c := Sqrt(a*a + b*b)
-
-        is345 := false
-        if (a > 0 && b > 0) {
-            ratio1 := a / b
-            ratio2 := b / a
-            if (Abs(ratio1 - 0.75) < 0.01 || Abs(ratio2 - 0.75) < 0.01)
-                is345 := true
-        }
-
-        extraDisplay := ""
-        if (unitLabel = "ft" || unitLabel = "'") {
-            ftPart := Floor(c)
-            inPart := (c - ftPart) * 12
-            extraDisplay := Format(" ({1}\x27-{2:0.2f}\x22)", ftPart, inPart)
-            extraDisplay := StrReplace(StrReplace(extraDisplay, "\x27", "'"), "\x22", '"')
-        }
-
-        guniyaTag := is345 ? " [📐 3-4-5 Right-Angle / Guniya Match]" : ""
+        ; Check 3-4-5 ratio
+        t345 := CivilPythagoras.Detect345(a, b, c)
+        ; Build clean result
+        resText := CivilPythagoras.Format345Result("📐 Diag", c, unitLabel, t345, false)
 
         return {
             success: true,
             category: "📐 Pythagoras / Diagonal (Guniya)",
             displayExpr: Format("√( {1}² + {2}² )", a, b),
-            resultStr: Format("Diagonal / Hypotenuse (Guniya): {:0.3f} {}{}{}", c, unitLabel, extraDisplay, guniyaTag),
+            resultStr: resText,
             val: c,
             unit: unitLabel
         }
+    }
+
+    ; ------------------------------------------------------------------------------------------------------------------
+    ; 3. 3-Side Guniya Verification & 3-4-5 String-Line Benchmark Engine
+    ; ------------------------------------------------------------------------------------------------------------------
+    static EvaluateGuniyaCheck(nums, unitLabel) {
+        ; 1. Sort the 3 numbers: a = smaller leg, b = larger leg, cActual = longest side (measured diagonal)
+        if (nums[1] > nums[2]) {
+            tmp := nums[1], nums[1] := nums[2], nums[2] := tmp
+        }
+        if (nums[2] > nums[3]) {
+            tmp := nums[2], nums[2] := nums[3], nums[3] := tmp
+        }
+        if (nums[1] > nums[2]) {
+            tmp := nums[1], nums[1] := nums[2], nums[2] := tmp
+        }
+
+        a := nums[1]
+        b := nums[2]
+        cActual := nums[3]
+
+        ; 2. Triangle inequality guard
+        if (a + b <= cActual) {
+            return {success: false, message: "Invalid triangle: two sides must sum to more than diagonal"}
+        }
+
+        ; 3. True Right-Angle Diagonal & Discrepancy
+        cTrue := Sqrt(a*a + b*b)
+        diffDiag := cActual - cTrue
+
+        ; 4. Actual Corner Angle via Law of Cosines
+        cosTheta := (a*a + b*b - cActual*cActual) / (2.0 * a * b)
+        cosTheta := Max(-1.0, Min(1.0, cosTheta))
+        thetaRad := ACos(cosTheta)
+        thetaDeg := thetaRad * (180.0 / 3.141592653589793)
+        angleError := thetaDeg - 90.0
+
+        ; 5. Tolerance Check (3mm for metric, ~1/8 inch = 0.0104 ft for imperial)
+        tol := (unitLabel = "ft" || unitLabel = "'") ? 0.0104 : 0.003
+        if (Abs(diffDiag) <= tol) {
+            outMatch := Format("✔️ 90.0° Guniya Match (Diag: {:0.2f}{})", cActual, unitLabel)
+            return {
+                success: true,
+                category: "📐 Guniya Verification",
+                displayExpr: Format("Guniya: {1}{4} × {2}{4} [Diag: {3:0.2f}{4}]", a, b, cActual, unitLabel),
+                resultStr: outMatch,
+                val: 90.0,
+                unit: "°",
+                isMatched: true
+            }
+        }
+
+        ; 6. Peg Shifts at Tip of Each Leg: arc movement = length * sin(|angleError|)
+        dirWord := (angleError > 0) ? "IN" : "OUT"
+        absRad := Abs(thetaRad - (3.141592653589793 / 2.0))
+        shiftA := a * Sin(absRad)
+        shiftB := b * Sin(absRad)
+
+        if (unitLabel = "ft" || unitLabel = "'") {
+            shiftA_Str := Format("{:0.1f}in", shiftA * 12.0)
+            shiftB_Str := Format("{:0.1f}in", shiftB * 12.0)
+        } else {
+            shiftA_Str := Format("{:0.0f}mm", Round(shiftA * 1000.0))
+            shiftB_Str := Format("{:0.0f}mm", Round(shiftB * 1000.0))
+        }
+
+        ; 7. Scaled 3-4-5 Benchmark fitting within measured legs
+        mult := Floor(Min(a / 3.0, b / 4.0))
+        if (mult < 1)
+            mult := 1
+        m3 := 3 * mult
+        m4 := 4 * mult
+        d5 := 5 * mult
+
+        ; 8. Formulate Concise 20-50 Char Lines
+        line1 := Format("⚠️ {:0.1f}° ({:+0.1f}° OFF) | True Diag: {:0.2f}{}", thetaDeg, angleError, cTrue, unitLabel)
+        line2 := Format("👉 Move {:0.0f}{} peg {} {} (or {:0.0f}{} peg {})", a, unitLabel, shiftA_Str, dirWord, b, unitLabel, shiftB_Str)
+        line3 := Format("👉 3-4-5 Fix: Mark {}{} & {}{} -> Cross-tape {}{}", m3, unitLabel, m4, unitLabel, d5, unitLabel)
+
+        outFull := line1 . "`n" . line2 . "`n" . line3
+
+        return {
+            success: true,
+            category: "📐 Guniya Verification",
+            displayExpr: Format("Guniya: {1}{4} × {2}{4} [Diag: {3:0.2f}{4}]", a, b, cActual, unitLabel),
+            resultStr: outFull,
+            val: Round(thetaDeg, 2),
+            unit: "°",
+            isMatched: false
+        }
+    }
+
+    ; ------------------------------------------------------------------------------------------------------------------
+    ; 4. Modular Geometry & Formatting Primitives (DRY Invariant)
+    ; ------------------------------------------------------------------------------------------------------------------
+    ; Feet-inches display
+    static FormatFeetInches(val, unitLabel) {
+        if (unitLabel != "ft" && unitLabel != "'")
+            return ""
+        ; Extract ft and in
+        ftPart := Floor(val)
+        inPart := (val - ftPart) * 12.0
+        return Format(" ({1}'-{2:0.2f}`")", ftPart, inPart)
+    }
+
+    ; Detect 3-4-5 triplet
+    static Detect345(sideA, sideB, hypVal) {
+        legMin := Min(sideA, sideB)
+        legMax := Max(sideA, sideB)
+        if (legMin <= 0 || legMax <= 0 || hypVal <= 0)
+            return {is345: false}
+
+        ; Invariant ratios: 3/4 = 0.75, 3/5 = 0.60
+        if (Abs(legMin / legMax - 0.75) < 0.015 && Abs(legMin / hypVal - 0.60) < 0.015) {
+            mult := Round(hypVal / 5.0, 2)
+            multStr := (mult == Floor(mult)) ? Format("{:0.0f}", mult) : Format("{:0.2f}", mult)
+            return {is345: true, multStr: multStr, legMin: legMin, legMax: legMax, hyp: hypVal}
+        }
+        return {is345: false}
+    }
+
+    ; Format 3-4-5 result
+    static Format345Result(mainLabel, resultVal, unitLabel, t345, isInverse := false) {
+        ; Imperial string
+        extraDisplay := CivilPythagoras.FormatFeetInches(resultVal, unitLabel)
+        if (!t345.is345) {
+            suffix := isInverse ? " (Base/Height)" : ""
+            return Format("{}{}: {:0.3f} {}{}", mainLabel, suffix, resultVal, unitLabel, extraDisplay)
+        }
+        ; Tail tag
+        diagTag := isInverse ? " (Diag)" : ""
+        return Format("{}: {:0.3f} {}{}`n(True 3-4-5 Triangle | {}x Scale)`n👉 {:0.0f}{} - {:0.0f}{} -> {:0.0f}{}{}", mainLabel, resultVal, unitLabel, extraDisplay, t345.multStr, t345.legMin, unitLabel, t345.legMax, unitLabel, t345.hyp, unitLabel, diagTag)
     }
 }

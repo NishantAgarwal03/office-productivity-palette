@@ -104,6 +104,29 @@ class CivilConverterEngine {
         cfg["EmulsionPaintLitersPerSqFtWall"] := 0.007
         cfg["FlooringTileAreaMultiplier"] := 1.25
         cfg["FlooringRatePerSqFt"] := 65.0
+
+        ; Manpower Wages & Productivity Defaults
+        cfg["WageMasonPerDay"] := 950.0
+        cfg["WageBarbenderPerDay"] := 900.0
+        cfg["WageCarpenterPerDay"] := 900.0
+        cfg["WagePainterPerDay"] := 850.0
+        cfg["WageElectricianPerDay"] := 900.0
+        cfg["WagePlumberPerDay"] := 900.0
+        cfg["WageHelperPerDay"] := 600.0
+        cfg["JcbHourlyRate"] := 1400.0
+        cfg["ConcretePourSkilledPerCum"] := 0.24
+        cfg["ConcretePourUnskilledPerCum"] := 2.90
+        cfg["BrickworkOutputCumPerDay"] := 1.35
+        cfg["PlasterOutputSqMPerDay"] := 14.50
+        cfg["ShutteringOutputSqMPerDay"] := 11.00
+        cfg["RebarBindingOutputMtPerDay"] := 0.135
+        cfg["FlooringOutputSqMPerDay"] := 13.50
+        cfg["PaintingOutputSqMPerDay"] := 28.00
+        cfg["ElectricalLaborRatePerSqFt"] := 32.50
+        cfg["PlumbingLaborRatePerSqFt"] := 29.50
+        cfg["JcbExcavationCumPerHour"] := 30.0
+        cfg["LaborReconciliationTolerancePercent"] := 2.0
+
         cfg["MaxAllowedVariancePercent"] := 5.0
 
         if (FileExist(iniPath)) {

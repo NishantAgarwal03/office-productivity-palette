@@ -5,14 +5,14 @@
 #Requires AutoHotkey v2.0
 
 RegisterFinanceActions() {
-    RegisterAction("Indian Financial Year & Quarter", "💼 Finance", "[Needs Selection] Converts date to FY 2026–27 (Q2)", "fy, financial year, quarter, q1, q2, q3, q4, fiscal, tax", (*) => ProcessIndianFY())
+    RegisterAction("Indian Financial Year & Quarter", "💼 Finance", "[Needs Selection] Converts date to FY 2026–27 (Q2)", "fy, financial year, quarter, q1, q2, q3, q4, fiscal, tax, itr, it returns, year", (*) => ProcessIndianFY())
     RegisterAction("Percentage Change vs Point (pp) Change", "💼 Finance", "[Needs Selection] Compares two rates (e.g. 5.0% -> 6.5% gives +1.5pp / +30%)", "percentage, point, pp, change, rate, yield, compare", (*) => ProcessPctVsPp())
     RegisterAction("CAGR Growth Calculator", "💼 Finance", "[Needs Selection] Calculates CAGR from Beg Val, End Val, Years (Natural text supported)", "cagr, growth, compound, annual, investment, returns", (*) => ProcessCAGR())
     RegisterAction("Reverse GST Calculator (18%)", "💼 Finance", "[Needs Selection] Extracts Base + 18% GST from inclusive amount or sentence", "reverse, gst, 18%, tax, base, inclusive, invoice", (*) => ProcessReverseGST(18))
     RegisterAction("Reverse GST (Custom Rate)", "💼 Finance", "[Needs Selection] Extracts Base + Tax for custom rate (e.g. GST = 12%)", "reverse, gst, rate, tax, 5%, 12%, 28%, custom", (*) => ProcessReverseGSTPrompt())
     RegisterAction("Clean Number to Raw Machine Value", "💼 Finance", "[Needs Selection] Converts '1.25 Lakh' / '2.5 Cr' / '1,25,000' -> 125000", "clean, number, machine, raw, lakh, crore, euro", (*) => TransformSelectedText((txt) => CleanToMachineNumber(txt)))
-    RegisterAction("Format Number with Indian Commas", "💼 Finance", "[Needs Selection] Formats 12345678 -> 1,23,45,678 (Lakhs/Crores)", "comma, indian, lakh, crore, format, currency", (*) => TransformSelectedText((txt) => FormatIndianCommas(txt)))
-    RegisterAction("Format Number with International Commas", "💼 Finance", "[Needs Selection] Formats 12345678 -> 12,345,678 (Millions/Billions)", "comma, international, million, format, standard", (*) => TransformSelectedText((txt) => FormatInternationalCommas(txt)))
+    RegisterAction("Format Number: Indian Lakhs (12,34,567)", "💼 Finance", "[Needs Selection] Formats 12345678 -> 1,23,45,678 (Lakhs/Crores)", "comma, format, number, indian, lakh, crore, digits, currency", (*) => TransformSelectedText((txt) => FormatIndianCommas(txt)))
+    RegisterAction("Format Number: International Millions (1,234,567)", "💼 Finance", "[Needs Selection] Formats 12345678 -> 12,345,678 (Millions/Billions)", "comma, format, number, international, million, billion, digits, standard", (*) => TransformSelectedText((txt) => FormatInternationalCommas(txt)))
 }
 
 ; ======================================================================================================================

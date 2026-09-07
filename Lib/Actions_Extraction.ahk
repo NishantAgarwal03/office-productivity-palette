@@ -30,7 +30,7 @@ ProcessExtraction(itemType, extractorFunc) {
     }
     
     A_Clipboard := extracted
-    if !WinActive("ahk_class CabinetWClass") && !WinActive("ahk_class ExploreWClass") && !WinActive("ahk_class Progman") && !WinActive("ahk_class WorkerW") {
+    if CanPasteToTargetWindow() {
         InsertText(extracted)
     }
     
@@ -183,7 +183,7 @@ ExtractPan(text) {
 ExtractDates(text) {
     dates := []
     pos := 1
-    pattern := "\b(?:\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\d{1,2}[-/\s]+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[-/\s,]+\d{2,4}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2}(?:st|nd|rd|th)?,?\s*\d{2,4})\b"
+    pattern := "\b(?:(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s*)?(?:\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\d{1,2}\.\d{1,2}\.\d{2,4}|\d{1,2}[-/\s\._\\]*(?:of\s+)?[a-z]{3,9}[-/\s,\._\\]*\d{2,4}|[a-z]{3,9}[-/\s\._\\]*\d{1,2}(?:st|nd|rd|th)?[-/\s,\._\\]+\d{2,4})\b"
     while RegExMatch(text, "i)" . pattern, &m, pos) {
         raw := Trim(m[0], " .,;:")
         found := false
@@ -250,7 +250,7 @@ CalculateDateDifferencePrompt() {
 ExtractRawDatesList(text) {
     dates := []
     pos := 1
-    pattern := "\b(?:\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\d{1,2}[-/\s]+(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[-/\s,]+\d{2,4}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{1,2}(?:st|nd|rd|th)?,?\s*\d{2,4})\b"
+    pattern := "\b(?:(?:Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday|Mon|Tue|Wed|Thu|Fri|Sat|Sun),?\s*)?(?:\d{4}[-/]\d{1,2}[-/]\d{1,2}|\d{1,2}[-/]\d{1,2}[-/]\d{2,4}|\d{1,2}\.\d{1,2}\.\d{2,4}|\d{1,2}[-/\s\._\\]*(?:of\s+)?[a-z]{3,9}[-/\s,\._\\]*\d{2,4}|[a-z]{3,9}[-/\s\._\\]*\d{1,2}(?:st|nd|rd|th)?[-/\s,\._\\]+\d{2,4})\b"
     while RegExMatch(text, "i)" . pattern, &m, pos) {
         raw := Trim(m[0], " .,;:")
         if IsValidCalendarDate(raw) {
@@ -301,6 +301,14 @@ CalculateDateDifference(dateStr1, dateStr2) {
 
 ParseAnyDateToYyyyMmDd(dStr) {
     s := Trim(dStr)
+    if (s == "")
+        return ""
+
+    if (IsSet(DateFormatConverter) && HasMethod(DateFormatConverter, "ParseIndianDate")) {
+        p := DateFormatConverter.ParseIndianDate(s)
+        if (p.valid)
+            return p.yyyymmdd
+    }
     
     if RegExMatch(s, "i)^(\d{1,2})[-/\s]+([a-z]{3})[a-z]*[-/\s,]+(\d{2,4})$", &m) {
         day := Integer(m[1])
@@ -324,13 +332,13 @@ ParseAnyDateToYyyyMmDd(dStr) {
         return Format("{:04d}{:02d}{:02d}", year, monthNum, day)
     }
     
-    if RegExMatch(s, "^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$", &m)
+    if RegExMatch(s, "^(\d{4})[-/\.](?:(\d{1,2})[-/\.](\d{1,2}))$", &m)
         return Format("{}{:02d}{:02d}", m[1], Integer(m[2]), Integer(m[3]))
         
-    if RegExMatch(s, "^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$", &m)
+    if RegExMatch(s, "^(\d{1,2})[-/\.](\d{1,2})[-/\.](\d{4})$", &m)
         return Format("{}{:02d}{:02d}", m[3], Integer(m[2]), Integer(m[1]))
         
-    if RegExMatch(s, "^(\d{1,2})[-/](\d{1,2})[-/](\d{2})$", &m)
+    if RegExMatch(s, "^(\d{1,2})[-/\.](\d{1,2})[-/\.](\d{2})$", &m)
         return Format("20{}{:02d}{:02d}", m[3], Integer(m[2]), Integer(m[1]))
         
     return ""

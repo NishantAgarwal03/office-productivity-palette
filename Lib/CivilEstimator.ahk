@@ -3,11 +3,12 @@
 ; Part of Office Productivity Hub (v2.0.0)
 ;
 ; ARCHITECTURAL 3-TIER RECONCILIATION WORKFLOW:
-; 1. Tier 1 (Micro Bottom-Up): Empirical Member-Wise Material & Labor Schedule (C1)
-;    - Concrete m³, Steel by member (Slab 1%, Beam 2%, Col 2.5%, Footing 0.8%)
-;    - Shuttering Ply Sheets (0.22x), Battens (19.82x), Nails/Wire (75g/m²), Oil (0.065 L/m²)
-;    - Cement by activity (RCC, Masonry, Plaster, Flooring), Bricks, Sand, Aggregate
-;    - Conduit (1.0 m/m²), Wire (10.0 m/m²), Painting & Putty (3x Carpet Area)
+; 1. Tier 1 (Micro Bottom-Up): Empirical Member-Wise Material & Deep Trade Manpower Schedule (C1)
+;    - Materials: Concrete m³, Steel by member (Slab 1%, Beam 2%, Col 2.5%, Footing 0.8%), Shuttering Ply/Props,
+;      Cement by activity (RCC, Masonry, Plaster, Flooring), Bricks, Sand, Aggregate, Tiles, Paint, Conduit & Wire
+;    - Manpower (Mandays & Wages): 9 Trades (Concrete 0.24S+2.9U/m³, Brick 1.35m³/d, Plaster 14.5m²/d, Shutter 11m²/d,
+;      Rebar 0.135MT/d, Flooring 13.5m²/d, Paint 28m²/d, MEP Labor) + JCB Machine Excavation (30m³/hr @ ₹1,400/hr)
+;    - Labor Reconciliation: Explicit Trade Manpower Sum verified against Flat Rate Benchmark (₹377.40/sqft) <= 2.0% variance
 ; 2. Tier 2 (Meso Trade-Packages): Package Unit Rates Model (C2)
 ;    - Civil Structure (₹751.25), Finishing (₹467.50), Electrical (₹133), Plumbing (₹126),
 ;      Fire Fighting (₹40), External Dev (₹94.50) + COP (10%)
@@ -486,10 +487,80 @@ class CivilEstimator {
         costFlooring := (tileAreaSqFt * tileRateSqFt) + (areaSqFt * 40.0)
         costJoinery := areaSqFt * 130.0
 
-        ; 9. Site Structural Labor & Excavation
-        costSiteLabor := areaSqFt * 377.40
+        ; ==============================================================================================================
+        ; 9. DEEP MANPOWER ESTIMATION & TRADE-WISE LABOR RECONCILIATION ENGINE
+        ; ==============================================================================================================
+        ; A. Daily Wage Coefficients
+        wMason   := cfg.Has("WageMasonPerDay") ? cfg["WageMasonPerDay"] : 950.0
+        wBar     := cfg.Has("WageBarbenderPerDay") ? cfg["WageBarbenderPerDay"] : 900.0
+        wCarp    := cfg.Has("WageCarpenterPerDay") ? cfg["WageCarpenterPerDay"] : 900.0
+        wPaint   := cfg.Has("WagePainterPerDay") ? cfg["WagePainterPerDay"] : 850.0
+        wHelper  := cfg.Has("WageHelperPerDay") ? cfg["WageHelperPerDay"] : 600.0
+        jcbRateHr:= cfg.Has("JcbHourlyRate") ? cfg["JcbHourlyRate"] : 1400.0
 
-        costTier1 := costSteel + costCement + costShuttering + costBricks + costSand + costAgg + costElectrical + costPlumbing + costPainting + costFlooring + costJoinery + costSiteLabor
+        ; B. Trade Quantities & Mandays
+        ; 1. Concrete Placing & Curing (0.24 skilled + 2.90 unskilled mandays/m³)
+        concSkilledDays   := totalConcCum * (cfg.Has("ConcretePourSkilledPerCum") ? cfg["ConcretePourSkilledPerCum"] : 0.24)
+        concUnskilledDays := totalConcCum * (cfg.Has("ConcretePourUnskilledPerCum") ? cfg["ConcretePourUnskilledPerCum"] : 2.90)
+        costConcLabor     := (concSkilledDays * wMason) + (concUnskilledDays * wHelper)
+
+        ; 2. Brick Masonry (1 Mason + 2 Helpers @ 1.35 m³/day)
+        brickCrewDays   := brickMasonryCum / (cfg.Has("BrickworkOutputCumPerDay") ? cfg["BrickworkOutputCumPerDay"] : 1.35)
+        costBrickLabor  := brickCrewDays * (wMason + (2 * wHelper))
+
+        ; 3. Plastering (1 Mason + 2 Helpers @ 14.50 m²/day)
+        plasterCrewDays := wallAreaSqM / (cfg.Has("PlasterOutputSqMPerDay") ? cfg["PlasterOutputSqMPerDay"] : 14.50)
+        costPlasterLabor:= plasterCrewDays * (wMason + (2 * wHelper))
+
+        ; 4. Shuttering / Formwork (1 Carpenter + 2 Helpers @ 11.00 m²/day)
+        shutterCrewDays := shutterAreaSqM / (cfg.Has("ShutteringOutputSqMPerDay") ? cfg["ShutteringOutputSqMPerDay"] : 11.00)
+        costShutterLabor:= shutterCrewDays * (wCarp + (2 * wHelper))
+
+        ; 5. Steel Reinforcement Binding (2 Bar Benders + 2 Helpers @ 0.135 MT/day)
+        rebarCrewDays   := totalSteelTonnes / (cfg.Has("RebarBindingOutputMtPerDay") ? cfg["RebarBindingOutputMtPerDay"] : 0.135)
+        costRebarLabor  := rebarCrewDays * ((2 * wBar) + (2 * wHelper))
+
+        ; 6. Flooring / Vitrified Tiles (1 Mason + 2 Helpers @ 13.50 m²/day)
+        floorAreaSqM    := tileAreaSqFt * 0.09290304
+        floorCrewDays   := floorAreaSqM / (cfg.Has("FlooringOutputSqMPerDay") ? cfg["FlooringOutputSqMPerDay"] : 13.50)
+        costFloorLabor  := floorCrewDays * (wMason + (2 * wHelper))
+
+        ; 7. Painting (1 Painter + 1 Helper @ 28.00 m²/day)
+        paintCrewDays   := wallAreaSqM / (cfg.Has("PaintingOutputSqMPerDay") ? cfg["PaintingOutputSqMPerDay"] : 28.00)
+        costPaintLabor  := paintCrewDays * (wPaint + wHelper)
+
+        ; 8. Electrical & Plumbing Trade Labor
+        rateElecLabor   := cfg.Has("ElectricalLaborRatePerSqFt") ? cfg["ElectricalLaborRatePerSqFt"] : 32.50
+        ratePlumbLabor  := cfg.Has("PlumbingLaborRatePerSqFt") ? cfg["PlumbingLaborRatePerSqFt"] : 29.50
+        costElecLabor   := areaSqFt * rateElecLabor
+        costPlumbLabor  := areaSqFt * ratePlumbLabor
+
+        ; 9. Machine Excavation (JCB only @ 30 m³/hr)
+        excavationCum   := areaSqM * 0.75
+        jcbHours        := excavationCum / (cfg.Has("JcbExcavationCumPerHour") ? cfg["JcbExcavationCumPerHour"] : 30.0)
+        costJcbLabor    := jcbHours * jcbRateHr
+
+        ; C. Aggregate Trade-Wise Mandays
+        totalMasonDays       := Round(concSkilledDays + brickCrewDays + plasterCrewDays + floorCrewDays, 1)
+        totalBarbenderDays   := Round(rebarCrewDays * 2, 1)
+        totalCarpenterDays   := Round(shutterCrewDays, 1)
+        totalPainterDays     := Round(paintCrewDays, 1)
+        totalElectricianDays := Round((areaSqFt / 100.0) * 0.23, 1)
+        totalPlumberDays     := Round((areaSqFt / 100.0) * 0.21, 1)
+        totalHelperDays      := Round(concUnskilledDays + (brickCrewDays * 2) + (plasterCrewDays * 2) + (shutterCrewDays * 2) + (rebarCrewDays * 2) + (floorCrewDays * 2) + paintCrewDays + (areaSqFt * 0.02), 1)
+        totalManDays         := Round(totalMasonDays + totalBarbenderDays + totalCarpenterDays + totalPainterDays + totalElectricianDays + totalPlumberDays + totalHelperDays, 0)
+
+        ; D. Sum Explicit Manpower vs Flat Benchmark & 1-2% Variance Verification
+        costExplicitLabor := costConcLabor + costBrickLabor + costPlasterLabor + costShutterLabor + costRebarLabor + costFloorLabor + costPaintLabor + costElecLabor + costPlumbLabor + costJcbLabor
+        costFlatLabor     := areaSqFt * 377.40
+        laborVariancePercent := Abs(costExplicitLabor - costFlatLabor) / costFlatLabor * 100.0
+        maxLaborVar := cfg.Has("LaborReconciliationTolerancePercent") ? cfg["LaborReconciliationTolerancePercent"] : 2.0
+        isLaborReconciled := (laborVariancePercent <= maxLaborVar)
+
+        costMaterialsOnly := costSteel + costCement + costShuttering + costBricks + costSand + costAgg + costElectrical + costPlumbing + costPainting + costFlooring + costJoinery
+        costSiteLabor := costExplicitLabor
+
+        costTier1 := costMaterialsOnly + costSiteLabor
 
         ; ==============================================================================================================
         ; TIER 2: Meso Work-Package Based Model (C2)
@@ -540,9 +611,11 @@ class CivilEstimator {
             out .= "     🏗️ 3-TIER VERIFIED CIVIL COST & MATERIAL QUANTITY ESTIMATE (BOQ)           `n"
             out .= "================================================================================`n"
             out .= Format("Project Scope: {1} sq ft ({2:0.2f} m²) | Quality: {3}`n", Fmt(areaSqFt), areaSqM, tierName)
-            out .= Format("3-Tier Reconciliation: C₁ (Material) ₹{1} | C₂ (Package) ₹{2} | C₃ (Macro) ₹{3}`n", Fmt(costTier1), Fmt(costTier2), Fmt(costTier3))
+            out .= Format("3-Tier Reconciliation: C₁ (Material+Labor) ₹{1} | C₂ (Package) ₹{2} | C₃ (Macro) ₹{3}`n", Fmt(costTier1), Fmt(costTier2), Fmt(costTier3))
             out .= Format("Reconciliation Status: ✔️ VERIFIED (Max Variance = {1:0.2f}% ≤ {2:0.1f}%)`n`n", maxVariance, maxAllowedVar)
             out .= Format("💰 TOTAL ESTIMATED PROJECT BUDGET: ₹{1} (₹{2:0.0f} / sq ft)`n", Fmt(meanBudget), meanBudget / areaSqFt)
+            out .= Format("   ├── 🧱 Material Component : ₹{1} ({2:0.1f}%) [₹{3:0.0f}/sqft]`n", Fmt(costMaterialsOnly), (costMaterialsOnly / costTier1) * 100, costMaterialsOnly / areaSqFt)
+            out .= Format("   └── 👷 Manpower / Labor   : ₹{1} ({2:0.1f}%) [₹{3:0.0f}/sqft] ({4} Mandays, Var vs Flat: {5:0.2f}%)`n", Fmt(costSiteLabor), (costSiteLabor / costTier1) * 100, costSiteLabor / areaSqFt, Fmt(totalManDays), laborVariancePercent)
             out .= "--------------------------------------------------------------------------------`n"
             out .= Format("1. Civil Structure (Foundation, RCC, Formwork)  : ₹{1} ({2:0.1f}%)`n", Fmt(pkgCivilStruct), (pkgCivilStruct/costTier2)*100)
             out .= Format("2. Finishing (Flooring, Paint, Plaster, POP)   : ₹{1} ({2:0.1f}%)`n", Fmt(pkgFinishing), (pkgFinishing/costTier2)*100)

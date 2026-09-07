@@ -1,0 +1,81 @@
+﻿{
+  "category": "🔄 Recipe",
+  "description": "Calculates standard forward GST on base amount(s) and converts total amount to words",
+  "id": "recipe_forward_gst_words",
+  "input_source": "selection",
+  "name": "Normal Forward GST & Words",
+  "sink": "clipboard",
+  "steps": [
+    {
+      "bindings": {
+        "text": "input.text"
+      },
+      "id": "step_1",
+      "settings": {
+        "delimiter": "\\n"
+      },
+      "tool_id": "primitive_split",
+      "tool_version": 1
+    },
+    {
+      "bindings": {
+        "items": "step_1.items"
+      },
+      "id": "step_2",
+      "is_container": 1,
+      "loop_return_step": "step_2_4",
+      "sub_steps": [
+        {
+          "bindings": {
+            "text": "loop.item"
+          },
+          "id": "step_2_1",
+          "settings": {},
+          "tool_id": "parse_number",
+          "tool_version": 1
+        },
+        {
+          "bindings": {
+            "amount": "step_2_1.number"
+          },
+          "id": "step_2_2",
+          "settings": {
+            "rate": 18
+          },
+          "tool_id": "normal_gst",
+          "tool_version": 1
+        },
+        {
+          "bindings": {
+            "number": "step_2_2.total"
+          },
+          "id": "step_2_3",
+          "settings": {},
+          "tool_id": "number_to_words",
+          "tool_version": 1
+        },
+        {
+          "bindings": {},
+          "id": "step_2_4",
+          "settings": {
+            "template": "{step_2_2.summary}\nAmount in Words: {step_2_3.words}"
+          },
+          "tool_id": "primitive_template_combine",
+          "tool_version": 1
+        }
+      ]
+    },
+    {
+      "bindings": {
+        "items": "step_2.items"
+      },
+      "id": "step_3",
+      "settings": {
+        "delimiter": "\\n\\n"
+      },
+      "tool_id": "primitive_join",
+      "tool_version": 1
+    }
+  ],
+  "version": 1
+}

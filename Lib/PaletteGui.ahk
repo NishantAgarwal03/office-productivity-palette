@@ -151,7 +151,7 @@ FilterPaletteItems(query, forceExpand := false) {
     PaletteListView.Delete()
 
     for idx, item in PaletteItems {
-        numBadge := (idx <= 9) ? ("[" . idx . "]") : ""
+        numBadge := (idx <= 9) ? ("A+" . idx) : ""
         shortcutText := FormatShortcutBadge(item)
         cleanDesc := item.description
 
@@ -179,8 +179,8 @@ FilterPaletteItems(query, forceExpand := false) {
     }
 
     try {
-        PaletteListView.ModifyCol(1, "38 Center")
-        PaletteListView.ModifyCol(2, 255)
+        PaletteListView.ModifyCol(1, "42 Center")
+        PaletteListView.ModifyCol(2, 251)
         PaletteListView.ModifyCol(3, 95)
         PaletteListView.ModifyCol(4, 270)
         PaletteListView.ModifyCol(5, "100 Right")
@@ -188,9 +188,9 @@ FilterPaletteItems(query, forceExpand := false) {
 
     if (PaletteItems.Length > 0 && IsObject(PaletteStatus)) {
         if (qTrim == "")
-            PaletteStatus.Text := "⚡ Top " . PaletteItems.Length . " Most Used Tools  |  Tap [1.." . PaletteItems.Length . "] or [Enter]  |  [↑↓] Navigate  |  [Esc] Dismiss"
+            PaletteStatus.Text := "⚡ Top " . PaletteItems.Length . " Most Used Tools  |  Tap [Alt+1.." . PaletteItems.Length . "] or [Enter]  |  [↑↓] Navigate  |  [Esc] Dismiss"
         else
-            PaletteStatus.Text := "Found " . PaletteItems.Length . " tools  |  Tap [1..9] or [Enter] to Execute  |  [↑↓] Navigate  |  [Esc] Dismiss"
+            PaletteStatus.Text := "Found " . PaletteItems.Length . " tools  |  Tap [Alt+1..9] or [Enter] to Execute  |  [↑↓] Navigate  |  [Esc] Dismiss"
     }
 }
 

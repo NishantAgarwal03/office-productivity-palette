@@ -1,13 +1,13 @@
 ; ======================================================================================================================
 ; Module: Globals.ahk - Centralized Global State, Configuration & Unified Theme Tokens
-; Part of Office Productivity Hub (v2.0.0)
+; Part of Office Productivity Hub (v2.0.1)
 ; ======================================================================================================================
 
 #Requires AutoHotkey v2.0
 
 ; --- Application Identity ---
 global AppTitle           := "Office Productivity Hub"
-global AppVersion         := "2.0.0"
+global AppVersion         := "2.0.1"
 
 ; --- Unified Theme Design Tokens ---
 global ThemePrimary       := "7B909D" ; Slate Grey / Cool Steel Blue
@@ -44,10 +44,63 @@ global SnippetsPreImportFile  := DataDir . "\Backups\snippets_backup_pre_import.
 global ActionTasksFile        := DataDir . "\office_productivity_tasks.csv"
 global ActionArchiveFile      := DataDir . "\office_tasks_archive.csv"
 global CivilEngineeringDefaultsFile := DataDir . "\CivilEngineeringDefaults.ini"
+global SettingsFile           := DataDir . "\office_productivity_settings.ini"
+global DefaultDateFormatId    := 6
+global RecipesDir             := DataDir . "\Recipes"
+global RunHistoryFile         := DataDir . "\Logs\WorkflowRunHistory.json"
 global TelemetryDir           := IsTestMode ? (DataDir . "\Telemetry") : (A_AppData . "\OfficeProductivityHub")
 global TelemetryStatsFile     := TelemetryDir . "\usage_analytics.ini"
 global TelemetryErrorLog      := TelemetryDir . "\error_telemetry.log"
 global TelemetryMissLog       := TelemetryDir . "\zero_result_searches.log"
+
+LoadAppSettings() {
+    global SettingsFile, DefaultDateFormatId
+    try {
+        val := Integer(IniRead(SettingsFile, "DateFormat", "DefaultFormatId", "6"))
+        if (val >= 1 && val <= 9)
+            DefaultDateFormatId := val
+        else
+            DefaultDateFormatId := 6
+    } catch {
+        DefaultDateFormatId := 6
+    }
+    return DefaultDateFormatId
+}
+
+SaveDefaultDateFormat(formatId) {
+    global SettingsFile, DefaultDateFormatId
+    idNum := Integer(formatId)
+    if (idNum < 1 || idNum > 9)
+        return false
+    DefaultDateFormatId := idNum
+    try {
+        IniWrite(String(idNum), SettingsFile, "DateFormat", "DefaultFormatId")
+        return true
+    } catch {
+        return false
+    }
+}
+
+GetDefaultDateFormatName() {
+    global DefaultDateFormatId
+    names := [
+        "DD/MM/YYYY",
+        "DD-MM-YYYY",
+        "DD.MM.YYYY",
+        "DD/MM/YY",
+        "DD-MM-YY",
+        "DD Month YYYY",
+        "Month DD, YYYY",
+        "DD Month, YYYY",
+        "DDDD, dd Month YYYY"
+    ]
+    idx := (DefaultDateFormatId >= 1 && DefaultDateFormatId <= 9) ? DefaultDateFormatId : 6
+    return names[idx]
+}
+
+; --- Workflow Composer & Diagnostics ---
+global WorkflowComposerGui    := ""
+global RunHistoryGui          := ""
 
 ; --- Central Action & Snippet Registry ---
 global BuiltInActions         := []          ; Array of registered tool objects: {name, category, description, keywords, callback, chord, isCustom}
@@ -94,9 +147,11 @@ global PrioritizerMiniGui := ""
 global NudgeHudGui        := ""
 global YellowHudGui       := ""
 global ToastHudGui        := ""
+global ToastTextCtrl      := ""
 global FindReplaceGui     := ""
 global CivilPromptGui     := ""
 global CivilResultHudGui  := ""
+global DateFormatGui      := ""
 
 global LastClassifiedTime := 0
 global LastPrioritizedTime:= 0
@@ -107,4 +162,4 @@ global LeaderActive       := false
 global LastShiftTime      := 0
 global LastCtrlTime       := 0
 global LastExecutedAction := ""
-global SessionStartTime   := A_Now
+global SessionStartTime   := A_Now

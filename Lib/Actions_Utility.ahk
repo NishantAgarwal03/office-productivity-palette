@@ -38,7 +38,7 @@ ConvertClipboardPath(slashType) {
 
     A_Clipboard := clean
     
-    if !WinActive("ahk_class CabinetWClass") && !WinActive("ahk_class ExploreWClass") && !WinActive("ahk_class Progman") && !WinActive("ahk_class WorkerW") {
+    if CanPasteToTargetWindow() {
         InsertText(clean)
     }
     
@@ -115,11 +115,23 @@ ToggleAlwaysOnTop() {
         return
     exStyle := WinGetExStyle(hwnd)
     isTop := (exStyle & 0x8)
+    curTitle := WinGetTitle(hwnd)
+    
     if isTop {
+        ; Unpin window
         WinSetAlwaysOnTop(0, hwnd)
+        if InStr(curTitle, "[📌] ") == 1 {
+            newTitle := SubStr(curTitle, 6) ; remove '[📌] '
+            try WinSetTitle(newTitle, hwnd)
+        }
         ShowToast("📌 Window Unpinned (Normal)", 1500)
     } else {
+        ; Pin window
         WinSetAlwaysOnTop(1, hwnd)
+        if InStr(curTitle, "[📌] ") != 1 {
+            newTitle := "[📌] " . curTitle
+            try WinSetTitle(newTitle, hwnd)
+        }
         ShowToast("📌 Window Pinned (Always on Top)", 1500)
     }
 }
