@@ -27,7 +27,14 @@ EvaluateMathSelection() {
     
     evalRes := SafeEvaluateMath(sel)
     if (!evalRes.success) {
-        ShowToast("Math Eval Error: " . evalRes.errorMessage, 2500)
+        ; DEFECT-034: Sanitize error messages — never expose raw COM HRESULT codes (e.g. 0x80040154)
+        ; to the user.  In v1.0.0 a missing MSScriptControl COM class produced "Class not registered"
+        ; with a hex error code that was meaningless to end-users.  Guard defensively so any future
+        ; regression surfaces a clear, actionable message instead of a hex code.
+        errMsg := evalRes.errorMessage
+        if (InStr(errMsg, "0x") || InStr(errMsg, "Class not registered") || InStr(errMsg, "MSScriptControl"))
+            errMsg := "Math evaluator unavailable — expression uses unsupported syntax or a system component is missing."
+        ShowToast("⚠️ " . errMsg, 2500)
         return
     }
     
@@ -62,33 +69,36 @@ CalculatePercentageDelta() {
         ib := OfficeInputBox("Enter two numbers (e.g. 100 125 or 1L 1.25L):", "Percentage Delta")
         if (ib.Result != "OK" || Trim(ib.Value) = "")
             return
-        nums := ExtractAllNumbers(ib.Value)
-        if (nums.Length < 2)
-            return
+        sel := ib.Value
     }
+    res := ComputePercentageChange(sel)
+    ShowCalculationResult("Percentage Change & Growth", res["summary"])
+}
+
+ComputePercentageChange(text) {
+    nums := ExtractAllNumbers(text)
+    if (nums.Length < 2)
+        throw Error("Percentage Change: Expected 2 numbers in input text (e.g. '100 to 125')")
     oldVal := nums[1]
     newVal := nums[2]
-    if (oldVal = 0 && newVal = 0) {
-        ShowToast("⚠️ Both values cannot be 0", 2500)
-        return
-    }
-    
-    ; Relative change from oldVal to newVal
-    relStr := ""
-    if (oldVal != 0) {
-        delta := ((newVal - oldVal) / oldVal) * 100
-        relStr := Format("Change ({:0.2f} -> {:0.2f}): {:+0.2f}%", oldVal, newVal, delta)
-    } else {
-        relStr := Format("Change ({:0.2f} -> {:0.2f}): N/A (Base is 0)", oldVal, newVal)
-    }
-    
-    ; Symmetric percentage difference (|A - B| / Avg)
+    if (oldVal = 0 && newVal = 0)
+        throw Error("Percentage Change: Both values cannot be 0")
+
+    relPct := (oldVal != 0) ? (((newVal - oldVal) / oldVal) * 100) : 0.0
     avgVal := (Abs(oldVal) + Abs(newVal)) / 2.0
     symmDiff := (avgVal > 0) ? (Abs(newVal - oldVal) / avgVal) * 100 : 0.0
+
+    relStr := (oldVal != 0) ? Format("Change ({:0.2f} -> {:0.2f}): {:+0.2f}%", oldVal, newVal, relPct) : Format("Change ({:0.2f} -> {:0.2f}): N/A (Base is 0)", oldVal, newVal)
     symmStr := Format("Symm Difference: {:0.2f}% (|A-B| / Avg)", symmDiff)
-    
-    out := relStr . "`n" . symmStr
-    ShowCalculationResult("Percentage Change & Growth (" . oldVal . " -> " . newVal . ")", out)
+    summary := relStr . "`n" . symmStr
+
+    return Map(
+        "relative_change", relPct,
+        "symmetric_change", symmDiff,
+        "summary", summary,
+        "result", summary,
+        "text", summary
+    )
 }
 
 GenerateSecurePassword(length := 16) {
