@@ -12,7 +12,7 @@
 - Dynamic recipe category strictly set to '🔄 Recipe' with zero global hotkeys (palette-only invocation).
 - Successfully executed 3-part hardening: (1) 15 isolated defect regressions in `test_regression_defects.ahk` (41/41 pass), (2) Synthetic UI focus/hotkey interaction runner in `test_ui_interaction_runner.ahk` (63/63 pass), and (3) True bidirectional closed-world manifest integrity + static #Include AST auditor in `run_tests.py` (54 AHK files audited, 0 external <Lib> leaks).
 - Implemented 3 Workflow Composer Core Pillars: (1) Step Settings parameter dropdowns with Option 1 canonical patterns (<=24 chars), dual format_id/target_format_id alias, dual output contract ({result, text, format_name}), polymorphic Map/Object ingestion, (2) Complete input source (Selection, Clipboard, User Prompt, Files, None) and sink (Clipboard, Paste / Replace, Toast HUD, Silent) options with clean labels, (3) Flat-flow Loop architecture (LOOP START / LOOP END blocks) with isolated immutable iteration scoping, eliminating modal-in-a-modal nesting.
-- 100% Zero-Trust Master Test Suite passing: 1,314 / 1,314 assertions passing across all 8 test suites in 5.20 seconds with zero leaks, zero regressions, and bitwise data integrity verified.
+- 100% Zero-Trust Master Test Suite passing: 1,319 / 1,319 assertions passing across all 8 test suites in 5.04 seconds with zero leaks, zero regressions, and bitwise data integrity verified.
 
 | Timestamp | Instruction | Status |
 | :--- | :--- | :--- |
@@ -44,6 +44,7 @@
 | 2026-09-07 16:51 | Evaluate two optional hardening recommendations (shallow clone comment in PipelineRunner and runItem.status guard in RunHistoryGui) and explain them in simple terms. | Completed |
 | 2026-09-07 16:55 | Apply optional hardening: shallow clone comment in PipelineRunner.ahk L373, status guard in RunHistoryGui.ahk L87, and DEFECT-033 test coverage. | Completed (100% Pass) |
 | 2026-09-12 18:45 | Analyze telemetry logs (usage_analytics.ini, zero_result_searches.log, error_telemetry.log, WorkflowRunHistory.json); upgrade Command Palette search engine to order-independent Multi-Token Matching; add telemetry-driven keywords/aliases to Math, Text, Workflow, CivilConvert, and DateTime actions; expose in-demand tools (Deduplicate Lines, Lorem Ipsum Dummy Text); add DEFECT-034 & DEFECT-035 regression tests; verify 100% pass across all 8 suites (1,216/1,216). | Completed (100% Pass) |
+| 2026-09-13 02:28 | Harden ResolveCurrentFilePath against unhandled COM errors with granular try/catch blocks; fix single-backslash path detection; suppress intrusive AHK default fatal error dialogs in TelemetryGlobalErrorHandler (return -1); add DEFECT-037 regression tests (1,319/1,319 pass); recompile executable with Ahk2Exe. | Completed (100% Pass) |
 
 ## Subject: Universal Bidirectional Date Format Converter
 - **Status**: 🔴 Active

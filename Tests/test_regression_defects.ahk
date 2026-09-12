@@ -1411,6 +1411,34 @@ try {
     AssertTrue("DEFECT-036", "Deduplicate Lines action registered", dedupFound)
     AssertTrue("DEFECT-036", "Insert Lorem Ipsum Dummy Text action registered", loremFound)
 
+    ; --------------------------------------------------------------------------------------------------
+    ; DEFECT-037: ResolveCurrentFilePath COM Resilience & Zero-Crash Contract
+    ; --------------------------------------------------------------------------------------------------
+    global TargetWindowHwnd
+    TargetWindowHwnd := 0
+    resPath := ""
+    threwError := false
+    try {
+        resPath := ResolveCurrentFilePath()
+    } catch {
+        threwError := true
+    }
+    AssertFalse("DEFECT-037", "ResolveCurrentFilePath does not throw uncaught exceptions", threwError)
+    AssertTrue("DEFECT-037", "ResolveCurrentFilePath returns a String", IsSet(resPath) && Type(resPath) = "String")
+
+    ; Verify resilient handling with invalid/detached target HWND
+    TargetWindowHwnd := 99999999
+    resInvalidHwnd := ""
+    threwInvalidHwnd := false
+    try {
+        resInvalidHwnd := ResolveCurrentFilePath()
+    } catch {
+        threwInvalidHwnd := true
+    }
+    AssertFalse("DEFECT-037", "ResolveCurrentFilePath handles invalid target HWND safely without throwing", threwInvalidHwnd)
+    AssertTrue("DEFECT-037", "ResolveCurrentFilePath with invalid HWND returns empty or valid string", Type(resInvalidHwnd) = "String")
+    TargetWindowHwnd := 0
+
 } catch as testErr {
     FailCount++
     TestLogs.Push("[FATAL_REGRESSION_CRASH] " . testErr.Message . " (Line: " . testErr.Line . ")")

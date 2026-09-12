@@ -99,7 +99,8 @@ LogAppError(context, errObj) {
 
 TelemetryGlobalErrorHandler(thrown, mode) {
     LogAppError("GlobalUnhandledException (Mode: " . mode . ")", thrown)
-    return false
+    ; Suppress AHK default fatal crash dialog and exit the offending thread cleanly
+    return -1
 }
 
 ExportDiagnosticsReport() {
