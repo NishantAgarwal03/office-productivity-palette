@@ -354,7 +354,9 @@ All insert literal text, require no selection, overwrite the clipboard, and do n
 ### 5.9 Sum Column of Selected Numbers
 
 - Uses `ExtractAllNumbers` across the selected text; grouped numbers, currencies, signs, multiple space-separated values and supported units are consumed, and zeros are included in the count.
-- Output: `Sum (N numbers): ₹<Indian commas, two decimals> (<plain fixed-two-decimal total>)`.
+- Output: Itemized receipt format:
+  `Items (N): <num1> + <num2> + ...`
+  `Total    : ₹<Indian commas, two decimals> (<plain fixed-two-decimal total>)`.
 - **Runtime-verified:** `1,25,000 + 50,000 + 2,00,000` → total `375000`; mixed currency/sign/accounting/unit tokens are also covered.
 - **Partially working:** standalone `L` suffix is not expanded, and rejected-token details are not reported.
 

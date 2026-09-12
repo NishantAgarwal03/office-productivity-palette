@@ -213,6 +213,40 @@ RoundNumber(text, decimals := 2) {
     return String(text)
 }
 
+FormatSumOutput(nums) {
+    if (nums.Length = 0)
+        return ""
+
+    total := 0.0
+    for val in nums {
+        total += val
+    }
+
+    itemsExpr := ""
+    for numIdx, val in nums {
+        valStr := (Round(val, 2) = Round(val, 0)) ? String(Integer(Round(val, 0))) : RTrim(RTrim(Format("{:0.2f}", val), "0"), ".")
+        if (numIdx == 1) {
+            itemsExpr := valStr
+        } else if (val < 0) {
+            itemsExpr .= " - " . SubStr(valStr, 2)
+        } else {
+            itemsExpr .= " + " . valStr
+        }
+    }
+
+    itemsLabel := Format("Items ({}):", nums.Length)
+    padCount := Max(1, StrLen(itemsLabel) - StrLen("Total") - 1)
+    padSpaces := ""
+    loop padCount
+        padSpaces .= " "
+    totalLabel := "Total" . padSpaces . ":"
+
+    totalFormatted := (total < 0) ? "-₹" . FormatIndianCommas(Abs(total)) : "₹" . FormatIndianCommas(total)
+    totalPlain := Format("{:0.2f}", total)
+
+    return itemsLabel . " " . itemsExpr . "`n" . totalLabel . " " . totalFormatted . " (" . totalPlain . ")"
+}
+
 SumSelectedNumbers() {
     sel := SafeGetSelection()
     if (Trim(sel) = "") {
@@ -226,12 +260,8 @@ SumSelectedNumbers() {
         ShowToast("⚠️ No valid numbers found", 2000)
         return
     }
-    total := 0.0
-    for val in nums {
-        total += val
-    }
-    out := Format("Sum ({} numbers): ₹{} ({:0.2f})", nums.Length, FormatIndianCommas(total), total)
-    ShowCalculationResult("Sum of " . nums.Length . " Numbers", out)
+    out := FormatSumOutput(nums)
+    ShowCalculationResult("", out)
 }
 
 ; ======================================================================================================================

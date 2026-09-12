@@ -60,6 +60,10 @@ for n in colNums
     totalSum += n
 AssertInteg("CommaExtraction", "Sum 1,25,000 + 50,000 + 2,00,000 = 375000", totalSum == 375000, totalSum)
 
+sumReceipt := FormatSumOutput([100, 250, 150, 12])
+expectedReceipt := "Items (4): 100 + 250 + 150 + 12`nTotal    : ₹512.00 (512.00)"
+AssertInteg("SumFormat", "FormatSumOutput items and total alignment", sumReceipt == expectedReceipt, sumReceipt)
+
 pctNums := ExtractAllNumbers("1,00,000 to 1,25,000")
 AssertInteg("CommaExtraction", "Percentage delta comma nums", pctNums.Length == 2 && pctNums[1] == 100000 && pctNums[2] == 125000, pctNums.Length)
 

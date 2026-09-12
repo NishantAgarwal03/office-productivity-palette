@@ -346,7 +346,9 @@ TOOL 44: Sum Column of Selected Numbers
 ────────────────────────────────────────
   Intent: User selects a column of numbers (from a table, invoice, or list)
   and wants the total sum. Supports currency symbols, Indian formats, etc.
-  Output: "Sum (N numbers): ₹X,XX,XXX (XXXX.XX)"
+  Output:
+    Items (N): <num1> + <num2> + ...
+    Total    : ₹X,XX,XXX (XXXX.XX)
   Design Decision: Always shows ₹ symbol in output. This is intentional —
   the primary user is in India and most sums are monetary.
 

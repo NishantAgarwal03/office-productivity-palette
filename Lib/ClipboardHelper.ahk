@@ -6,17 +6,23 @@
 
 SafeGetSelection(timeoutSec := 0.4) {
     clipBackup := ClipboardAll()
-    A_Clipboard := ""
-    
-    SendInput("{Ctrl down}c{Ctrl up}")
-    
-    if !ClipWait(timeoutSec) {
-        A_Clipboard := clipBackup
-        return ""
+    sel := ""
+    try {
+        A_Clipboard := ""
+        SendInput("{Ctrl down}c{Ctrl up}")
+        if ClipWait(timeoutSec)
+            sel := A_Clipboard
+    } catch as err {
+        if IsSet(LogAppError)
+            LogAppError("SafeGetSelection", err)
+    } finally {
+        try {
+            A_Clipboard := clipBackup
+        } catch {
+            Sleep(20)
+            try A_Clipboard := clipBackup
+        }
     }
-    
-    sel := A_Clipboard
-    A_Clipboard := clipBackup
     return sel
 }
 
@@ -39,14 +45,21 @@ InsertText(text, restoreClipboard := false) {
         Sleep(30)
         SendInput("{Ctrl down}v{Ctrl up}")
         
-        if restoreClipboard {
-            Sleep(150)
-            try A_Clipboard := clipBackup
-        }
+        if restoreClipboard
+            Sleep(100)
     } catch as err {
         if IsSet(LogAppError)
             LogAppError("InsertText", err)
         try SendText(text)
+    } finally {
+        if (restoreClipboard && clipBackup is ClipboardAll) {
+            try {
+                A_Clipboard := clipBackup
+            } catch {
+                Sleep(20)
+                try A_Clipboard := clipBackup
+            }
+        }
     }
 }
 
@@ -89,12 +102,19 @@ CanPasteToTargetWindow(hwnd := 0) {
             return false
         }
 
-        ; 5. Win32 Focused Control Read-Only Style (ES_READONLY = 0x0800)
-        ctrl := ControlGetFocus("ahk_id " . hwnd)
-        if (ctrl) {
-            style := WinGetStyle(ctrl, "ahk_id " . hwnd)
-            if (style & 0x0800) ; ES_READONLY
-                return false
+        ; 5. Win32 Focused Control Read-Only & Disabled Style (ES_READONLY = 0x0800, WS_DISABLED = 0x08000000)
+        try {
+            ctrl := ControlGetFocus("ahk_id " . hwnd)
+            if (ctrl) {
+                style := ControlGetStyle(ctrl, "ahk_id " . hwnd)
+                if (style & 0x0800 || style & 0x08000000)
+                    return false
+
+                ; RichEdit inspection: EM_GETOPTIONS (0x044E) -> ECO_READONLY (0x0800)
+                opts := SendMessage(0x044E, 0, 0, ctrl, "ahk_id " . hwnd, , , 200)
+                if (opts & 0x0800)
+                    return false
+            }
         }
 
         return true
