@@ -1,17 +1,26 @@
 # Test Sandboxes & Transient Outputs
+**/_test_sandbox/
 _test_sandbox/
 master_test_summary.json
+**/master_test_summary.json
 results.json
-*_results.log
-Tests/results.json
-Tests/*_results.log
+**/results.json
+*.log
+**/*_results.log
+launch_diag.log
 
 # Python Cache
 __pycache__/
 *.py[cod]
+*$py.class
 
-# Temp & Editor
+# Temp, Editor & OS Artifacts
 *.tmp
 *.bak
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
 
 

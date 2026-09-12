@@ -94,6 +94,24 @@
 | 2026-09-07 21:00 | Diagnose Win+Shift+E PowerToys Text Extractor failure: audit PowerToys logs, eliminate intrusive ~LButton Up drag hook clobbering OCR clipboard, recompile executable, and verify 100% test pass. | Completed (100% Pass) |
 | 2026-09-12 19:25 | Diagnose intermittent Windows typing freeze bug caused by dropped Ctrl keyup from synthetic ~LButton Up drag-selection hook and A_MenuMaskKey; restore stashed PowerToys harmonization on master, integrate with multi-token search and in-demand tools, recompile executable, and achieve 1,314/1,314 Zero-Trust test pass. | Completed (100% Pass) |
 
+## Subject: Repository Housekeeping & Cleanup
+- **Status**: 🔴 Active
+- **Initial Score**: 9.5/10
+- **Final Score**: TBD
+- **Satisfaction Level**: TBD (user feedback)
+
+### Remarks
+- Executed comprehensive repository housekeeping: deleted 19 dead scratch/log files from `Dev_Scratch/`, purged 477 transient test artifacts from `Tests/_test_sandbox/`, deleted stale test runner logs, removed broken 87-byte dummy screenshot, and eliminated obsolete single-line `office_usage_stats.ini`.
+- Resolved root directory clutter: moved `Office_Productivity_Palette_v2.0.1_Combined_Audit.pdf` to `Docs/`, removed duplicate timestamped backup `Thumb_rules_converted_260831_ORIGINAL_BACKUP_20260831_212730.xlsx`, and organized `Thumb_rules_converted_260831_ORIGINAL_BACKUP.xlsx` into `Excel sheet for extimation/`.
+- Safely archived legacy v2.0.0 artifacts into `Archive/v2.0.0/` with descriptive `README.md`.
+- Synchronized Skill compliance: migrated finalized v2.0.0 subject tracker from `Docs/subject_tracker.md` to `.agents/skills/subject_tracker/ARCHIVE.md` per Section 6 archival mandate.
+- Upgraded `.gitignore` with recursive sandbox, log, and OS artifact exclusions.
+- 100% Zero-Trust Master Test Suite verified passing in Python 3.11: 1,314 / 1,314 assertions passing across all 8 test suites with sealed closed-world manifest reduced from 139 to 111 clean files.
+
+| Timestamp | Instruction | Status |
+| :--- | :--- | :--- |
+| 2026-09-12 19:37 | Housekeeping of repository: remove old files that are not usable, prune scratchpads and stale test logs, organize root documents and excel backups into structured folders, archive v2.0.0 baseline, upgrade .gitignore, and verify zero regressions (1,314/1,314 pass). | Completed (100% Pass) |
+
 ## Archived Subjects
 | Subject | Final Score | Date Archived |
 | :--- | :--- | :--- |

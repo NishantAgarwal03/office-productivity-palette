@@ -53,7 +53,6 @@ PROTECTED_PRODUCTION_FILES = [
     ROOT_DIR / "office_productivity_tasks.csv",
     ROOT_DIR / "office_tasks_archive.csv",
     ROOT_DIR / "CivilEngineeringDefaults.ini",
-    ROOT_DIR / "office_productivity_palette_v2.0.0.ahk",
     ROOT_DIR / "office_productivity_palette_v2.0.1.ahk",
 ]
 
@@ -68,6 +67,7 @@ EXCLUDED_MANIFEST_PATTERNS = [
     ".git",
     "__pycache__",
     "master_test_summary.json",
+    "Archive",
 ]
 
 SUITE_TIMEOUT_SECONDS = 60
