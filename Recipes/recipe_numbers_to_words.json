@@ -1,4 +1,4 @@
-﻿{
+{
   "category": "🔄 Recipe",
   "description": "Takes multiline numbers from selection, converts each to words, and outputs row-by-row",
   "id": "recipe_numbers_to_words",
@@ -22,43 +22,51 @@
         "items": "step_1.items"
       },
       "id": "step_2",
-      "is_container": 1,
-      "loop_return_step": "step_2_3",
-      "sub_steps": [
-        {
-          "bindings": {
-            "text": "loop.item"
-          },
-          "id": "step_2_1",
-          "settings": {},
-          "tool_id": "parse_number",
-          "tool_version": 1
-        },
-        {
-          "bindings": {
-            "number": "step_2_1.number"
-          },
-          "id": "step_2_2",
-          "settings": {},
-          "tool_id": "number_to_words",
-          "tool_version": 1
-        },
-        {
-          "bindings": {},
-          "id": "step_2_3",
-          "settings": {
-            "template": "{loop.item} : {step_2_2.words}"
-          },
-          "tool_id": "primitive_template_combine",
-          "tool_version": 1
-        }
-      ]
+      "settings": {},
+      "tool_id": "loop_start",
+      "tool_version": 1
     },
     {
       "bindings": {
-        "items": "step_2.items"
+        "text": "loop.item"
       },
       "id": "step_3",
+      "settings": {},
+      "tool_id": "parse_number",
+      "tool_version": 1
+    },
+    {
+      "bindings": {
+        "number": "step_3.number"
+      },
+      "id": "step_4",
+      "settings": {},
+      "tool_id": "number_to_words",
+      "tool_version": 1
+    },
+    {
+      "bindings": {},
+      "id": "step_5",
+      "settings": {
+        "template": "{loop.item} : {step_4.words}"
+      },
+      "tool_id": "primitive_template_combine",
+      "tool_version": 1
+    },
+    {
+      "bindings": {
+        "collect": "step_5.text"
+      },
+      "id": "step_6",
+      "settings": {},
+      "tool_id": "loop_end",
+      "tool_version": 1
+    },
+    {
+      "bindings": {
+        "items": "step_6.items"
+      },
+      "id": "step_7",
       "settings": {
         "delimiter": "\\n"
       },

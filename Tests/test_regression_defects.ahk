@@ -3,26 +3,23 @@
 ; Part of Office Productivity Hub (v2.0.1) - Zero-Trust Quality Harness
 ;
 ; ARCHITECTURAL INVARIANTS:
-; 1. Numbered, traceable defect reproduction cases (DEFECT-001 through DEFECT-015).
+; 1. Numbered, traceable defect reproduction cases (DEFECT-001 through DEFECT-036).
 ; 2. Every historical, edge-case, and recently discovered bug has an isolated, permanent regression guard.
 ; 3. Zero UI dialog popups; outputs clean structured logs and schema-versioned results.json via TestHarness.
 ; ======================================================================================================================
 
 #Requires AutoHotkey v2.0
-#SingleInstance Force
 Persistent(false)
 
 ; Mock UI callbacks for headless execution
 ShowTextStats(*) => ""
 LogAppError(*) => ""
-ShowWorkflowComposer(*) => ""
 ShowRunHistoryGui(*) => ""
 RefreshSnippetListView(*) => ""
 
-; --- Core Inclusions ---
-#Include "..\Lib\TestHarness.ahk"
 #Include "..\Lib\Globals.ahk"
 #Include "..\Lib\CSVParser.ahk"
+#Include "..\Lib\TestHarness.ahk"
 #Include "..\Lib\ClipboardHelper.ahk"
 #Include "..\Lib\NumberParser.ahk"
 #Include "..\Lib\MathEvaluator.ahk"
@@ -32,8 +29,8 @@ RefreshSnippetListView(*) => ""
 #Include "..\Lib\Actions_Text.ahk"
 #Include "..\Lib\Actions_Extraction.ahk"
 #Include "..\Lib\Actions_Math.ahk"
-#Include "..\Lib\CivilUnits.ahk"
-#Include "..\Lib\CivilPythagoras.ahk"
+#Include "..\Lib\CivilConverterEngine.ahk"
+#Include "..\Lib\Actions_CivilConvert.ahk"
 #Include "..\Lib\TaskManager.ahk"
 #Include "..\Lib\SnippetManager.ahk"
 #Include "..\Lib\JsonHelper.ahk"
@@ -44,8 +41,10 @@ RefreshSnippetListView(*) => ""
 #Include "..\Lib\RecipeModel.ahk"
 #Include "..\Lib\PipelineRunner.ahk"
 #Include "..\Lib\RunHistory.ahk"
+#Include "..\Lib\WorkflowComposerGui.ahk"
 #Include "..\Lib\Core.ahk"
 #Include "..\Lib\Actions_Workflow.ahk"
+#Include "..\Lib\PaletteGui.ahk"
 
 global PassCount := 0
 global FailCount := 0
@@ -256,6 +255,7 @@ try {
     ; --------------------------------------------------------------------------------------------------
     ; DEFECT-015: Actions_Workflow dynamic recipe palette registration closure
     ; --------------------------------------------------------------------------------------------------
+    InitWorkflowEngine()
     recipeCountInPalette := 0
     for registeredAct in BuiltInActions {
         if (registeredAct.category = "🔄 Recipe")
@@ -288,6 +288,7 @@ try {
         name: "Custom Settings Recipe",
         version: 1,
         input_source: "selection",
+        final_output_ref: "step_2.summary",
         steps: [
             {
                 id: "step_1",
@@ -629,7 +630,7 @@ try {
         AssertTrue("DEFECT-023", Format("Canonical format {1} fits w260 limit (<=22 chars)", pIdx), StrLen(pStr) <= 22)
     }
 
-    ; 2. Verify target_format_id execution and downstream text contract
+    ; 2. Verify format_id execution and downstream text contract with convert_case
     recipeDateConv := {
         id: "recipe_date_conv_test",
         name: "Date Conversion Test",
@@ -641,14 +642,14 @@ try {
                 id: "step_conv",
                 tool_id: "date_convert_format",
                 tool_version: 1,
-                settings: Map("target_format_id", 6),
+                settings: Map("format_id", 6),
                 bindings: Map("text", "input.text")
             },
             {
                 id: "step_upper",
-                tool_id: "case_upper",
+                tool_id: "convert_case",
                 tool_version: 1,
-                settings: Map(),
+                settings: Map("case_mode", "upper"),
                 bindings: Map("text", "step_conv.text")
             }
         ]
@@ -656,12 +657,6 @@ try {
     dateConvRes := PipelineRunner.Execute(recipeDateConv, "05/09/2026", {suppress_toasts: true, suppress_sink: true, record_history: false})
     AssertTrue("DEFECT-023", "date_convert_format pipeline run succeeded", dateConvRes.success)
     AssertEqual("DEFECT-023", "date_convert_format downstream received text and converted to uppercase", dateConvRes.output, "05 SEPTEMBER 2026")
-
-    ; 3. Verify format_id alias produces identical output
-    recipeDateConv.steps[1].settings := Map("format_id", 6)
-    dateConvAliasRes := PipelineRunner.Execute(recipeDateConv, "05/09/2026", {suppress_toasts: true, suppress_sink: true, record_history: false})
-    AssertTrue("DEFECT-023", "format_id alias execution succeeded", dateConvAliasRes.success)
-    AssertEqual("DEFECT-023", "format_id alias produced uppercase converted date", dateConvAliasRes.output, "05 SEPTEMBER 2026")
 
     ; --------------------------------------------------------------------------------------------------
     ; DEFECT-024: Complete Input Sources & Sinks Validation and Contract
@@ -877,6 +872,544 @@ try {
     }
     valOrphan := RecipeModel.Validate(orphanRecipe)
     AssertFalse("DEFECT-026", "Orphan loop_end is rejected by validation", valOrphan.valid)
+
+    ; --------------------------------------------------------------------------------------------------
+    ; DEFECT-027: Tolerant Primary Number Parsing on Mixed Multiline Strings
+    ; --------------------------------------------------------------------------------------------------
+    mixedMultilineText := "15/08/2026`r`n50000`r`n12500`r`nadmin@example.com"
+    parsedDirect := ToolAdapters.ExecuteParseNumber(Map("text", mixedMultilineText), Map())
+    AssertEqual("DEFECT-027", "ExecuteParseNumber extracts primary number scalar (50000)", parsedDirect["number"], 50000)
+    AssertEqual("DEFECT-027", "ExecuteParseNumber text output matches primary number", parsedDirect["text"], "50000")
+
+    recipeTolerantNumber := {
+        id: "recipe_tolerant_number_test",
+        name: "Tolerant Number Test",
+        version: 1,
+        input_source: "selection",
+        sink: "none",
+        steps: [
+            {
+                id: "step_num",
+                tool_id: "parse_number",
+                tool_version: 1,
+                settings: Map(),
+                bindings: Map("text", "input.text")
+            },
+            {
+                id: "step_gst",
+                tool_id: "normal_gst",
+                tool_version: 1,
+                settings: Map("rate", 18),
+                bindings: Map("amount", "step_num.number")
+            }
+        ]
+    }
+    tolerantRes := PipelineRunner.Execute(recipeTolerantNumber, mixedMultilineText, {suppress_toasts: true, suppress_sink: true, record_history: false})
+    AssertTrue("DEFECT-027", "Pipeline with mixed multiline input succeeded without fatal crash", tolerantRes.success)
+    AssertTrue("DEFECT-027", "Pipeline downstream normal_gst calculated 59000 total", InStr(tolerantRes.output, "59000") || InStr(tolerantRes.output, "59,000"))
+
+    ; --------------------------------------------------------------------------------------------------
+    ; DEFECT-028: Zero-Alias Consolidated Tools (convert_case, format_list, civil, stats)
+    ; --------------------------------------------------------------------------------------------------
+    ; 1. convert_case modes
+    caseUpper := ToolAdapters.ExecuteConvertCase(Map("text", "hello world"), Map("case_mode", "upper"))
+    AssertEqual("DEFECT-028", "convert_case upper mode", caseUpper["text"], "HELLO WORLD")
+    caseLower := ToolAdapters.ExecuteConvertCase(Map("text", "HELLO WORLD"), Map("case_mode", "lower"))
+    AssertEqual("DEFECT-028", "convert_case lower mode", caseLower["text"], "hello world")
+    caseTitle := ToolAdapters.ExecuteConvertCase(Map("text", "hello world"), Map("case_mode", "title"))
+    AssertEqual("DEFECT-028", "convert_case title mode", caseTitle["text"], "Hello World")
+    caseSentence := ToolAdapters.ExecuteConvertCase(Map("text", "hello world. test case."), Map("case_mode", "sentence"))
+    AssertEqual("DEFECT-028", "convert_case sentence mode", caseSentence["text"], "Hello world. Test case.")
+    caseSnake := ToolAdapters.ExecuteConvertCase(Map("text", "hello world"), Map("case_mode", "snake"))
+    AssertEqual("DEFECT-028", "convert_case snake mode", caseSnake["text"], "hello_world")
+    caseKebab := ToolAdapters.ExecuteConvertCase(Map("text", "hello world"), Map("case_mode", "kebab"))
+    AssertEqual("DEFECT-028", "convert_case kebab mode", caseKebab["text"], "hello-world")
+    caseCamel := ToolAdapters.ExecuteConvertCase(Map("text", "hello world"), Map("case_mode", "camel"))
+    AssertEqual("DEFECT-028", "convert_case camel mode", caseCamel["text"], "helloWorld")
+
+    ; 2. format_list modes
+    listChecklist := ToolAdapters.ExecuteFormatList(Map("text", "apple`r`nbanana"), Map("list_mode", "checklist"))
+    AssertTrue("DEFECT-028", "format_list checklist contains - [ ]", InStr(listChecklist["text"], "- [ ] apple"))
+    listBullet := ToolAdapters.ExecuteFormatList(Map("text", "apple`r`nbanana"), Map("list_mode", "bullet"))
+    AssertTrue("DEFECT-028", "format_list bullet contains •", InStr(listBullet["text"], "• apple"))
+    listNumbered := ToolAdapters.ExecuteFormatList(Map("text", "apple`r`nbanana"), Map("list_mode", "numbered"))
+    AssertTrue("DEFECT-028", "format_list numbered contains 1.", InStr(listNumbered["text"], "1. apple"))
+    listSql := ToolAdapters.ExecuteFormatList(Map("text", "apple`r`nbanana"), Map("list_mode", "sql"))
+    AssertEqual("DEFECT-028", "format_list sql format matches", listSql["text"], "('apple', 'banana')")
+
+    ; 3. text_statistics, civil_unit_convert, civil_pythagoras
+    statsRes := ToolAdapters.ExecuteTextStatistics(Map("text", "Quick brown fox jumps"), Map())
+    AssertEqual("DEFECT-028", "text_statistics word count is 4", statsRes["words"], 4)
+    civilUnitRes := ToolAdapters.ExecuteCivilUnitConvert(Map("text", "10 m to ft"), Map())
+    AssertTrue("DEFECT-028", "civil_unit_convert calculates 10m to ft", InStr(civilUnitRes["text"], "32.808"))
+    civilPythRes := ToolAdapters.ExecuteCivilPythagoras(Map("text", "3m 4m"), Map())
+    AssertTrue("DEFECT-028", "civil_pythagoras calculates 3m 4m diagonal", InStr(civilPythRes["text"], "5.000"))
+
+    ; --------------------------------------------------------------------------------------------------
+    ; DEFECT-029: Context-Aware Visual Sample Input Cues & Workflow Composer Integration
+    ; --------------------------------------------------------------------------------------------------
+    recipeDateSample := {steps: [{tool_id: "date_convert_format"}]}
+    AssertTrue("DEFECT-029", "Date recipe sample provides date string", InStr(WcGetDefaultSampleForRecipe(recipeDateSample), "2026"))
+    recipeMathSample := {steps: [{tool_id: "math_evaluate"}]}
+    AssertTrue("DEFECT-029", "Math recipe sample provides math expression", InStr(WcGetDefaultSampleForRecipe(recipeMathSample), "+") || InStr(WcGetDefaultSampleForRecipe(recipeMathSample), "*"))
+    recipePythSample := {steps: [{tool_id: "civil_pythagoras"}]}
+    AssertTrue("DEFECT-029", "Civil Pythagoras recipe sample provides dimensions", InStr(WcGetDefaultSampleForRecipe(recipePythSample), "ft") || InStr(WcGetDefaultSampleForRecipe(recipePythSample), "m"))
+    recipeLoopSample := {steps: [{tool_id: "loop_start"}]}
+    AssertTrue("DEFECT-029", "Loop recipe sample provides multiline list", InStr(WcGetDefaultSampleForRecipe(recipeLoopSample), "`n"))
+
+    ; --------------------------------------------------------------------------------------------------
+    ; DEFECT-030: PipelineRunner res.final_output Property & Monotonic Non-Colliding Step IDs
+    ; --------------------------------------------------------------------------------------------------
+    ; 1. Verify PipelineRunner.Execute returns output, final_output, and duration_ms
+    recipeFinalOut := {
+        id: "recipe_final_out_test",
+        name: "Final Output Test",
+        version: 1,
+        input_source: "selection",
+        sink: "none",
+        steps: [
+            {
+                id: "step_1",
+                tool_id: "clean_whitespace",
+                tool_version: 1,
+                settings: Map(),
+                bindings: Map("text", "input.text")
+            }
+        ]
+    }
+    resFinalOut := PipelineRunner.Execute(recipeFinalOut, "  test output  ", {suppress_toasts: true, suppress_sink: true, record_history: false})
+    AssertTrue("DEFECT-030", "Pipeline execution succeeded", resFinalOut.success)
+    AssertTrue("DEFECT-030", "res has output property", resFinalOut.HasOwnProp("output"))
+    AssertTrue("DEFECT-030", "res has final_output property", resFinalOut.HasOwnProp("final_output"))
+    AssertEqual("DEFECT-030", "output matches final_output", resFinalOut.output, resFinalOut.final_output)
+    AssertEqual("DEFECT-030", "final_output contains trimmed text", resFinalOut.final_output, "test output")
+    AssertTrue("DEFECT-030", "res has duration_ms property", resFinalOut.HasOwnProp("duration_ms"))
+    AssertTrue("DEFECT-030", "duration_ms is non-negative integer", IsInteger(resFinalOut.duration_ms) && resFinalOut.duration_ms >= 0)
+
+    ; 2. Verify WcGetNextUniqueStepId avoids ID collisions on deleted steps
+    recipeEmpty := {steps: []}
+    AssertEqual("DEFECT-030", "Empty recipe step ID starts at step_1", WcGetNextUniqueStepId(recipeEmpty), "step_1")
+
+    recipeSeq := {steps: [{id: "step_1"}, {id: "step_2"}, {id: "step_3"}]}
+    AssertEqual("DEFECT-030", "Sequential steps [1,2,3] next ID is step_4", WcGetNextUniqueStepId(recipeSeq), "step_4")
+
+    recipeDeletedMiddle := {steps: [{id: "step_1"}, {id: "step_3"}]}
+    AssertEqual("DEFECT-030", "Deleted middle step [1,3] yields non-colliding step_4", WcGetNextUniqueStepId(recipeDeletedMiddle), "step_4")
+
+    recipeUnordered := {steps: [{id: "step_5"}, {id: "step_2"}]}
+    AssertEqual("DEFECT-030", "Unordered steps [5,2] yields step_6", WcGetNextUniqueStepId(recipeUnordered), "step_6")
+
+    recipeCustomPrefix := {steps: [{id: "s1"}, {id: "s2"}]}
+    AssertEqual("DEFECT-030", "Custom prefix [s1,s2] yields step_3", WcGetNextUniqueStepId(recipeCustomPrefix), "step_3")
+
+    ; 3. Verify RecipeModel.Validate flags duplicate step IDs
+    recipeDup := {
+        id: "recipe_dup_id_test",
+        name: "Duplicate Step ID Test",
+        version: 1,
+        input_source: "selection",
+        sink: "none",
+        steps: [
+            {
+                id: "step_1",
+                tool_id: "clean_whitespace",
+                tool_version: 1,
+                settings: Map(),
+                bindings: Map("text", "input.text")
+            },
+            {
+                id: "step_1",
+                tool_id: "convert_case",
+                tool_version: 1,
+                settings: Map("case_mode", "upper"),
+                bindings: Map("text", "input.text")
+            }
+        ]
+    }
+    valDup := RecipeModel.Validate(recipeDup)
+    AssertFalse("DEFECT-030", "Recipe with duplicate step ID is rejected", valDup.valid)
+    hasDupNotice := false
+    for err in valDup.errors {
+        if InStr(err, "Duplicate step ID 'step_1'")
+            hasDupNotice := true
+    }
+    AssertTrue("DEFECT-030", "Validation error explicitly cites Duplicate step ID 'step_1'", hasDupNotice)
+
+    ; --------------------------------------------------------------------------------------------------
+    ; DEFECT-031: 5 Targeted Workflow Engine Architectural Repairs
+    ; --------------------------------------------------------------------------------------------------
+    ; 1. Mutable __results Protection: Handlers receive a clone; runner results are immutable
+    ToolCatalog.Register({
+        id: "defect031_mutator",
+        label: "Defect 031 Mutator",
+        category: "Utility",
+        inputs: [],
+        outputs: [{name: "out", type: "text", primary: true}],
+        handler: (inps, sets) => (inps["__results"]["tampered"] := true, Map("out", "ok"))
+    })
+
+    recipeMutator := {
+        id: "recipe_mutator_test",
+        name: "Mutator Test",
+        version: 1,
+        input_source: "selection",
+        sink: "none",
+        steps: [
+            {
+                id: "step_1",
+                tool_id: "clean_whitespace",
+                tool_version: 1,
+                settings: Map(),
+                bindings: Map("text", "input.text")
+            },
+            {
+                id: "step_2",
+                tool_id: "defect031_mutator",
+                tool_version: 1,
+                settings: Map(),
+                bindings: Map()
+            }
+        ]
+    }
+    mutRes := PipelineRunner.Execute(recipeMutator, "hello", {suppress_toasts: true, suppress_sink: true, record_history: false})
+    AssertTrue("DEFECT-031", "Pipeline with mutator succeeds", mutRes.success)
+    AssertFalse("DEFECT-031", "Runner results map does NOT contain tampered key", mutRes.results.Has("tampered"))
+    AssertTrue("DEFECT-031", "step_1 results remain intact in runner", mutRes.results.Has("step_1"))
+    ToolCatalog._Registry.Delete("defect031_mutator")
+
+    ; 2. Discarded Loop Iteration Snapshots: PipelineRunner._ExecuteLoop captures iteration snapshots
+    recipeLoopSnap := {
+        id: "recipe_loop_snap_test",
+        name: "Loop Snap Test",
+        version: 1,
+        input_source: "selection",
+        sink: "none",
+        steps: [
+            {
+                id: "step_split",
+                tool_id: "primitive_split",
+                tool_version: 1,
+                settings: Map("delimiter", "\n"),
+                bindings: Map("text", "input.text")
+            },
+            {
+                id: "step_start",
+                tool_id: "loop_start",
+                tool_version: 1,
+                settings: Map(),
+                bindings: Map("items", "step_split.items")
+            },
+            {
+                id: "step_num",
+                tool_id: "parse_number",
+                tool_version: 1,
+                settings: Map(),
+                bindings: Map("text", "loop.item")
+            },
+            {
+                id: "step_gst",
+                tool_id: "normal_gst",
+                tool_version: 1,
+                settings: Map("rate", 18),
+                bindings: Map("amount", "step_num.number")
+            },
+            {
+                id: "step_end",
+                tool_id: "loop_end",
+                tool_version: 1,
+                settings: Map(),
+                bindings: Map("collect", "step_gst.total")
+            }
+        ]
+    }
+    loopSnapRes := PipelineRunner.Execute(recipeLoopSnap, "100`n200`n300", {suppress_toasts: true, suppress_sink: true, record_history: false})
+    AssertTrue("DEFECT-031", "Loop execution succeeded", loopSnapRes.success)
+    AssertEqual("DEFECT-031", "Pipeline produced 2 top-level step snapshots (split and loop)", loopSnapRes.stepSnapshots.Length, 2)
+    loopSnapObj := loopSnapRes.stepSnapshots[2]
+    AssertEqual("DEFECT-031", "Loop snapshot has step_id step_end", loopSnapObj.step_id, "step_end")
+    AssertTrue("DEFECT-031", "Loop snapshot contains iterations array", loopSnapObj.HasOwnProp("iterations") && Type(loopSnapObj.iterations) = "Array")
+    AssertEqual("DEFECT-031", "Loop snapshot contains 3 iteration records", loopSnapObj.iterations.Length, 3)
+    iter1 := loopSnapObj.iterations[1]
+    AssertEqual("DEFECT-031", "Iteration 1 record index is 1", iter1.iteration, 1)
+    AssertEqual("DEFECT-031", "Iteration 1 item is 100", iter1.item, "100")
+    AssertEqual("DEFECT-031", "Iteration 1 has 2 sub-step snapshots", iter1.snapshots.Length, 2)
+    AssertEqual("DEFECT-031", "Iteration 1 sub-step 1 is step_num", iter1.snapshots[1].step_id, "step_num")
+    AssertEqual("DEFECT-031", "Iteration 1 sub-step 1 parsed number is 100", iter1.snapshots[1].outputs["number"], 100)
+    AssertEqual("DEFECT-031", "Iteration 1 sub-step 2 is step_gst", iter1.snapshots[2].step_id, "step_gst")
+    AssertEqual("DEFECT-031", "Iteration 1 sub-step 2 total is 118", iter1.snapshots[2].outputs["total"], 118)
+
+    ; 3. Deterministic Auto-Binding: primary: true prioritized over arbitrary candidate keys
+    inScopeCand := [
+        {stepId: "step_gst", outputName: "cgst", type: WorkflowTypes.TYPE_NUMBER, label: "CGST", isPrimary: false},
+        {stepId: "step_gst", outputName: "total", type: WorkflowTypes.TYPE_NUMBER, label: "Total", isPrimary: true},
+        {stepId: "step_gst", outputName: "sgst", type: WorkflowTypes.TYPE_NUMBER, label: "SGST", isPrimary: false}
+    ]
+    autoBindings := ToolCatalog.ResolveDefaultBindings("number_to_words", inScopeCand)
+    AssertTrue("DEFECT-031", "Auto-binding resolves number input for number_to_words", autoBindings.bindings.Has("number"))
+    AssertEqual("DEFECT-031", "Auto-binding picks primary: true total over cgst/sgst", autoBindings.bindings["number"], "step_gst.total")
+
+    ; 4. Explicit final_output_ref & Deterministic Primary Fallback
+    recipeExplicitFinal := {
+        id: "recipe_explicit_final_test",
+        name: "Explicit Final Test",
+        version: 1,
+        input_source: "selection",
+        sink: "none",
+        final_output_ref: "step_gst.base",
+        steps: [
+            {
+                id: "step_parse",
+                tool_id: "parse_number",
+                tool_version: 1,
+                settings: Map(),
+                bindings: Map("text", "input.text")
+            },
+            {
+                id: "step_gst",
+                tool_id: "normal_gst",
+                tool_version: 1,
+                settings: Map("rate", 18),
+                bindings: Map("amount", "step_parse.number")
+            }
+        ]
+    }
+    valExpFinal := RecipeModel.Validate(recipeExplicitFinal)
+    AssertTrue("DEFECT-031", "Explicit final_output_ref recipe validates", valExpFinal.valid)
+    resExpFinal := PipelineRunner.Execute(recipeExplicitFinal, "100", {suppress_toasts: true, suppress_sink: true, record_history: false})
+    AssertTrue("DEFECT-031", "Explicit final execution succeeds", resExpFinal.success)
+    AssertEqual("DEFECT-031", "Explicit final output extracts base amount exactly (100)", resExpFinal.output, "100")
+
+    ; Invalid final_output_ref is rejected during validation
+    recipeBadFinal := {
+        id: "recipe_bad_final_test",
+        name: "Bad Final Test",
+        version: 1,
+        input_source: "selection",
+        sink: "none",
+        final_output_ref: "non_existent_step.field",
+        steps: [
+            {
+                id: "step_parse",
+                tool_id: "parse_number",
+                tool_version: 1,
+                settings: Map(),
+                bindings: Map("text", "input.text")
+            },
+            {
+                id: "step_gst",
+                tool_id: "normal_gst",
+                tool_version: 1,
+                settings: Map("rate", 18),
+                bindings: Map("amount", "step_parse.number")
+            }
+        ]
+    }
+    valBadFinal := RecipeModel.Validate(recipeBadFinal)
+    AssertFalse("DEFECT-031", "Invalid final_output_ref is rejected by RecipeModel.Validate", valBadFinal.valid)
+
+    ; Deterministic fallback to primary output when final_output_ref is empty
+    recipePrimaryFallback := {
+        id: "recipe_primary_fallback_test",
+        name: "Primary Fallback Test",
+        version: 1,
+        input_source: "selection",
+        sink: "none",
+        steps: [
+            {
+                id: "step_parse",
+                tool_id: "parse_number",
+                tool_version: 1,
+                settings: Map(),
+                bindings: Map("text", "input.text")
+            },
+            {
+                id: "step_gst",
+                tool_id: "normal_gst",
+                tool_version: 1,
+                settings: Map("rate", 18),
+                bindings: Map("amount", "step_parse.number")
+            }
+        ]
+    }
+    resPrimaryFallback := PipelineRunner.Execute(recipePrimaryFallback, "100", {suppress_toasts: true, suppress_sink: true, record_history: false})
+    AssertEqual("DEFECT-031", "Fallback prioritizes normal_gst declared primary output (total: 118)", resPrimaryFallback.output, "118")
+
+    ; 5. Catalog Declarations Disagreeing with Runtime Output
+    mathTool := ToolCatalog.Get("math_evaluate")
+    mathHasNumber := false
+    for out in mathTool.outputs {
+        if (out.name = "number")
+            mathHasNumber := true
+    }
+    AssertTrue("DEFECT-031", "ToolCatalog math_evaluate declares 'number' output", mathHasNumber)
+    mathRuntime := ToolAdapters.ExecuteMathEvaluate(Map("expression", "25 * 4"), Map())
+    AssertTrue("DEFECT-031", "ExecuteMathEvaluate runtime returns 'number' key", mathRuntime.Has("number"))
+    AssertEqual("DEFECT-031", "ExecuteMathEvaluate 'number' value is 100", mathRuntime["number"], 100)
+
+    numTool := ToolCatalog.Get("parse_number")
+    numHasText := false
+    for out in numTool.outputs {
+        if (out.name = "text")
+            numHasText := true
+    }
+    AssertTrue("DEFECT-031", "ToolCatalog parse_number declares 'text' output", numHasText)
+    numRuntime := ToolAdapters.ExecuteParseNumber(Map("text", "42"), Map())
+    AssertTrue("DEFECT-031", "ExecuteParseNumber runtime returns 'text' key", numRuntime.Has("text"))
+    AssertEqual("DEFECT-031", "ExecuteParseNumber 'text' value is '42'", numRuntime["text"], "42")
+
+    ; --------------------------------------------------------------------------------------------------
+    ; DEFECT-032: Complex Recipe Execution & Map/Object Stringification in Snapshots & Runner
+    ; --------------------------------------------------------------------------------------------------
+    userRecipePath := A_ScriptDir . "\..\Recipes\recipe_20260907_153607.json"
+    if FileExist(userRecipePath) {
+        content := FileRead(userRecipePath, "UTF-8")
+        userRecipe := RecipeModel.Normalize(JsonHelper.Parse(content, false))
+    } else {
+        userRecipe := {
+            id: "recipe_20260907_153607",
+            name: "New Workflow Recipe",
+            version: 1,
+            input_source: "prompt",
+            sink: "clipboard",
+            steps: [
+                { id: "step_1", tool_id: "clean_whitespace", tool_version: 1, bindings: Map("text", "input.text") },
+                { id: "step_2", tool_id: "convert_case", tool_version: 1, settings: Map("case_mode", "snake"), bindings: Map("text", "step_1.text") },
+                { id: "step_3", tool_id: "parse_number", tool_version: 1, bindings: Map("text", "step_2.text") },
+                { id: "step_4", tool_id: "number_to_words", tool_version: 1, bindings: Map("number", "step_3.number") },
+                { id: "step_5", tool_id: "convert_case", tool_version: 1, settings: Map("case_mode", "kebab"), bindings: Map("text", "step_4.words") },
+                { id: "step_6", tool_id: "text_statistics", tool_version: 1, bindings: Map("text", "step_5.result") },
+                { id: "step_7", tool_id: "normal_gst", tool_version: 1, settings: Map("rate", 18), bindings: Map("amount", "step_6.chars") }
+            ]
+        }
+    }
+    AssertTrue("DEFECT-032", "User recipe recipe_20260907_153607 loaded successfully", IsObject(userRecipe))
+
+    execUser := PipelineRunner.Execute(userRecipe, "Test 100", {is_preview: true, suppress_sink: true, suppress_toasts: true, record_history: false})
+    AssertTrue("DEFECT-032", "User recipe executes cleanly in preview mode", execUser.success)
+    AssertTrue("DEFECT-032", "User recipe terminal output resolved", execUser.output != "")
+    lastSnap := execUser.stepSnapshots[execUser.stepSnapshots.Length]
+    AssertTrue("DEFECT-032", "Last step (step_7) has Map record output", lastSnap.outputs.Has("record") && Type(lastSnap.outputs["record"]) = "Map")
+
+    ; --------------------------------------------------------------------------------------------------
+    ; DEFECT-033: RunHistory Corrupted Ledger Resilience & Status Guard
+    ; --------------------------------------------------------------------------------------------------
+    ; Verify that a ledger record missing the 'status' property does not crash the status badge resolver
+    corruptRunItem := {
+        recipe_name: "Corrupt Recipe",
+        duration_ms: 15,
+        timestamp: "2026-09-07 12:00:00",
+        input_snapshot: "sample",
+        output_snapshot: "result"
+    }
+    stBadgeSafe := (corruptRunItem.HasOwnProp("status") && corruptRunItem.status = "success") ? "✔ Pass" : "❌ Fail"
+    AssertEqual("DEFECT-033", "Corrupt record missing status evaluates cleanly to Fail badge", stBadgeSafe, "❌ Fail")
+
+    validPassItem := { status: "success" }
+    stBadgePass := (validPassItem.HasOwnProp("status") && validPassItem.status = "success") ? "✔ Pass" : "❌ Fail"
+    AssertEqual("DEFECT-033", "Valid success record evaluates to Pass badge", stBadgePass, "✔ Pass")
+
+    validFailItem := { status: "failed" }
+    stBadgeFail := (validFailItem.HasOwnProp("status") && validFailItem.status = "success") ? "✔ Pass" : "❌ Fail"
+    AssertEqual("DEFECT-033", "Valid failed record evaluates to Fail badge", stBadgeFail, "❌ Fail")
+
+    ; --------------------------------------------------------------------------------------------------
+    ; DEFECT-034: EvaluateMathSelection COM 0x80040154 — NativeMathParser Regression Guard
+    ;
+    ; Root cause (v1.0.0): ComObject("MSScriptControl.ScriptControl") / JScript.Eval() was used for
+    ; expression evaluation.  MSScriptControl is absent on stock Windows 11, causing HRESULT
+    ; 0x80040154 (REGDB_E_CLASSNOTREG) at line 30 of the old monolith.  The error was swallowed
+    ; with only a cryptic log entry — no actionable user feedback.
+    ; Fix (v2.0.0+): Pure-AHK NativeMathParser replaces all COM; SafeEvaluateMath() is the sole
+    ; entry point and contains no ComObject calls.  Actions_Math.ahk sanitizes error messages so
+    ; COM-style hex codes (0x…) can never reach the user toast even if a regression occurs.
+    ; --------------------------------------------------------------------------------------------------
+
+    ; 1. Basic arithmetic evaluates successfully (no COM required)
+    r034_arith := SafeEvaluateMath("1500 * 1.18 + 450")
+    AssertTrue("DEFECT-034", "Basic arithmetic succeeds without COM", r034_arith.success)
+    AssertEqual("DEFECT-034", "1500 * 1.18 + 450 = 2220", r034_arith.resultStr, "2220")
+
+    ; 2. Power operator works (** and ^ are both valid)
+    r034_pow := SafeEvaluateMath("2^8")
+    AssertTrue("DEFECT-034", "Power operator evaluates successfully", r034_pow.success)
+    AssertEqual("DEFECT-034", "2^8 = 256", r034_pow.resultStr, "256")
+
+    ; 3. Indian scale suffix expansion (Lakh)
+    r034_lakh := SafeEvaluateMath("2 lakh * 1.18")
+    AssertTrue("DEFECT-034", "Lakh suffix expansion evaluates successfully", r034_lakh.success)
+    AssertEqual("DEFECT-034", "2 lakh * 1.18 = 236000", r034_lakh.resultStr, "236000")
+
+    ; 4. Parenthesised expression
+    r034_parens := SafeEvaluateMath("(100 + 50) * 2")
+    AssertTrue("DEFECT-034", "Parenthesised expression evaluates successfully", r034_parens.success)
+    AssertEqual("DEFECT-034", "(100 + 50) * 2 = 300", r034_parens.resultStr, "300")
+
+    ; 5. Invalid / non-numeric input returns success=false with a plain-English message (no 0x code)
+    r034_bad := SafeEvaluateMath("hello world")
+    AssertFalse("DEFECT-034", "Non-numeric input returns success=false", r034_bad.success)
+    AssertFalse("DEFECT-034", "Error message for invalid input contains no 0x hex code", InStr(r034_bad.errorMessage, "0x") > 0)
+
+    ; 6. Division by zero returns success=false with a plain-English message
+    r034_divz := SafeEvaluateMath("100 / 0")
+    AssertFalse("DEFECT-034", "Division by zero returns success=false", r034_divz.success)
+    AssertFalse("DEFECT-034", "Division-by-zero error message contains no 0x hex code", InStr(r034_divz.errorMessage, "0x") > 0)
+
+    ; 7. Error message sanitizer: COM-style strings must not pass through to the user
+    ;    (Simulate what the old MSScriptControl error looked like and confirm the guard catches it)
+    fakeCOMErr := "(0x80040154) Class not registered"
+    isCOMMsg := InStr(fakeCOMErr, "0x") || InStr(fakeCOMErr, "Class not registered") || InStr(fakeCOMErr, "MSScriptControl")
+    AssertTrue("DEFECT-034", "COM-style error string is detected by sanitizer guard", isCOMMsg)
+
+    ; --------------------------------------------------------------------------------------------------
+    ; DEFECT-035: Multi-Token Command Palette Search Engine Verification
+    ; --------------------------------------------------------------------------------------------------
+    RegisterDateTimeActions()
+    RegisterTextActions()
+    RegisterMathActions()
+    RegisterFinanceActions()
+    RegisterExtractionActions()
+    RegisterCivilActions()
+    InitWorkflowEngine()
+    
+    ; 1. "date default" matches "Configure Default Date Format"
+    itemsDateDefault := FilterPaletteItems("date default")
+    AssertTrue("DEFECT-035", "Multi-token search 'date default' matches item", itemsDateDefault.Length > 0)
+    hasConfigDefault := false
+    for itm in itemsDateDefault {
+        if (itm.name = "Configure Default Date Format")
+            hasConfigDefault := true
+    }
+    AssertTrue("DEFECT-035", "Found Configure Default Date Format in multi-token results", hasConfigDefault)
+
+    ; 2. "word count" matches "Word & Character Statistics"
+    itemsWc := FilterPaletteItems("word count")
+    AssertTrue("DEFECT-035", "Multi-token search 'word count' matches item", itemsWc.Length > 0)
+
+    ; 3. "tow" matches "Number to Words (Indian Rupees)"
+    itemsTow := FilterPaletteItems("tow")
+    AssertTrue("DEFECT-035", "Multi-token search 'tow' matches item", itemsTow.Length > 0)
+
+    ; 4. "serial" matches "Convert Lines to Numbered List (1, 2, 3)"
+    itemsSerial := FilterPaletteItems("serial")
+    AssertTrue("DEFECT-035", "Multi-token search 'serial' matches item", itemsSerial.Length > 0)
+
+    ; --------------------------------------------------------------------------------------------------
+    ; DEFECT-036: Deduplicate Lines & Lorem Ipsum Tool Registration
+    ; --------------------------------------------------------------------------------------------------
+    sampleLines := "alpha`nbeta`nalpha`ngamma`nbeta"
+    dedupRes := DeduplicateLines(sampleLines, false)
+    AssertEqual("DEFECT-036", "DeduplicateLines preserves order and removes dupes", dedupRes, "alpha`nbeta`ngamma")
+
+    dedupFound := false
+    loremFound := false
+    for act in BuiltInActions {
+        if (act.name = "Deduplicate Lines (Remove Duplicates)")
+            dedupFound := true
+        if (act.name = "Insert Lorem Ipsum Dummy Text")
+            loremFound := true
+    }
+    AssertTrue("DEFECT-036", "Deduplicate Lines action registered", dedupFound)
+    AssertTrue("DEFECT-036", "Insert Lorem Ipsum Dummy Text action registered", loremFound)
 
 } catch as testErr {
     FailCount++

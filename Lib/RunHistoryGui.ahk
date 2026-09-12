@@ -84,7 +84,7 @@ RefreshHistoryList() {
     HistoryListView.Delete()
 
     for idx, runItem in HistoryRunsList {
-        stBadge := (runItem.status = "success") ? "✔ Pass" : "❌ Fail"
+        stBadge := (runItem.HasOwnProp("status") && runItem.status = "success") ? "✔ Pass" : "❌ Fail"
         durStr := (runItem.HasOwnProp("duration_ms") ? runItem.duration_ms : 0) . " ms"
         ts := runItem.HasOwnProp("timestamp") ? runItem.timestamp : ""
         rName := runItem.HasOwnProp("recipe_name") ? runItem.recipe_name : "Recipe"

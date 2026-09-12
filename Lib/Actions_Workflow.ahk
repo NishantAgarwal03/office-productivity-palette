@@ -22,8 +22,13 @@ InitWorkflowEngine() {
         ; Register Workflow Hub management actions
         RegisterAction("Workflow: Open Composer", "⚡ Workflow", 
                        "Visually design, test, and save multi-step automated recipes", 
-                       "workflow, composer, builder, recipe, create, automate, chain, pipeline", 
+                       "workflow, composer, builder, recipe, create, automate, chain, pipeline, edit, edit recipe, modify recipe, open recipe, load recipe", 
                        (*) => ShowWorkflowComposer())
+
+        RegisterAction("Workflow: Edit Saved Recipe...", "⚡ Workflow", 
+                       "Choose and open any saved workflow recipe in the visual composer", 
+                       "workflow, edit, open, recipe, load, modify, composer", 
+                       (*) => WcShowOpenRecipeModal())
 
         RegisterAction("Workflow: Run History & Diagnostics", "⚡ Workflow", 
                        "Inspect step-by-step execution snapshots, error logs, and rerun previous inputs", 

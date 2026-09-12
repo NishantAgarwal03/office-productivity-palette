@@ -1,6 +1,13 @@
 ; ======================================================================================================================
 ; Module: MathEvaluator.ahk - Pure-AHK Native Math Preprocessor, Expression Evaluator & Standardized Dark Math HUD
-; Part of Office Productivity Hub (v2.0.0) - Zero COM Dependencies
+; Part of Office Productivity Hub (v2.0.1) - Zero COM Dependencies
+;
+; DEFECT-034 (fixed v2.0.0):  v1.0.0 used ComObject("MSScriptControl.ScriptControl") / JScript.Eval()
+;   for expression evaluation.  MSScriptControl is a 32-bit legacy COM class that is absent on stock
+;   Windows 11 installations, producing HRESULT 0x80040154 (REGDB_E_CLASSNOTREG) at runtime.
+;   The entire COM path was replaced with the pure-AHK recursive-descent NativeMathParser class
+;   (below) which has no external dependencies and works identically on all Windows versions.
+;   SafeEvaluateMath() is the sole public entry point and never calls any COM object.
 ; ======================================================================================================================
 
 #Requires AutoHotkey v2.0
@@ -325,4 +332,4 @@ DismissYellowHud() {
 IsYellowHudVisible() {
     global YellowHudGui
     return IsObject(YellowHudGui) && WinExist("ahk_id " . YellowHudGui.Hwnd) && DllCall("user32\IsWindowVisible", "ptr", YellowHudGui.Hwnd)
-}
+}

@@ -77,6 +77,14 @@ class RecipeModel {
             }
         }
 
+        ; Validate final_output_ref if specified
+        if (recipe.HasOwnProp("final_output_ref") && Trim(String(recipe.final_output_ref)) != "") {
+            fRef := Trim(String(recipe.final_output_ref))
+            if (!scopeOutputs.Has(fRef)) {
+                errors.Push(Format("Recipe final_output_ref '{1}' does not exist in recipe steps", fRef))
+            }
+        }
+
         return {
             valid: (errors.Length = 0),
             errors: errors,
@@ -382,9 +390,27 @@ class RecipeModel {
         if !IsObject(recipe)
             return recipe
 
-        if (recipe.HasOwnProp("steps") && Type(recipe.steps) = "Array") {
-            for step in recipe.steps {
-                RecipeModel._NormalizeStep(step)
+        if (Type(recipe) = "Map") {
+            if (!recipe.Has("final_output_ref"))
+                recipe["final_output_ref"] := ""
+            else
+                recipe["final_output_ref"] := Trim(String(recipe["final_output_ref"]))
+
+            if (recipe.Has("steps") && Type(recipe["steps"]) = "Array") {
+                for step in recipe["steps"] {
+                    RecipeModel._NormalizeStep(step)
+                }
+            }
+        } else {
+            if (!recipe.HasOwnProp("final_output_ref"))
+                recipe.final_output_ref := ""
+            else
+                recipe.final_output_ref := Trim(String(recipe.final_output_ref))
+
+            if (recipe.HasOwnProp("steps") && Type(recipe.steps) = "Array") {
+                for step in recipe.steps {
+                    RecipeModel._NormalizeStep(step)
+                }
             }
         }
         return recipe
@@ -393,21 +419,41 @@ class RecipeModel {
     static _NormalizeStep(step) {
         if !IsObject(step)
             return
-        if (step.HasOwnProp("bindings") && Type(step.bindings) != "Map") {
-            bMap := Map()
-            for k, v in step.bindings.OwnProps()
-                bMap[k] := v
-            step.bindings := bMap
-        }
-        if (step.HasOwnProp("settings") && Type(step.settings) != "Map") {
-            sMap := Map()
-            for k, v in step.settings.OwnProps()
-                sMap[k] := v
-            step.settings := sMap
-        }
-        if (step.HasOwnProp("sub_steps") && Type(step.sub_steps) = "Array") {
-            for subStep in step.sub_steps
-                RecipeModel._NormalizeStep(subStep)
+
+        if (Type(step) = "Map") {
+            if (step.Has("bindings") && Type(step["bindings"]) != "Map") {
+                bMap := Map()
+                for k, v in step["bindings"].OwnProps()
+                    bMap[k] := v
+                step["bindings"] := bMap
+            }
+            if (step.Has("settings") && Type(step["settings"]) != "Map") {
+                sMap := Map()
+                for k, v in step["settings"].OwnProps()
+                    sMap[k] := v
+                step["settings"] := sMap
+            }
+            if (step.Has("sub_steps") && Type(step["sub_steps"]) = "Array") {
+                for subStep in step["sub_steps"]
+                    RecipeModel._NormalizeStep(subStep)
+            }
+        } else {
+            if (step.HasOwnProp("bindings") && Type(step.bindings) != "Map") {
+                bMap := Map()
+                for k, v in step.bindings.OwnProps()
+                    bMap[k] := v
+                step.bindings := bMap
+            }
+            if (step.HasOwnProp("settings") && Type(step.settings) != "Map") {
+                sMap := Map()
+                for k, v in step.settings.OwnProps()
+                    sMap[k] := v
+                step.settings := sMap
+            }
+            if (step.HasOwnProp("sub_steps") && Type(step.sub_steps) = "Array") {
+                for subStep in step.sub_steps
+                    RecipeModel._NormalizeStep(subStep)
+            }
         }
     }
 
@@ -442,7 +488,7 @@ class RecipeModel {
             throw Error("Recipe not found: " . recipeId)
 
         content := FileRead(fPath, "UTF-8")
-        parsedRecipe := JsonHelper.Parse(content, true)
+        parsedRecipe := JsonHelper.Parse(content, false)
         return RecipeModel.Normalize(parsedRecipe)
     }
 
@@ -454,7 +500,7 @@ class RecipeModel {
         Loop Files, folder . "\*.json" {
             try {
                 content := FileRead(A_LoopFileFullPath, "UTF-8")
-                rObj := JsonHelper.Parse(content, true)
+                rObj := JsonHelper.Parse(content, false)
                 if (IsObject(rObj) && (Type(rObj) = "Map" ? rObj.Has("id") : rObj.HasOwnProp("id"))) {
                     recipesList.Push(RecipeModel.Normalize(rObj))
                 }
@@ -501,39 +547,45 @@ class RecipeModel {
                     },
                     {
                         id: "step_2",
-                        is_container: true,
-                        bindings: Map("items", "step_1.items"),
-                        loop_return_step: "step_2_3",
-                        sub_steps: [
-                            {
-                                id: "step_2_1",
-                                tool_id: "parse_number",
-                                tool_version: 1,
-                                settings: Map(),
-                                bindings: Map("text", "loop.item")
-                            },
-                            {
-                                id: "step_2_2",
-                                tool_id: "number_to_words",
-                                tool_version: 1,
-                                settings: Map(),
-                                bindings: Map("number", "step_2_1.number")
-                            },
-                            {
-                                id: "step_2_3",
-                                tool_id: "primitive_template_combine",
-                                tool_version: 1,
-                                settings: Map("template", "{loop.item} : {step_2_2.words}"),
-                                bindings: Map()
-                            }
-                        ]
+                        tool_id: "loop_start",
+                        tool_version: 1,
+                        settings: Map(),
+                        bindings: Map("items", "step_1.items")
                     },
                     {
                         id: "step_3",
+                        tool_id: "parse_number",
+                        tool_version: 1,
+                        settings: Map(),
+                        bindings: Map("text", "loop.item")
+                    },
+                    {
+                        id: "step_4",
+                        tool_id: "number_to_words",
+                        tool_version: 1,
+                        settings: Map(),
+                        bindings: Map("number", "step_3.number")
+                    },
+                    {
+                        id: "step_5",
+                        tool_id: "primitive_template_combine",
+                        tool_version: 1,
+                        settings: Map("template", "{loop.item} : {step_4.words}"),
+                        bindings: Map()
+                    },
+                    {
+                        id: "step_6",
+                        tool_id: "loop_end",
+                        tool_version: 1,
+                        settings: Map(),
+                        bindings: Map("collect", "step_5.text")
+                    },
+                    {
+                        id: "step_7",
                         tool_id: "primitive_join",
                         tool_version: 1,
                         settings: Map("delimiter", "\n"),
-                        bindings: Map("items", "step_2.items")
+                        bindings: Map("items", "step_6.items")
                     }
                 ]
             }
@@ -561,46 +613,52 @@ class RecipeModel {
                     },
                     {
                         id: "step_2",
-                        is_container: true,
-                        bindings: Map("items", "step_1.items"),
-                        loop_return_step: "step_2_4",
-                        sub_steps: [
-                            {
-                                id: "step_2_1",
-                                tool_id: "parse_number",
-                                tool_version: 1,
-                                settings: Map(),
-                                bindings: Map("text", "loop.item")
-                            },
-                            {
-                                id: "step_2_2",
-                                tool_id: "normal_gst",
-                                tool_version: 1,
-                                settings: Map("rate", 18),
-                                bindings: Map("amount", "step_2_1.number")
-                            },
-                            {
-                                id: "step_2_3",
-                                tool_id: "number_to_words",
-                                tool_version: 1,
-                                settings: Map(),
-                                bindings: Map("number", "step_2_2.total")
-                            },
-                            {
-                                id: "step_2_4",
-                                tool_id: "primitive_template_combine",
-                                tool_version: 1,
-                                settings: Map("template", "{step_2_2.summary}`nAmount in Words: {step_2_3.words}"),
-                                bindings: Map()
-                            }
-                        ]
+                        tool_id: "loop_start",
+                        tool_version: 1,
+                        settings: Map(),
+                        bindings: Map("items", "step_1.items")
                     },
                     {
                         id: "step_3",
+                        tool_id: "parse_number",
+                        tool_version: 1,
+                        settings: Map(),
+                        bindings: Map("text", "loop.item")
+                    },
+                    {
+                        id: "step_4",
+                        tool_id: "normal_gst",
+                        tool_version: 1,
+                        settings: Map("rate", 18),
+                        bindings: Map("amount", "step_3.number")
+                    },
+                    {
+                        id: "step_5",
+                        tool_id: "number_to_words",
+                        tool_version: 1,
+                        settings: Map(),
+                        bindings: Map("number", "step_4.total")
+                    },
+                    {
+                        id: "step_6",
+                        tool_id: "primitive_template_combine",
+                        tool_version: 1,
+                        settings: Map("template", "{step_4.summary}`nAmount in Words: {step_5.words}"),
+                        bindings: Map()
+                    },
+                    {
+                        id: "step_7",
+                        tool_id: "loop_end",
+                        tool_version: 1,
+                        settings: Map(),
+                        bindings: Map("collect", "step_6.text")
+                    },
+                    {
+                        id: "step_8",
                         tool_id: "primitive_join",
                         tool_version: 1,
                         settings: Map("delimiter", "\n\n"),
-                        bindings: Map("items", "step_2.items")
+                        bindings: Map("items", "step_7.items")
                     }
                 ]
             }

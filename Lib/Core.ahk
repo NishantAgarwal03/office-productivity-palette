@@ -128,12 +128,13 @@ IsAnyOfficeUIVisible() {
         || SafeIsWindowVisible(CivilPromptGui)
         || SafeIsWindowVisible(CivilResultHudGui)
         || SafeIsWindowVisible(WorkflowComposerGui)
+        || (IsSet(WcOpenRecipeModalGui) && SafeIsWindowVisible(WcOpenRecipeModalGui))
         || SafeIsWindowVisible(RunHistoryGui)
         || SafeIsWindowVisible(DateFormatGui)
 }
 
 CloseAllOfficeUIs() {
-    global PaletteGui, ActionBoardGui, SnippetGui, ClassifierGui, PrioritizerMiniGui, NudgeHudGui, YellowHudGui, ToastHudGui, FindReplaceGui, CivilPromptGui, CivilResultHudGui, WorkflowComposerGui, RunHistoryGui, DateFormatGui
+    global PaletteGui, ActionBoardGui, SnippetGui, ClassifierGui, PrioritizerMiniGui, NudgeHudGui, YellowHudGui, ToastHudGui, FindReplaceGui, CivilPromptGui, CivilResultHudGui, WorkflowComposerGui, RunHistoryGui, DateFormatGui, WcOpenRecipeModalGui
     
     if IsSet(CloseCommandPalette)
         CloseCommandPalette()
@@ -180,9 +181,15 @@ CloseAllOfficeUIs() {
         try CivilResultHudGui.Destroy()
         CivilResultHudGui := ""
     }
-    if IsObject(WorkflowComposerGui) {
+    if IsSet(CloseWorkflowComposer)
+        CloseWorkflowComposer()
+    else if IsObject(WorkflowComposerGui) {
         try WorkflowComposerGui.Destroy()
         WorkflowComposerGui := ""
+    }
+    if (IsSet(WcOpenRecipeModalGui) && IsObject(WcOpenRecipeModalGui)) {
+        try WcOpenRecipeModalGui.Destroy()
+        WcOpenRecipeModalGui := ""
     }
     if IsObject(RunHistoryGui) {
         try RunHistoryGui.Destroy()

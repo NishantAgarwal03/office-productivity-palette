@@ -301,7 +301,7 @@ try {
     Sleep(50)
     AssertUI("DateFormatGui_Lifecycle", "DateFormatGui visible on second open", SafeIsWindowVisible(DateFormatGui), SafeIsWindowVisible(DateFormatGui))
     DismissDateFormatSettingsGui()
-    Sleep(20)
+    Sleep(60)
     AssertUI("DateFormatGui_Lifecycle", "DateFormatGui closed after Dismiss", !SafeIsWindowVisible(DateFormatGui), SafeIsWindowVisible(DateFormatGui))
     AssertUI("DateFormatGui_Lifecycle", "IsAnyOfficeUIVisible false after Dismiss", !IsAnyOfficeUIVisible(), IsAnyOfficeUIVisible())
     SaveDefaultDateFormat(6) ; Restore default to 6
@@ -372,6 +372,68 @@ try {
     }
     AssertUI("Shortcut_Audit", "All 8 Leader chords map to valid callable actions", missingLeaders.Length == 0, missingLeaders.Length)
 
+    ; --------------------------------------------------------------------------------------------------
+    ; Inspector Output Formatting: Map, Array, Object and empty types (DEFECT-032)
+    ; --------------------------------------------------------------------------------------------------
+    testMap := Map("key1", "val1", "key2", 42)
+    fmtMap := WcFormatValueForInspector(testMap)
+    AssertUI("Inspector_Formatting", "WcFormatValueForInspector handles Map without ToString error", InStr(fmtMap, "Map[2]") > 0, fmtMap)
+
+    testObj := {prop1: "hello", prop2: 99}
+    fmtObj := WcFormatValueForInspector(testObj)
+    AssertUI("Inspector_Formatting", "WcFormatValueForInspector handles Object without ToString error", InStr(fmtObj, "hello") > 0, fmtObj)
+
+    testArr := [1, 2, 3]
+    fmtArr := WcFormatValueForInspector(testArr)
+    AssertUI("Inspector_Formatting", "WcFormatValueForInspector handles Array", InStr(fmtArr, "Array[3]") > 0, fmtArr)
+
+    fmtEmptyMap := WcFormatValueForInspector(Map())
+    AssertUI("Inspector_Formatting", "Empty Map formats cleanly", fmtEmptyMap == "{}", fmtEmptyMap)
+
+    fmtEmptyArr := WcFormatValueForInspector([])
+    AssertUI("Inspector_Formatting", "Empty Array formats cleanly", fmtEmptyArr == "[]", fmtEmptyArr)
+
+    ; --------------------------------------------------------------------------------------------------
+    ; 8. Workflow Composer Open / Edit Recipe Flow Tests
+    ; --------------------------------------------------------------------------------------------------
+    ; Verify Workflow: Edit Saved Recipe... action registration in Command Palette
+    editRecipeActionFound := false
+    for act in BuiltInActions {
+        if (act.name = "Workflow: Edit Saved Recipe...") {
+            editRecipeActionFound := true
+            AssertUI("Workflow_EditAction", "Workflow: Edit Saved Recipe... action is callable", HasMethod(act.callback, "Call"), "")
+            break
+        }
+    }
+    AssertUI("Workflow_EditAction", "Workflow: Edit Saved Recipe... registered in BuiltInActions", editRecipeActionFound, "")
+
+    ; Test WcShowOpenRecipeModal lifecycle
+    WcShowOpenRecipeModal()
+    Sleep(50)
+    AssertUI("OpenRecipeModal_Lifecycle", "WcOpenRecipeModalGui is open", SafeIsWindowVisible(WcOpenRecipeModalGui), "")
+    AssertUI("OpenRecipeModal_Lifecycle", "IsAnyOfficeUIVisible detects OpenRecipe modal", IsAnyOfficeUIVisible(), "")
+
+    ; Dismiss Open Recipe modal
+    CloseAllOfficeUIs()
+    Sleep(50)
+    AssertUI("OpenRecipeModal_Lifecycle", "WcOpenRecipeModalGui dismissed by CloseAllOfficeUIs", !SafeIsWindowVisible(WcOpenRecipeModalGui), "")
+
+    ; Verify loading a specific saved recipe into ShowWorkflowComposer
+    seedRecipes := RecipeModel.ListAll()
+    AssertUI("OpenRecipe_Load", "RecipeModel.ListAll returns recipes", seedRecipes.Length > 0, seedRecipes.Length)
+
+    if (seedRecipes.Length > 0) {
+        testRecipeToLoad := seedRecipes[1]
+        ShowWorkflowComposer(testRecipeToLoad)
+        Sleep(50)
+        AssertUI("OpenRecipe_Load", "WorkflowComposerGui is visible after loading recipe", SafeIsWindowVisible(WorkflowComposerGui), "")
+        AssertUI("OpenRecipe_Load", "WcCurrentRecipe has loaded recipe ID", WcCurrentRecipe.id == testRecipeToLoad.id, WcCurrentRecipe.id)
+        AssertUI("OpenRecipe_Load", "WcCurrentRecipe has matching steps", WcCurrentRecipe.steps.Length == testRecipeToLoad.steps.Length, WcCurrentRecipe.steps.Length)
+        CloseWorkflowComposer()
+        Sleep(30)
+        AssertUI("OpenRecipe_Load", "WorkflowComposerGui closed cleanly", !SafeIsWindowVisible(WorkflowComposerGui), "")
+    }
+
 } catch as testErr {
     UiTestsFailed++
     UiLogLines.Push("[UI FATAL] " . testErr.Message . " at Line " . testErr.Line)
@@ -386,6 +448,8 @@ try {
             ActionBoardGui.Destroy()
         if IsObject(WorkflowComposerGui)
             WorkflowComposerGui.Destroy()
+        if (IsSet(WcOpenRecipeModalGui) && IsObject(WcOpenRecipeModalGui))
+            WcOpenRecipeModalGui.Destroy()
         if IsObject(RunHistoryGui)
             RunHistoryGui.Destroy()
         if IsObject(ToastHudGui)

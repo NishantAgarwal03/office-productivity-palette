@@ -1,6 +1,213 @@
 ﻿[
   {
     "duration_ms": 0,
+    "error_message": "Parse Number: No numeric value found in 'not a valid number'",
+    "failed_step": "step_1",
+    "input_snapshot": "not a valid number",
+    "output_snapshot": "",
+    "recipe_id": "recipe_failing_test",
+    "recipe_name": "Failing Test Recipe",
+    "recipe_version": 1,
+    "run_id": "20260907_124505_3772",
+    "status": "failed",
+    "step_snapshots": [
+      {
+        "duration_ms": 0,
+        "error": "Parse Number: No numeric value found in 'not a valid number'",
+        "inputs": {
+          "text": "not a valid number"
+        },
+        "status": "failed",
+        "step_id": "step_1"
+      }
+    ],
+    "timestamp": "2026-09-07 12:45:05"
+  },
+  {
+    "duration_ms": 0,
+    "error_message": "",
+    "failed_step": "",
+    "input_snapshot": "Reach out to admin@example.com, support@company.com, or ADMIN@EXAMPLE.COM.",
+    "output_snapshot": "admin@example.com\nsupport@company.com",
+    "recipe_id": "recipe_extract_clean_emails",
+    "recipe_name": "Extract & Clean Email List",
+    "recipe_version": 1,
+    "run_id": "20260907_124505_7326",
+    "status": "success",
+    "step_snapshots": [
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "text": "Reach out to admin@example.com, support@company.com, or ADMIN@EXAMPLE.COM."
+        },
+        "outputs": {
+          "count": 2,
+          "items": [
+            "admin@example.com",
+            "support@company.com"
+          ]
+        },
+        "status": "success",
+        "step_id": "step_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "items": [
+            "admin@example.com",
+            "support@company.com"
+          ]
+        },
+        "outputs": {
+          "count": 2,
+          "items": [
+            "admin@example.com",
+            "support@company.com"
+          ],
+          "removed_count": 0
+        },
+        "status": "success",
+        "step_id": "step_2"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "items": [
+            "admin@example.com",
+            "support@company.com"
+          ]
+        },
+        "outputs": {
+          "text": "admin@example.com\nsupport@company.com"
+        },
+        "status": "success",
+        "step_id": "step_3"
+      }
+    ],
+    "timestamp": "2026-09-07 12:45:05"
+  },
+  {
+    "duration_ms": 0,
+    "error_message": "",
+    "failed_step": "",
+    "input_snapshot": "50000",
+    "output_snapshot": "Base: ₹50,000.00 | GST (18%): ₹9,000.00 (CGST: ₹4,500.00 | SGST: ₹4,500.00) | Total: ₹59,000.00\\nAmount in Words: Rupees Fifty-Nine Thousand Only",
+    "recipe_id": "recipe_forward_gst_words",
+    "recipe_name": "Normal Forward GST & Words",
+    "recipe_version": 1,
+    "run_id": "20260907_124505_2157",
+    "status": "success",
+    "step_snapshots": [
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "text": "50000"
+        },
+        "outputs": {
+          "count": 1,
+          "items": [
+            "50000"
+          ]
+        },
+        "status": "success",
+        "step_id": "step_1"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "items_count": 1
+        },
+        "outputs": {
+          "count": 1,
+          "items": [
+            "Base: ₹50,000.00 | GST (18%): ₹9,000.00 (CGST: ₹4,500.00 | SGST: ₹4,500.00) | Total: ₹59,000.00\\nAmount in Words: Rupees Fifty-Nine Thousand Only"
+          ],
+          "text": "Base: ₹50,000.00 | GST (18%): ₹9,000.00 (CGST: ₹4,500.00 | SGST: ₹4,500.00) | Total: ₹59,000.00\\nAmount in Words: Rupees Fifty-Nine Thousand Only"
+        },
+        "status": "success",
+        "step_id": "step_7"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "items": [
+            "Base: ₹50,000.00 | GST (18%): ₹9,000.00 (CGST: ₹4,500.00 | SGST: ₹4,500.00) | Total: ₹59,000.00\\nAmount in Words: Rupees Fifty-Nine Thousand Only"
+          ]
+        },
+        "outputs": {
+          "text": "Base: ₹50,000.00 | GST (18%): ₹9,000.00 (CGST: ₹4,500.00 | SGST: ₹4,500.00) | Total: ₹59,000.00\\nAmount in Words: Rupees Fifty-Nine Thousand Only"
+        },
+        "status": "success",
+        "step_id": "step_8"
+      }
+    ],
+    "timestamp": "2026-09-07 12:45:05"
+  },
+  {
+    "duration_ms": 47,
+    "error_message": "",
+    "failed_step": "",
+    "input_snapshot": "12500\n45000\n999",
+    "output_snapshot": "12500 : Rupees Twelve Thousand Five Hundred Only\n45000 : Rupees Forty-Five Thousand Only\n999 : Rupees Nine Hundred Ninety-Nine Only",
+    "recipe_id": "recipe_numbers_to_words",
+    "recipe_name": "Numbers to Words (Row by Row)",
+    "recipe_version": 1,
+    "run_id": "20260907_124505_1562",
+    "status": "success",
+    "step_snapshots": [
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "text": "12500\n45000\n999"
+        },
+        "outputs": {
+          "count": 3,
+          "items": [
+            "12500",
+            "45000",
+            "999"
+          ]
+        },
+        "status": "success",
+        "step_id": "step_1"
+      },
+      {
+        "duration_ms": 16,
+        "inputs": {
+          "items_count": 3
+        },
+        "outputs": {
+          "count": 3,
+          "items": [
+            "12500 : Rupees Twelve Thousand Five Hundred Only",
+            "45000 : Rupees Forty-Five Thousand Only",
+            "999 : Rupees Nine Hundred Ninety-Nine Only"
+          ],
+          "text": "12500 : Rupees Twelve Thousand Five Hundred Only\n45000 : Rupees Forty-Five Thousand Only\n999 : Rupees Nine Hundred Ninety-Nine Only"
+        },
+        "status": "success",
+        "step_id": "step_6"
+      },
+      {
+        "duration_ms": 0,
+        "inputs": {
+          "items": [
+            "12500 : Rupees Twelve Thousand Five Hundred Only",
+            "45000 : Rupees Forty-Five Thousand Only",
+            "999 : Rupees Nine Hundred Ninety-Nine Only"
+          ]
+        },
+        "outputs": {
+          "text": "12500 : Rupees Twelve Thousand Five Hundred Only\n45000 : Rupees Forty-Five Thousand Only\n999 : Rupees Nine Hundred Ninety-Nine Only"
+        },
+        "status": "success",
+        "step_id": "step_7"
+      }
+    ],
+    "timestamp": "2026-09-07 12:45:05"
+  },
+  {
+    "duration_ms": 0,
     "error_message": "",
     "failed_step": "",
     "input_snapshot": "  hello world  ",

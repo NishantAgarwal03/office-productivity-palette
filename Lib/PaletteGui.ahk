@@ -100,29 +100,43 @@ ExpandTopUsedTools() {
 
 FilterPaletteItems(query, forceExpand := false) {
     global BuiltInActions, Snippets, PaletteListView, PaletteItems, PaletteStatus, PaletteGui, IsPaletteExpanded
-    if !IsObject(PaletteListView) || !IsObject(PaletteGui)
-        return
 
     qTrim := Trim(query)
     qLower := StrLower(qTrim)
 
     if (qTrim = "") {
         if (!forceExpand && !IsPaletteExpanded) {
-            PaletteListView.Visible := false
-            PaletteStatus.Visible := false
-            PaletteGui.Move(,, 800, 56)
-            CenterGuiOnActiveMonitor(PaletteGui, 800, 56)
+            if (IsSet(PaletteListView) && IsObject(PaletteListView))
+                PaletteListView.Visible := false
+            if (IsSet(PaletteStatus) && IsObject(PaletteStatus))
+                PaletteStatus.Visible := false
+            if (IsSet(PaletteGui) && IsObject(PaletteGui)) {
+                PaletteGui.Move(,, 800, 56)
+                CenterGuiOnActiveMonitor(PaletteGui, 800, 56)
+            }
             PaletteItems := []
-            return
+            return PaletteItems
         }
         PaletteItems := GetTopUsedOfficeActions(5)
     } else {
         PaletteItems := []
+        rawTokens := StrSplit(qLower, [" ", "`t"])
+        validTokens := []
+        for t in rawTokens {
+            cleanTok := Trim(t)
+            if (cleanTok != "")
+                validTokens.Push(cleanTok)
+        }
+
         Matches(item) {
-            return InStr(StrLower(item.name), qLower) 
-                || InStr(StrLower(item.category), qLower) 
-                || InStr(StrLower(item.description), qLower)
-                || (item.HasOwnProp("keywords") && InStr(StrLower(item.keywords), qLower))
+            if (validTokens.Length == 0)
+                return true
+            searchStr := StrLower(item.name . " " . item.category . " " . item.description . (item.HasOwnProp("keywords") ? (" " . item.keywords) : ""))
+            for tok in validTokens {
+                if !InStr(searchStr, tok)
+                    return false
+            }
+            return true
         }
 
         for act in BuiltInActions {
@@ -148,50 +162,55 @@ FilterPaletteItems(query, forceExpand := false) {
         }
     }
 
-    PaletteListView.Delete()
+    if (IsSet(PaletteListView) && IsObject(PaletteListView)) {
+        PaletteListView.Delete()
 
-    for idx, item in PaletteItems {
-        numBadge := (idx <= 9) ? ("A+" . idx) : ""
-        shortcutText := FormatShortcutBadge(item)
-        cleanDesc := item.description
+        for idx, item in PaletteItems {
+            numBadge := (idx <= 9) ? ("A+" . idx) : ""
+            shortcutText := FormatShortcutBadge(item)
+            cleanDesc := item.description
 
-        PaletteListView.Add("", numBadge, item.name, item.category, cleanDesc, shortcutText)
+            PaletteListView.Add("", numBadge, item.name, item.category, cleanDesc, shortcutText)
+        }
+
+        if (PaletteItems.Length > 0) {
+            rowH := 24
+            calcH := Min(390, 56 + (Min(PaletteItems.Length, 12) * rowH) + 36)
+            PaletteListView.Move(,, 780, calcH - 88)
+            PaletteStatus.Move(, calcH - 28, 770)
+            
+            PaletteListView.Visible := true
+            PaletteStatus.Visible := true
+            PaletteGui.Move(,, 800, calcH)
+            
+            PaletteListView.Modify(1, "Select Focus")
+        } else {
+            PaletteListView.Visible := false
+            PaletteStatus.Visible := true
+            PaletteStatus.Move(, 56, 770)
+            PaletteGui.Move(,, 800, 86)
+            PaletteStatus.Text := "No matching tools found for '" . qTrim . "'"
+            if IsSet(LogZeroMatchQuery)
+                LogZeroMatchQuery(qTrim)
+        }
+
+        try {
+            PaletteListView.ModifyCol(1, "42 Center")
+            PaletteListView.ModifyCol(2, 251)
+            PaletteListView.ModifyCol(3, 95)
+            PaletteListView.ModifyCol(4, 270)
+            PaletteListView.ModifyCol(5, "100 Right")
+        }
+
+        if (PaletteItems.Length > 0 && IsObject(PaletteStatus)) {
+            if (qTrim == "")
+                PaletteStatus.Text := "⚡ Top " . PaletteItems.Length . " Most Used Tools  |  Tap [Alt+1.." . PaletteItems.Length . "] or [Enter]  |  [↑↓] Navigate  |  [Esc] Dismiss"
+            else
+                PaletteStatus.Text := "Found " . PaletteItems.Length . " tools  |  Tap [Alt+1..9] or [Enter] to Execute  |  [↑↓] Navigate  |  [Esc] Dismiss"
+        }
     }
 
-    if (PaletteItems.Length > 0) {
-        rowH := 24
-        calcH := Min(390, 56 + (Min(PaletteItems.Length, 12) * rowH) + 36)
-        PaletteListView.Move(,, 780, calcH - 88)
-        PaletteStatus.Move(, calcH - 28, 770)
-        
-        PaletteListView.Visible := true
-        PaletteStatus.Visible := true
-        PaletteGui.Move(,, 800, calcH)
-        
-        PaletteListView.Modify(1, "Select Focus")
-    } else {
-        PaletteListView.Visible := false
-        PaletteStatus.Visible := true
-        PaletteStatus.Move(, 56, 770)
-        PaletteGui.Move(,, 800, 86)
-        PaletteStatus.Text := "No matching tools found for '" . qTrim . "'"
-        LogZeroMatchQuery(qTrim)
-    }
-
-    try {
-        PaletteListView.ModifyCol(1, "42 Center")
-        PaletteListView.ModifyCol(2, 251)
-        PaletteListView.ModifyCol(3, 95)
-        PaletteListView.ModifyCol(4, 270)
-        PaletteListView.ModifyCol(5, "100 Right")
-    }
-
-    if (PaletteItems.Length > 0 && IsObject(PaletteStatus)) {
-        if (qTrim == "")
-            PaletteStatus.Text := "⚡ Top " . PaletteItems.Length . " Most Used Tools  |  Tap [Alt+1.." . PaletteItems.Length . "] or [Enter]  |  [↑↓] Navigate  |  [Esc] Dismiss"
-        else
-            PaletteStatus.Text := "Found " . PaletteItems.Length . " tools  |  Tap [Alt+1..9] or [Enter] to Execute  |  [↑↓] Navigate  |  [Esc] Dismiss"
-    }
+    return PaletteItems
 }
 
 PaletteExecuteSelection(targetIndex := 0) {

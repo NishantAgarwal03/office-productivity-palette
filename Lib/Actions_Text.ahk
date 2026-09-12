@@ -5,7 +5,7 @@
 #Requires AutoHotkey v2.0
 
 RegisterTextActions() {
-    RegisterAction("Word & Character Statistics", "🔤 Transform", "[Needs Selection] Shows Words, Characters with/without spaces & Lines", "count, words, characters, stats, length", (*) => (IsSet(ShowTextStats) ? ShowTextStats() : ""), "", "Ctrl+Shift+G")
+    RegisterAction("Word & Character Statistics", "🔤 Transform", "[Needs Selection] Shows Words, Characters with/without spaces & Lines", "count, words, characters, stats, length, word count, char count, character count, wc", (*) => (IsSet(ShowTextStats) ? ShowTextStats() : ""), "", "Ctrl+Shift+G")
     RegisterAction("Cycle Text Case (Word Standard)", "🔤 Transform", "[Needs Selection] Cycles lower -> Title -> UPPER -> lower", "cycle, case, word, shift, f3, toggle", (*) => TransformSelectedText((txt) => CycleTextCase(txt)), "", "Shift+F3")
     RegisterAction("Paste Clean Plain Text", "🔤 Transform", "[Cleans Selection] Strips HTML, font styles & excess whitespace", "plain, clean, strip, paste, unformat", (*) => TransformSelectedText((txt) => CleanPlainText(txt)), "v")
     RegisterAction("Convert to UPPERCASE", "🔤 Transform", "[Needs Selection] Converts highlighted text to ALL CAPS", "upper, caps, case, uppercase", (*) => TransformSelectedText((txt) => StrUpper(txt)))
@@ -18,8 +18,10 @@ RegisterTextActions() {
     RegisterAction("Quote Lines (SQL IN format)", "🔤 Transform", "[Needs Selection] Wraps each line in ('item1', 'item2')", "sql, quote, in, list, csv", (*) => TransformSelectedText((txt) => FormatSqlInList(txt)))
     RegisterAction("Join Lines into Single Paragraph", "🔤 Transform", "[Needs Selection] Merges PDF/web linebreaks into single paragraph", "join, unwrapper, paragraph, pdf, single line", (*) => TransformSelectedText((txt) => JoinLinesIntoParagraph(txt)))
     RegisterAction("Convert Lines to Bulleted List (•)", "🔤 Transform", "[Needs Selection] Adds bullet point (• ) to every line", "bullet, bullets, bul, list, point, unordered, dots", (*) => TransformSelectedText((txt) => FormatBulletList(txt)))
-    RegisterAction("Convert Lines to Numbered List (1, 2, 3)", "🔤 Transform", "[Needs Selection] Adds sequential numbers (1. 2. 3.) to lines", "numbered, numbers, num, list, ordered, sequence", (*) => TransformSelectedText((txt) => FormatNumberedList(txt)))
+    RegisterAction("Convert Lines to Numbered List (1, 2, 3)", "🔤 Transform", "[Needs Selection] Adds sequential numbers (1. 2. 3.) to lines", "numbered, numbers, num, list, ordered, sequence, numbering, serial, serial numbers, sr no, numbering lines", (*) => TransformSelectedText((txt) => FormatNumberedList(txt)))
     RegisterAction("Convert Lines to Checklist ([ ])", "🔤 Transform", "[Needs Selection] Formats lines as markdown checkbox items", "check, checkbox, checklist, task, box, todo", (*) => TransformSelectedText((txt) => FormatChecklist(txt)), "x")
+    RegisterAction("Deduplicate Lines (Remove Duplicates)", "🔤 Transform", "[Needs Selection] Removes duplicate lines while preserving original order", "dedupe, duplicate, dup, dupl, remove duplicates, unique, distinct, lines, filter", (*) => TransformSelectedText((txt) => DeduplicateLines(txt)))
+    RegisterAction("Insert Lorem Ipsum Dummy Text", "🔤 Transform", "Inserts standard 2-paragraph placeholder filler text", "lorem, lipsum, random text, dummy, filler, placeholder, text", (*) => InsertText("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.`n`nDuis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."))
 }
 
 CycleTextCase(text) {
@@ -183,4 +185,48 @@ CleanPlainText(text) {
     
     return cleanT
 }
-
+
+DeduplicateLines(text, matchCase := false) {
+    if (text == "")
+        return ""
+    
+    normalized := StrReplace(text, "`r`n", "`n")
+    lines := StrSplit(normalized, "`n")
+    unique := []
+    seen := Map()
+    
+    for l in lines {
+        key := matchCase ? l : StrLower(l)
+        if !seen.Has(key) {
+            seen[key] := true
+            unique.Push(l)
+        }
+    }
+    
+    delim := InStr(text, "`r`n") ? "`r`n" : "`n"
+    res := ""
+    for idx, u in unique {
+        res .= (idx > 1 ? delim : "") . u
+    }
+    return res
+}
+
+GetTextStatistics(text) {
+    charCount := StrLen(text)
+    charNoSpace := StrLen(RegExReplace(text, "\s", ""))
+    trimmed := Trim(text)
+    words := (trimmed != "") ? StrSplit(RegExReplace(trimmed, "\s+", " "), " ") : []
+    wordCount := words.Length
+    lines := (text != "") ? StrSplit(text, "`n", "`r") : []
+    lineCount := lines.Length
+    summary := Format("Words: {1} | Chars: {2} (No spaces: {3}) | Lines: {4}", wordCount, charCount, charNoSpace, lineCount)
+    return Map(
+        "words", wordCount,
+        "characters", charCount,
+        "characters_no_space", charNoSpace,
+        "lines", lineCount,
+        "summary", summary,
+        "result", summary,
+        "text", summary
+    )
+}

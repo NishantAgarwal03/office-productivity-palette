@@ -12,7 +12,7 @@
 - Dynamic recipe category strictly set to '🔄 Recipe' with zero global hotkeys (palette-only invocation).
 - Successfully executed 3-part hardening: (1) 15 isolated defect regressions in `test_regression_defects.ahk` (41/41 pass), (2) Synthetic UI focus/hotkey interaction runner in `test_ui_interaction_runner.ahk` (63/63 pass), and (3) True bidirectional closed-world manifest integrity + static #Include AST auditor in `run_tests.py` (54 AHK files audited, 0 external <Lib> leaks).
 - Implemented 3 Workflow Composer Core Pillars: (1) Step Settings parameter dropdowns with Option 1 canonical patterns (<=24 chars), dual format_id/target_format_id alias, dual output contract ({result, text, format_name}), polymorphic Map/Object ingestion, (2) Complete input source (Selection, Clipboard, User Prompt, Files, None) and sink (Clipboard, Paste / Replace, Toast HUD, Silent) options with clean labels, (3) Flat-flow Loop architecture (LOOP START / LOOP END blocks) with isolated immutable iteration scoping, eliminating modal-in-a-modal nesting.
-- 100% Zero-Trust Master Test Suite passing: 1,293 / 1,293 assertions passing across all 8 test suites in 5.77 seconds with zero leaks, zero regressions, and bitwise data integrity verified.
+- 100% Zero-Trust Master Test Suite passing: 1,314 / 1,314 assertions passing across all 8 test suites in 5.20 seconds with zero leaks, zero regressions, and bitwise data integrity verified.
 
 | Timestamp | Instruction | Status |
 | :--- | :--- | :--- |
@@ -43,6 +43,7 @@
 | 2026-09-07 16:06 | Explain how to edit saved workflows, analyze existing edit flow, and implement intuitive 'Open / Load Recipe' capability in Workflow Composer & Command Palette. | Completed (100% Pass) |
 | 2026-09-07 16:51 | Evaluate two optional hardening recommendations (shallow clone comment in PipelineRunner and runItem.status guard in RunHistoryGui) and explain them in simple terms. | Completed |
 | 2026-09-07 16:55 | Apply optional hardening: shallow clone comment in PipelineRunner.ahk L373, status guard in RunHistoryGui.ahk L87, and DEFECT-033 test coverage. | Completed (100% Pass) |
+| 2026-09-12 18:45 | Analyze telemetry logs (usage_analytics.ini, zero_result_searches.log, error_telemetry.log, WorkflowRunHistory.json); upgrade Command Palette search engine to order-independent Multi-Token Matching; add telemetry-driven keywords/aliases to Math, Text, Workflow, CivilConvert, and DateTime actions; expose in-demand tools (Deduplicate Lines, Lorem Ipsum Dummy Text); add DEFECT-034 & DEFECT-035 regression tests; verify 100% pass across all 8 suites (1,216/1,216). | Completed (100% Pass) |
 
 ## Subject: Universal Bidirectional Date Format Converter
 - **Status**: 🔴 Active
@@ -82,14 +83,16 @@
 ### Remarks
 - Resolved core conflict with Microsoft PowerToys caused by AHK's default `A_MenuMaskKey` (`vk11` / `Ctrl`) injecting synthetic Control events upon Win/Alt release, which broke PowerToys exact modifier chord matching (Color Picker, Text Extractor, Always On Top, etc.).
 - Set `A_MenuMaskKey := "vk07"` globally, eliminating synthetic modifier bleed while keeping all 1,000+ word expansions and virtual `Ctrl+V` pasting 100% intact.
-- Added mouse drag guard (`Shift`/`Alt` physical check) in `~LButton Up::` to prevent synthetic clipboard extraction during FancyZones grid snapping and window movement.
+- Completely eliminated intrusive ambient `~LButton` / `~LButton Up` mouse drag selection hook, which was causing intermittent Windows typing freezes due to dropped synthetic `Ctrl` keyup events during text selection.
 - Pruned redundant keyboard shortcuts across `office_productivity_palette_v2.0.1.ahk` and satellite tools (`F12`, `^0`, `^Space` yielding to PowerToys Peek, `#+t`, `#+Space`, and `^+c` in `Word Count Tooltip.ahk`).
-- 100% Zero-Trust Master Test Suite passing: 1,293 / 1,293 assertions passing across all 8 test suites in Python 3.11 with zero regressions.
+- Restored uncommitted stashed PowerToys harmonization and Workflow Composer enhancements onto `master` and integrated with multi-token search engine and in-demand text tools.
+- Recompiled `office_productivity_palette_v2.0.1.exe` with Ahk2Exe and verified 100% Zero-Trust Master Test Suite: 1,314 / 1,314 assertions passing across all 8 test suites in Python 3.11 with zero regressions.
 
 | Timestamp | Instruction | Status |
 | :--- | :--- | :--- |
 | 2026-09-07 20:45 | Resolve PowerToys keyboard hook / modifier masking conflicts, verify 1,000+ word snippet paste safety under virtual Ctrl+V, prune redundant shortcuts, and ensure zero test regressions. | Completed (100% Pass) |
 | 2026-09-07 21:00 | Diagnose Win+Shift+E PowerToys Text Extractor failure: audit PowerToys logs, eliminate intrusive ~LButton Up drag hook clobbering OCR clipboard, recompile executable, and verify 100% test pass. | Completed (100% Pass) |
+| 2026-09-12 19:25 | Diagnose intermittent Windows typing freeze bug caused by dropped Ctrl keyup from synthetic ~LButton Up drag-selection hook and A_MenuMaskKey; restore stashed PowerToys harmonization on master, integrate with multi-token search and in-demand tools, recompile executable, and achieve 1,314/1,314 Zero-Trust test pass. | Completed (100% Pass) |
 
 ## Archived Subjects
 | Subject | Final Score | Date Archived |

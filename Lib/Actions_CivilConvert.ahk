@@ -10,7 +10,7 @@ RegisterCivilActions() {
         "Civil & Construction Instant Converter",
         "🏗️ Civil",
         "[Needs Selection or Prompts] Multi-unit converter for Length, Area, Volume, Weight, Force, Pressure, Rebar, Density & Flow",
-        "civil, convert, units, construction, sqft, sqm, cft, m3, cum, ft, meter, inch, rebar, bigha, gaj, mpa, kn, slope, steel, cement",
+        "civil, convert, convertor, units, construction, sqft, sqm, cft, m3, cum, ft, meter, inch, rebar, bigha, gaj, mpa, kn, slope, steel, cement",
         (*) => ShowCivilConverter(),
         "u",
         "^+u"
@@ -28,7 +28,7 @@ RegisterCivilActions() {
         "Construction Rate & Unit Price Converter",
         "🏗️ Civil",
         "[Needs Selection or Prompts] Converts unit rates (e.g. Rs 500/sqft to sqm, 4500/cum to cft, 2500/brass to cft)",
-        "rate, price, per sqft, per cum, per cft, per brass, unit price, cost per, boq, estimate",
+        "rate, price, per sqft, per cum, per cft, per brass, unit price, cost per, boq, estimate, convert, convertor, converter",
         (*) => PromptRateConverter()
     )
 
@@ -44,7 +44,7 @@ RegisterCivilActions() {
         "Configure Civil Converter Defaults",
         "🏗️ Civil",
         "Opens CivilEngineeringDefaults.ini to customize material densities, geometric fallback rules, and rebar defaults",
-        "configure, civil, defaults, engineering, convert, settings, density, rebar, slope, bigha",
+        "configure, civil, defaults, engineering, convert, convertor, settings, density, rebar, slope, bigha",
         (*) => OpenCivilDefaultsFile()
     )
 }

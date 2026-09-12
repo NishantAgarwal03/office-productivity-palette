@@ -270,9 +270,12 @@ try {
     AssertTrue("RunHistory", "RunHistory recorded executions", historyBefore >= 3)
 
     lastRun := RunHistory.LoadAll()[1]
-    AssertTrue("RunHistory", "Last run has run_id", lastRun.HasOwnProp("run_id") && StrLen(lastRun.run_id) > 0)
-    AssertEqual("RunHistory", "Last run status is success", lastRun.status, "success")
-    AssertTrue("RunHistory", "Last run has snapshots", lastRun.HasOwnProp("step_snapshots") && lastRun.step_snapshots.Length > 0)
+    hasRunId := (Type(lastRun) = "Map") ? (lastRun.Has("run_id") && StrLen(lastRun["run_id"]) > 0) : (lastRun.HasOwnProp("run_id") && StrLen(lastRun.run_id) > 0)
+    runStatus := (Type(lastRun) = "Map") ? lastRun["status"] : lastRun.status
+    hasSnaps := (Type(lastRun) = "Map") ? (lastRun.Has("step_snapshots") && lastRun["step_snapshots"].Length > 0) : (lastRun.HasOwnProp("step_snapshots") && lastRun.step_snapshots.Length > 0)
+    AssertTrue("RunHistory", "Last run has run_id", hasRunId)
+    AssertEqual("RunHistory", "Last run status is success", runStatus, "success")
+    AssertTrue("RunHistory", "Last run has snapshots", hasSnaps)
 
     ; Stop-on-First-Failure verification
     failingRecipe := {
@@ -301,8 +304,10 @@ try {
     AssertFalse("PipelineRunner", "Invalid input fails execution", failRunRes.success)
 
     failHistoryRecord := RunHistory.LoadAll()[1]
-    AssertEqual("RunHistory", "Failure recorded in history", failHistoryRecord.status, "failed")
-    AssertEqual("RunHistory", "Failed step identified", failHistoryRecord.failed_step, "step_1")
+    failStatus := (Type(failHistoryRecord) = "Map") ? failHistoryRecord["status"] : failHistoryRecord.status
+    failedStep := (Type(failHistoryRecord) = "Map") ? failHistoryRecord["failed_step"] : failHistoryRecord.failed_step
+    AssertEqual("RunHistory", "Failure recorded in history", failStatus, "failed")
+    AssertEqual("RunHistory", "Failed step identified", failedStep, "step_1")
 
 } catch as testErr {
     FailCount++

@@ -62,6 +62,7 @@ class ToolCatalog {
             normalizedOutputs.Push({
                 name: StrLower(Trim(out.name)),
                 type: WorkflowTypes.Normalize(out.type),
+                primary: (out.HasOwnProp("primary") && out.primary),
                 label: out.HasOwnProp("label") ? out.label : out.name
             })
         }
@@ -157,25 +158,33 @@ class ToolCatalog {
             "count", 5
         )
 
+        GetRef(c) => (c.HasOwnProp("sourceRef") && c.sourceRef != "") ? c.sourceRef : (c.HasOwnProp("stepId") && c.HasOwnProp("outputName") ? c.stepId . "." . c.outputName : "")
+
         for inp in tool.inputs {
             candidates := ToolCatalog.GetCompatibleOutputs(inp.type, inScopeOutputs)
             if (candidates.Length > 0) {
                 chosen := candidates[candidates.Length]
                 bestScore := -1
 
-                latestRef := candidates[candidates.Length].sourceRef
+                latestRef := GetRef(candidates[candidates.Length])
                 dotPos := InStr(latestRef, ".")
                 latestStepPrefix := (dotPos > 0) ? SubStr(latestRef, 1, dotPos) : ""
 
                 for cand in candidates {
                     score := 0
-                    cRef := cand.sourceRef
+                    cRef := GetRef(cand)
                     dotIdx := InStr(cRef, ".")
                     field := (dotIdx > 0) ? SubStr(cRef, dotIdx + 1) : cRef
                     pfx := (dotIdx > 0) ? SubStr(cRef, 1, dotIdx) : ""
 
                     if (pfx != "" && pfx = latestStepPrefix)
                         score += 1000
+
+                    if (cand.HasOwnProp("isPrimary") && cand.isPrimary)
+                        score += 500
+
+                    if (field = inp.name)
+                        score += 100
 
                     if payloadWeights.Has(field)
                         score += payloadWeights[field]
@@ -188,7 +197,7 @@ class ToolCatalog {
                     }
                 }
 
-                bindings[inp.name] := chosen.sourceRef
+                bindings[inp.name] := GetRef(chosen)
             } else if (inp.required) {
                 needsInput := true
                 missing.Push(inp.name)

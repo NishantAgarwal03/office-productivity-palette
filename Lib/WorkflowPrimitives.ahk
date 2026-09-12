@@ -29,7 +29,7 @@ RegisterWorkflowPrimitives() {
             {name: "delimiter", type: "text", default: "\n", options: ["\n", "\n\n", ",", ";", "\t"], label: "Delimiter"}
         ],
         outputs: [
-            {name: "items", type: "items<text>", label: "Extracted Items"},
+            {name: "items", type: "items<text>", primary: true, label: "Extracted Items"},
             {name: "count", type: "number", label: "Item Count"}
         ],
         handler: (inputs, settings) => WorkflowPrimitives.ExecuteSplit(inputs, settings)
@@ -49,7 +49,7 @@ RegisterWorkflowPrimitives() {
             {name: "delimiter", type: "text", default: "\n", options: ["\n", "\n\n", ", ", "; ", "\t", " "], label: "Separator"}
         ],
         outputs: [
-            {name: "text", type: "text", label: "Joined Text"}
+            {name: "text", type: "text", primary: true, label: "Joined Text"}
         ],
         handler: (inputs, settings) => WorkflowPrimitives.ExecuteJoin(inputs, settings)
     })
@@ -71,7 +71,7 @@ RegisterWorkflowPrimitives() {
             {name: "match_case", type: "boolean", default: false, label: "Case Sensitive"}
         ],
         outputs: [
-            {name: "items", type: "items<any>", label: "Filtered Items"},
+            {name: "items", type: "items<any>", primary: true, label: "Filtered Items"},
             {name: "count", type: "number", label: "Result Count"}
         ],
         handler: (inputs, settings) => WorkflowPrimitives.ExecuteFilter(inputs, settings)
@@ -91,7 +91,7 @@ RegisterWorkflowPrimitives() {
             {name: "match_case", type: "boolean", default: false, label: "Case Sensitive"}
         ],
         outputs: [
-            {name: "items", type: "items<any>", label: "Unique Items"},
+            {name: "items", type: "items<any>", primary: true, label: "Unique Items"},
             {name: "count", type: "number", label: "Unique Count"},
             {name: "removed_count", type: "number", label: "Duplicates Removed"}
         ],
@@ -115,7 +115,7 @@ RegisterWorkflowPrimitives() {
             {name: "end", type: "number", default: 10, label: "End Index"}
         ],
         outputs: [
-            {name: "items", type: "items<any>", label: "Sliced Items"},
+            {name: "items", type: "items<any>", primary: true, label: "Sliced Items"},
             {name: "count", type: "number", label: "Slice Count"}
         ],
         handler: (inputs, settings) => WorkflowPrimitives.ExecuteSlice(inputs, settings)
@@ -136,7 +136,7 @@ RegisterWorkflowPrimitives() {
             {name: "output_type", type: "text", default: "text", options: ["text", "number"], label: "Output Type"}
         ],
         outputs: [
-            {name: "value", type: "any", label: "User Input"}
+            {name: "value", type: "any", primary: true, label: "User Input"}
         ],
         handler: (inputs, settings) => WorkflowPrimitives.ExecuteInterceptor(inputs, settings)
     })
@@ -155,7 +155,7 @@ RegisterWorkflowPrimitives() {
             {name: "template", type: "text", default: "{item}", label: "Template String"}
         ],
         outputs: [
-            {name: "text", type: "text", label: "Formatted Text"}
+            {name: "text", type: "text", primary: true, label: "Formatted Text"}
         ],
         handler: (inputs, settings) => WorkflowPrimitives.ExecuteTemplate(inputs, settings)
     })
@@ -172,7 +172,7 @@ RegisterWorkflowPrimitives() {
         ],
         settings: [],
         outputs: [
-            {name: "item", type: "any", label: "Current Iteration Item"},
+            {name: "item", type: "any", primary: true, label: "Current Iteration Item"},
             {name: "index", type: "number", label: "Current Index"},
             {name: "count", type: "number", label: "Total Count"}
         ],
@@ -191,7 +191,7 @@ RegisterWorkflowPrimitives() {
         ],
         settings: [],
         outputs: [
-            {name: "items", type: "items<any>", label: "Collected Items Array"},
+            {name: "items", type: "items<any>", primary: true, label: "Collected Items Array"},
             {name: "count", type: "number", label: "Total Items Processed"},
             {name: "text", type: "text", label: "Newline Joined Text"}
         ],

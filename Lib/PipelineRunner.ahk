@@ -35,6 +35,7 @@ class PipelineRunner {
         recipeSteps := (Type(recipe) = "Map") ? (recipe.Has("steps") ? recipe["steps"] : []) : (recipe.HasOwnProp("steps") ? recipe.steps : [])
         inpSrc := (Type(recipe) = "Map") ? (recipe.Has("input_source") ? recipe["input_source"] : "selection") : (recipe.HasOwnProp("input_source") ? recipe.input_source : "selection")
         sink := (Type(recipe) = "Map") ? (recipe.Has("sink") ? StrLower(recipe["sink"]) : "clipboard") : (recipe.HasOwnProp("sink") ? StrLower(recipe.sink) : "clipboard")
+        finalOutputRef := (Type(recipe) = "Map") ? (recipe.Has("final_output_ref") ? Trim(String(recipe["final_output_ref"])) : "") : (recipe.HasOwnProp("final_output_ref") ? Trim(String(recipe.final_output_ref)) : "")
 
         ; 1. Capture Physical Input
         rawInput := explicitInput
@@ -140,30 +141,77 @@ class PipelineRunner {
             }
 
             ; 4. Resolve Final Output from designated or last step
-            if (recipeSteps.Length > 0) {
+            if (finalOutputRef != "") {
+                resolvedFinal := PipelineRunner._ResolveReference(finalOutputRef, results)
+                if (Type(resolvedFinal) = "Array") {
+                    joinedArr := ""
+                    for idx, itm in resolvedFinal {
+                        valStr := IsObject(itm) ? JsonHelper.Stringify(itm) : String(itm)
+                        joinedArr .= (idx > 1 ? "`n" : "") . valStr
+                    }
+                    finalOutput := joinedArr
+                } else if IsObject(resolvedFinal) {
+                    finalOutput := JsonHelper.Stringify(resolvedFinal)
+                } else {
+                    finalOutput := String(resolvedFinal)
+                }
+            } else if (recipeSteps.Length > 0) {
                 lastStep := recipeSteps[recipeSteps.Length]
                 lastStepId := (Type(lastStep) = "Map") ? lastStep["id"] : lastStep.id
+                lastToolId := (Type(lastStep) = "Map") ? (lastStep.Has("tool_id") ? lastStep["tool_id"] : "") : (lastStep.HasOwnProp("tool_id") ? lastStep.tool_id : "")
                 if results.Has(lastStepId) {
                     lastResMap := results[lastStepId]
-                    if lastResMap.Has("text") {
-                        finalOutput := lastResMap["text"]
+                    ; Priority 1: Check if the tool declared a primary output
+                    primaryKey := ""
+                    if (lastToolId != "" && ToolCatalog.Has(lastToolId)) {
+                        toolDef := ToolCatalog.Get(lastToolId)
+                        if (toolDef.HasOwnProp("outputs") && IsObject(toolDef.outputs)) {
+                            for outDef in toolDef.outputs {
+                                if (outDef.HasOwnProp("primary") && outDef.primary) {
+                                    primaryKey := outDef.name
+                                    break
+                                }
+                            }
+                        }
+                    }
+
+                    if (primaryKey != "" && lastResMap.Has(primaryKey)) {
+                        val := lastResMap[primaryKey]
+                        if (Type(val) = "Array") {
+                            itemsArr := val
+                            finalOutput := ""
+                            for idx, itm in itemsArr {
+                                valStr := IsObject(itm) ? JsonHelper.Stringify(itm) : String(itm)
+                                finalOutput .= (idx > 1 ? "`n" : "") . valStr
+                            }
+                        } else if IsObject(val) {
+                            finalOutput := JsonHelper.Stringify(val)
+                        } else {
+                            finalOutput := String(val)
+                        }
+                    } else if lastResMap.Has("text") {
+                        v := lastResMap["text"]
+                        finalOutput := IsObject(v) ? JsonHelper.Stringify(v) : String(v)
                     } else if lastResMap.Has("result") {
-                        finalOutput := lastResMap["result"]
+                        v := lastResMap["result"]
+                        finalOutput := IsObject(v) ? JsonHelper.Stringify(v) : String(v)
                     } else if lastResMap.Has("summary") {
-                        finalOutput := lastResMap["summary"]
+                        v := lastResMap["summary"]
+                        finalOutput := IsObject(v) ? JsonHelper.Stringify(v) : String(v)
                     } else if lastResMap.Has("words") {
-                        finalOutput := lastResMap["words"]
+                        v := lastResMap["words"]
+                        finalOutput := IsObject(v) ? JsonHelper.Stringify(v) : String(v)
                     } else if lastResMap.Has("items") {
                         ; Join array into newline text
                         itemsArr := lastResMap["items"]
                         finalOutput := ""
                         for idx, itm in itemsArr {
-                            valStr := (Type(itm) = "Map") ? JsonHelper.Stringify(itm) : String(itm)
+                            valStr := IsObject(itm) ? JsonHelper.Stringify(itm) : String(itm)
                             finalOutput .= (idx > 1 ? "`n" : "") . valStr
                         }
                     } else {
                         for k, v in lastResMap {
-                            finalOutput := String(v)
+                            finalOutput := IsObject(v) ? JsonHelper.Stringify(v) : String(v)
                             break
                         }
                     }
@@ -223,6 +271,8 @@ class PipelineRunner {
         return {
             success: (status = "success"),
             output: finalOutput,
+            final_output: finalOutput,
+            duration_ms: durationMs,
             runId: runId,
             error: errMsg,
             failed_step: errStep,
@@ -264,17 +314,15 @@ class PipelineRunner {
                 inputsMap[inpName] := val
             }
         }
-        inputsMap["__results"] := results
+        inputsMap["__results"] := results.Clone()
 
-        ; Merge settings with defaults polymorphically (Map or Object) with format_id/target_format_id alias
+        ; Merge settings with defaults polymorphically (Map or Object)
         settingsMap := Map()
         for s in tool.settings {
             if (Type(stepSettings) = "Map" && stepSettings.Has(s.name)) {
                 settingsMap[s.name] := stepSettings[s.name]
             } else if (IsObject(stepSettings) && stepSettings.HasOwnProp(s.name)) {
                 settingsMap[s.name] := stepSettings.%s.name%
-            } else if (s.name = "format_id" && ((Type(stepSettings) = "Map" && stepSettings.Has("target_format_id")) || (IsObject(stepSettings) && stepSettings.HasOwnProp("target_format_id")))) {
-                settingsMap[s.name] := (Type(stepSettings) = "Map") ? stepSettings["target_format_id"] : stepSettings.target_format_id
             } else {
                 settingsMap[s.name] := s.default
             }
@@ -319,8 +367,10 @@ class PipelineRunner {
             throw Error(Format("Loop step '{1}' expects Items<T>, got '{2}'", loopId, Type(items)))
 
         collected := []
-        
+        iterationRecords := []
+
         for idx, item in items {
+            ; Shallow clone is safe: sub-steps create NEW result keys, never mutate existing inner Maps
             iterResults := results.Clone()
             iterResults["loop"] := Map(
                 "item", item,
@@ -330,8 +380,27 @@ class PipelineRunner {
                 "is_last", (idx = items.Length)
             )
 
-            for subStep in subSteps {
-                PipelineRunner._ExecuteStep(subStep, iterResults, [])
+            iterSnapshots := []
+            try {
+                for subStep in subSteps {
+                    PipelineRunner._ExecuteStep(subStep, iterResults, iterSnapshots)
+                }
+            } catch as loopStepErr {
+                iterationRecords.Push({
+                    iteration: idx,
+                    item: item,
+                    snapshots: iterSnapshots,
+                    error: loopStepErr.Message
+                })
+                stepSnapshots.Push({
+                    step_id: loopId,
+                    status: "failed",
+                    duration_ms: A_TickCount - stepStart,
+                    inputs: Map("items_count", items.Length, "failed_iteration", idx),
+                    iterations: iterationRecords,
+                    error: loopStepErr.Message
+                })
+                throw loopStepErr
             }
 
             retVal := ""
@@ -346,8 +415,33 @@ class PipelineRunner {
 
                 if (targetStepId != "" && iterResults.Has(targetStepId)) {
                     sMap := iterResults[targetStepId]
+
+                    ; Check primary first if subStep declares one
+                    targetToolId := ""
+                    for sub in subSteps {
+                        sId := (Type(sub) = "Map") ? sub["id"] : sub.id
+                        if (sId = targetStepId) {
+                            targetToolId := (Type(sub) = "Map") ? (sub.Has("tool_id") ? sub["tool_id"] : "") : (sub.HasOwnProp("tool_id") ? sub.tool_id : "")
+                            break
+                        }
+                    }
+                    primaryKey := ""
+                    if (targetToolId != "" && ToolCatalog.Has(targetToolId)) {
+                        toolDef := ToolCatalog.Get(targetToolId)
+                        if (toolDef.HasOwnProp("outputs") && IsObject(toolDef.outputs)) {
+                            for outDef in toolDef.outputs {
+                                if (outDef.HasOwnProp("primary") && outDef.primary) {
+                                    primaryKey := outDef.name
+                                    break
+                                }
+                            }
+                        }
+                    }
+
                     if (Type(sMap) = "Map") {
-                        if sMap.Has("text")
+                        if (primaryKey != "" && sMap.Has(primaryKey))
+                            retVal := sMap[primaryKey]
+                        else if sMap.Has("text")
                             retVal := sMap["text"]
                         else if sMap.Has("result")
                             retVal := sMap["result"]
@@ -362,7 +456,9 @@ class PipelineRunner {
                             }
                         }
                     } else if IsObject(sMap) {
-                        if sMap.HasOwnProp("text")
+                        if (primaryKey != "" && sMap.HasOwnProp(primaryKey))
+                            retVal := sMap.%primaryKey%
+                        else if sMap.HasOwnProp("text")
                             retVal := sMap.text
                         else if sMap.HasOwnProp("result")
                             retVal := sMap.result
@@ -383,11 +479,17 @@ class PipelineRunner {
             }
 
             collected.Push(retVal)
+            iterationRecords.Push({
+                iteration: idx,
+                item: item,
+                snapshots: iterSnapshots,
+                return_value: retVal
+            })
         }
 
         joinedText := ""
         for cIdx, cVal in collected {
-            valStr := (Type(cVal) = "Map") ? JsonHelper.Stringify(cVal) : String(cVal)
+            valStr := IsObject(cVal) ? JsonHelper.Stringify(cVal) : String(cVal)
             joinedText .= (cIdx > 1 ? "`n" : "") . valStr
         }
 
@@ -406,6 +508,7 @@ class PipelineRunner {
             status: "success",
             duration_ms: A_TickCount - stepStart,
             inputs: Map("items_count", items.Length),
+            iterations: iterationRecords,
             outputs: loopOut
         })
     }

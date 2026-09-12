@@ -1,4 +1,4 @@
-﻿{
+{
   "category": "🔄 Recipe",
   "description": "Calculates standard forward GST on base amount(s) and converts total amount to words",
   "id": "recipe_forward_gst_words",
@@ -22,54 +22,62 @@
         "items": "step_1.items"
       },
       "id": "step_2",
-      "is_container": 1,
-      "loop_return_step": "step_2_4",
-      "sub_steps": [
-        {
-          "bindings": {
-            "text": "loop.item"
-          },
-          "id": "step_2_1",
-          "settings": {},
-          "tool_id": "parse_number",
-          "tool_version": 1
-        },
-        {
-          "bindings": {
-            "amount": "step_2_1.number"
-          },
-          "id": "step_2_2",
-          "settings": {
-            "rate": 18
-          },
-          "tool_id": "normal_gst",
-          "tool_version": 1
-        },
-        {
-          "bindings": {
-            "number": "step_2_2.total"
-          },
-          "id": "step_2_3",
-          "settings": {},
-          "tool_id": "number_to_words",
-          "tool_version": 1
-        },
-        {
-          "bindings": {},
-          "id": "step_2_4",
-          "settings": {
-            "template": "{step_2_2.summary}\nAmount in Words: {step_2_3.words}"
-          },
-          "tool_id": "primitive_template_combine",
-          "tool_version": 1
-        }
-      ]
+      "settings": {},
+      "tool_id": "loop_start",
+      "tool_version": 1
     },
     {
       "bindings": {
-        "items": "step_2.items"
+        "text": "loop.item"
       },
       "id": "step_3",
+      "settings": {},
+      "tool_id": "parse_number",
+      "tool_version": 1
+    },
+    {
+      "bindings": {
+        "amount": "step_3.number"
+      },
+      "id": "step_4",
+      "settings": {
+        "rate": 18
+      },
+      "tool_id": "normal_gst",
+      "tool_version": 1
+    },
+    {
+      "bindings": {
+        "number": "step_4.total"
+      },
+      "id": "step_5",
+      "settings": {},
+      "tool_id": "number_to_words",
+      "tool_version": 1
+    },
+    {
+      "bindings": {},
+      "id": "step_6",
+      "settings": {
+        "template": "{step_4.summary}\\nAmount in Words: {step_5.words}"
+      },
+      "tool_id": "primitive_template_combine",
+      "tool_version": 1
+    },
+    {
+      "bindings": {
+        "collect": "step_6.text"
+      },
+      "id": "step_7",
+      "settings": {},
+      "tool_id": "loop_end",
+      "tool_version": 1
+    },
+    {
+      "bindings": {
+        "items": "step_7.items"
+      },
+      "id": "step_8",
       "settings": {
         "delimiter": "\\n\\n"
       },

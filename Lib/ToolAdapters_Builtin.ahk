@@ -28,7 +28,8 @@ RegisterBuiltinToolAdapters() {
         ],
         settings: [],
         outputs: [
-            {name: "number", type: "number", label: "Parsed Number"},
+            {name: "number", type: "number", primary: true, label: "Parsed Number"},
+            {name: "text", type: "text", label: "Number Text"},
             {name: "is_valid", type: "boolean", label: "Is Valid Number"}
         ],
         handler: (inputs, settings) => ToolAdapters.ExecuteParseNumber(inputs, settings)
@@ -46,7 +47,8 @@ RegisterBuiltinToolAdapters() {
         ],
         settings: [],
         outputs: [
-            {name: "text", type: "text", label: "Formatted Currency"}
+            {name: "text", type: "text", primary: true, label: "Formatted Currency"},
+            {name: "result", type: "text", label: "Formatted Currency"}
         ],
         handler: (inputs, settings) => ToolAdapters.ExecuteFormatCurrencyInr(inputs, settings)
     })
@@ -65,11 +67,11 @@ RegisterBuiltinToolAdapters() {
             {name: "rate", type: "number", default: 18, options: [5, 12, 18, 28], label: "GST Rate %"}
         ],
         outputs: [
+            {name: "total", type: "number", primary: true, label: "Total Invoice Amount"},
             {name: "base", type: "number", label: "Taxable Base"},
             {name: "gst", type: "number", label: "Total GST Amount"},
             {name: "cgst", type: "number", label: "CGST Amount"},
             {name: "sgst", type: "number", label: "SGST Amount"},
-            {name: "total", type: "number", label: "Total Invoice Amount"},
             {name: "summary", type: "text", label: "Formatted GST Summary"},
             {name: "text", type: "text", label: "Default Text Output"},
             {name: "record", type: "record", label: "Complete GST Record"}
@@ -91,8 +93,8 @@ RegisterBuiltinToolAdapters() {
             {name: "rate", type: "number", default: 18, options: [5, 12, 18, 28], label: "GST Rate %"}
         ],
         outputs: [
+            {name: "base", type: "number", primary: true, label: "Taxable Base"},
             {name: "original", type: "number", label: "Original Inclusive Amount"},
-            {name: "base", type: "number", label: "Taxable Base"},
             {name: "gst", type: "number", label: "Total GST Amount"},
             {name: "cgst", type: "number", label: "CGST Amount"},
             {name: "sgst", type: "number", label: "SGST Amount"},
@@ -115,7 +117,7 @@ RegisterBuiltinToolAdapters() {
         ],
         settings: [],
         outputs: [
-            {name: "words", type: "text", label: "Amount in Words"},
+            {name: "words", type: "text", primary: true, label: "Amount in Words"},
             {name: "text", type: "text", label: "Default Text Output"}
         ],
         handler: (inputs, settings) => ToolAdapters.ExecuteNumberToWords(inputs, settings)
@@ -133,7 +135,7 @@ RegisterBuiltinToolAdapters() {
         ],
         settings: [],
         outputs: [
-            {name: "sum", type: "number", label: "Total Sum"},
+            {name: "sum", type: "number", primary: true, label: "Total Sum"},
             {name: "count", type: "number", label: "Item Count"}
         ],
         handler: (inputs, settings) => ToolAdapters.ExecuteSumNumbers(inputs, settings)
@@ -151,10 +153,51 @@ RegisterBuiltinToolAdapters() {
         ],
         settings: [],
         outputs: [
-            {name: "average", type: "number", label: "Average"},
+            {name: "average", type: "number", primary: true, label: "Average"},
             {name: "count", type: "number", label: "Item Count"}
         ],
         handler: (inputs, settings) => ToolAdapters.ExecuteAverageNumbers(inputs, settings)
+    })
+
+    ; --- Evaluate Math Expression ---
+    ToolCatalog.Register({
+        id: "math_evaluate",
+        version: 1,
+        label: "Evaluate Math Expression",
+        category: "Finance & Math",
+        description: "Computes mathematical expressions and formulas with Indian scale words (lakh, cr)",
+        inputs: [
+            {name: "text", type: "text", required: true, label: "Formula / Expression"}
+        ],
+        settings: [],
+        outputs: [
+            {name: "result", type: "number", primary: true, label: "Evaluated Result"},
+            {name: "number", type: "number", label: "Evaluated Number"},
+            {name: "text", type: "text", label: "Result Text"},
+            {name: "display", type: "text", label: "Display Formula"}
+        ],
+        handler: (inputs, settings) => ToolAdapters.ExecuteMathEvaluate(inputs, settings)
+    })
+
+    ; --- Percentage Change & Growth ---
+    ToolCatalog.Register({
+        id: "math_percentage_change",
+        version: 1,
+        label: "Percentage Change Calculator",
+        category: "Finance & Math",
+        description: "Calculates relative percentage change and symmetric difference between two numbers",
+        inputs: [
+            {name: "text", type: "text", required: true, label: "Text with Two Numbers"}
+        ],
+        settings: [],
+        outputs: [
+            {name: "text", type: "text", primary: true, label: "Calculation Summary"},
+            {name: "relative_change", type: "number", label: "Relative Change %"},
+            {name: "symmetric_change", type: "number", label: "Symmetric Difference %"},
+            {name: "summary", type: "text", label: "Calculation Summary"},
+            {name: "result", type: "text", label: "Calculation Summary"}
+        ],
+        handler: (inputs, settings) => ToolAdapters.ExecutePercentageChange(inputs, settings)
     })
 
     ; ==================================================================================================================
@@ -173,7 +216,7 @@ RegisterBuiltinToolAdapters() {
         ],
         settings: [],
         outputs: [
-            {name: "items", type: "items<text>", label: "Extracted Emails"},
+            {name: "items", type: "items<text>", primary: true, label: "Extracted Emails"},
             {name: "count", type: "number", label: "Email Count"}
         ],
         handler: (inputs, settings) => ToolAdapters.ExecuteExtractEmails(inputs, settings)
@@ -191,7 +234,7 @@ RegisterBuiltinToolAdapters() {
         ],
         settings: [],
         outputs: [
-            {name: "items", type: "items<text>", label: "Extracted URLs"},
+            {name: "items", type: "items<text>", primary: true, label: "Extracted URLs"},
             {name: "count", type: "number", label: "URL Count"}
         ],
         handler: (inputs, settings) => ToolAdapters.ExecuteExtractUrls(inputs, settings)
@@ -209,7 +252,7 @@ RegisterBuiltinToolAdapters() {
         ],
         settings: [],
         outputs: [
-            {name: "items", type: "items<text>", label: "Extracted Phones"},
+            {name: "items", type: "items<text>", primary: true, label: "Extracted Phones"},
             {name: "count", type: "number", label: "Phone Count"}
         ],
         handler: (inputs, settings) => ToolAdapters.ExecuteExtractPhones(inputs, settings)
@@ -227,7 +270,7 @@ RegisterBuiltinToolAdapters() {
         ],
         settings: [],
         outputs: [
-            {name: "items", type: "items<text>", label: "Extracted GSTINs"},
+            {name: "items", type: "items<text>", primary: true, label: "Extracted GSTINs"},
             {name: "count", type: "number", label: "GSTIN Count"}
         ],
         handler: (inputs, settings) => ToolAdapters.ExecuteExtractGstin(inputs, settings)
@@ -245,10 +288,30 @@ RegisterBuiltinToolAdapters() {
         ],
         settings: [],
         outputs: [
-            {name: "items", type: "items<text>", label: "Extracted Dates"},
+            {name: "items", type: "items<text>", primary: true, label: "Extracted Dates"},
             {name: "count", type: "number", label: "Date Count"}
         ],
         handler: (inputs, settings) => ToolAdapters.ExecuteExtractDates(inputs, settings)
+    })
+
+    ; --- Extract PAN Numbers ---
+    ToolCatalog.Register({
+        id: "extract_pan",
+        version: 1,
+        label: "Extract Indian PAN Numbers",
+        category: "Extraction",
+        description: "Extracts 10-character Permanent Account Numbers (PAN)",
+        inputs: [
+            {name: "text", type: "text", required: true, label: "Raw Text"}
+        ],
+        settings: [],
+        outputs: [
+            {name: "text", type: "text", primary: true, label: "PAN Text"},
+            {name: "result", type: "text", label: "PAN Text"},
+            {name: "items", type: "items<text>", label: "Extracted PANs"},
+            {name: "count", type: "number", label: "PAN Count"}
+        ],
+        handler: (inputs, settings) => ToolAdapters.ExecuteExtractPan(inputs, settings)
     })
 
     ; ==================================================================================================================
@@ -267,7 +330,7 @@ RegisterBuiltinToolAdapters() {
             {name: "format", type: "text", default: "yyyy-MM-dd", options: ["yyyy-MM-dd", "dd-MMM-yyyy", "dd/MM/yyyy", "MMMM d, yyyy"], label: "Date Format"}
         ],
         outputs: [
-            {name: "date", type: "text", label: "Formatted Date"}
+            {name: "date", type: "text", primary: true, label: "Formatted Date"}
         ],
         handler: (inputs, settings) => ToolAdapters.ExecuteDateToday(inputs, settings)
     })
@@ -283,15 +346,52 @@ RegisterBuiltinToolAdapters() {
             {name: "text", type: "text", required: true, label: "Input Text or Date"}
         ],
         settings: [
-            {name: "format_id", type: "number", default: 1, options: [1, 2, 3, 4, 5, 6, 7, 8, 9], label: "Target Format ID (1-9)"},
-            {name: "target_format_id", type: "number", default: 1, options: [1, 2, 3, 4, 5, 6, 7, 8, 9], label: "Target Format ID (1-9)"}
+            {name: "format_id", type: "number", default: 1, options: [1, 2, 3, 4, 5, 6, 7, 8, 9], label: "Target Format ID (1-9)"}
         ],
         outputs: [
+            {name: "text", type: "text", primary: true, label: "Converted Text Output"},
             {name: "result", type: "text", label: "Converted Date or Text"},
-            {name: "text", type: "text", label: "Converted Text Output"},
             {name: "format_name", type: "text", label: "Target Format Name"}
         ],
         handler: (inputs, settings) => ToolAdapters.ExecuteConvertDateFormat(inputs, settings)
+    })
+
+    ; --- Date Difference & Working Days ---
+    ToolCatalog.Register({
+        id: "date_difference",
+        version: 1,
+        label: "Date Difference & Working Days",
+        category: "Date / Time",
+        description: "Calculates total calendar days and working days (Mon-Fri) between two dates",
+        inputs: [
+            {name: "text", type: "text", required: true, label: "Text with Two Dates"}
+        ],
+        settings: [],
+        outputs: [
+            {name: "text", type: "text", primary: true, label: "Difference Report"},
+            {name: "summary", type: "text", label: "Difference Report"},
+            {name: "result", type: "text", label: "Difference Report"}
+        ],
+        handler: (inputs, settings) => ToolAdapters.ExecuteDateDifference(inputs, settings)
+    })
+
+    ; --- Indian Financial Year & Quarter ---
+    ToolCatalog.Register({
+        id: "date_financial_year",
+        version: 1,
+        label: "Indian Financial Year & Quarter",
+        category: "Date / Time",
+        description: "Resolves date into Indian Financial Year and Quarter (e.g. FY 2026-27 (Q2))",
+        inputs: [
+            {name: "text", type: "text", required: true, label: "Date Text"}
+        ],
+        settings: [],
+        outputs: [
+            {name: "fy", type: "text", primary: true, label: "Fiscal Year and Quarter"},
+            {name: "result", type: "text", label: "Fiscal Year and Quarter"},
+            {name: "text", type: "text", label: "Fiscal Year and Quarter"}
+        ],
+        handler: (inputs, settings) => ToolAdapters.ExecuteFinancialYear(inputs, settings)
     })
 
     ; ==================================================================================================================
@@ -310,43 +410,89 @@ RegisterBuiltinToolAdapters() {
         ],
         settings: [],
         outputs: [
-            {name: "text", type: "text", label: "Cleaned Text"}
+            {name: "text", type: "text", primary: true, label: "Cleaned Text"}
         ],
         handler: (inputs, settings) => ToolAdapters.ExecuteCleanText(inputs, settings)
     })
 
-    ; --- Convert to UPPERCASE ---
+    ; --- Unwrap Text Paragraphs ---
     ToolCatalog.Register({
-        id: "case_upper",
+        id: "clean_text_unwrap",
         version: 1,
-        label: "Convert to UPPERCASE",
+        label: "Unwrap Text Paragraphs",
         category: "Text",
-        description: "Converts all characters to uppercase",
+        description: "Unwraps hard line breaks within paragraphs into single flowing lines",
         inputs: [
             {name: "text", type: "text", required: true, label: "Input Text"}
         ],
         settings: [],
         outputs: [
-            {name: "text", type: "text", label: "Uppercase Text"}
+            {name: "text", type: "text", primary: true, label: "Unwrapped Text"}
         ],
-        handler: (inputs, settings) => ToolAdapters.ExecuteCaseTransform(inputs, settings, "upper")
+        handler: (inputs, settings) => ToolAdapters.ExecuteCleanTextUnwrap(inputs, settings)
     })
 
-    ; --- Convert to lowercase ---
+    ; --- Change Text Case (Consolidated) ---
     ToolCatalog.Register({
-        id: "case_lower",
+        id: "convert_case",
         version: 1,
-        label: "Convert to lowercase",
+        label: "Change Text Case",
         category: "Text",
-        description: "Converts all characters to lowercase",
+        description: "Converts text case (UPPERCASE, lowercase, Title Case, Sentence case, snake_case, kebab-case, camelCase)",
+        inputs: [
+            {name: "text", type: "text", required: true, label: "Input Text"}
+        ],
+        settings: [
+            {name: "case_mode", type: "text", default: "upper", options: ["upper", "lower", "title", "sentence", "snake", "kebab", "camel"], label: "Target Case"}
+        ],
+        outputs: [
+            {name: "text", type: "text", primary: true, label: "Converted Text"},
+            {name: "result", type: "text", label: "Converted Text"}
+        ],
+        handler: (inputs, settings) => ToolAdapters.ExecuteConvertCase(inputs, settings)
+    })
+
+    ; --- Format Lines as List (Consolidated) ---
+    ToolCatalog.Register({
+        id: "format_list",
+        version: 1,
+        label: "Format Lines as List",
+        category: "Text",
+        description: "Formats each line as a checklist, bullet list, numbered list, or SQL IN clause",
+        inputs: [
+            {name: "text", type: "text", required: true, label: "Input Text"}
+        ],
+        settings: [
+            {name: "list_type", type: "text", default: "checklist", options: ["checklist", "bullet", "numbered", "sql"], label: "List Type"}
+        ],
+        outputs: [
+            {name: "text", type: "text", primary: true, label: "Formatted List"},
+            {name: "result", type: "text", label: "Formatted List"}
+        ],
+        handler: (inputs, settings) => ToolAdapters.ExecuteFormatList(inputs, settings)
+    })
+
+    ; --- Word & Character Statistics ---
+    ToolCatalog.Register({
+        id: "text_statistics",
+        version: 1,
+        label: "Count Words & Statistics",
+        category: "Text",
+        description: "Calculates character, word, line counts, and summary statistics",
         inputs: [
             {name: "text", type: "text", required: true, label: "Input Text"}
         ],
         settings: [],
         outputs: [
-            {name: "text", type: "text", label: "Lowercase Text"}
+            {name: "text", type: "text", primary: true, label: "Statistics Summary"},
+            {name: "summary", type: "text", label: "Statistics Summary"},
+            {name: "result", type: "text", label: "Statistics Summary"},
+            {name: "words", type: "number", label: "Word Count"},
+            {name: "chars", type: "number", label: "Character Count"},
+            {name: "chars_no_spaces", type: "number", label: "Character Count (No Spaces)"},
+            {name: "lines", type: "number", label: "Line Count"}
         ],
-        handler: (inputs, settings) => ToolAdapters.ExecuteCaseTransform(inputs, settings, "lower")
+        handler: (inputs, settings) => ToolAdapters.ExecuteTextStatistics(inputs, settings)
     })
 
     ; ==================================================================================================================
@@ -365,15 +511,59 @@ RegisterBuiltinToolAdapters() {
         ],
         settings: [],
         outputs: [
+            {name: "record", type: "record", primary: true, label: "Metadata Record"},
             {name: "path", type: "text", label: "Full Path"},
             {name: "name", type: "text", label: "Filename"},
             {name: "stem", type: "text", label: "Filename Stem"},
             {name: "extension", type: "text", label: "Extension"},
             {name: "folder", type: "text", label: "Folder Path"},
-            {name: "index", type: "number", label: "File Index"},
-            {name: "record", type: "record", label: "Metadata Record"}
+            {name: "index", type: "number", label: "File Index"}
         ],
         handler: (inputs, settings) => ToolAdapters.ExecuteFileMetadata(inputs, settings)
+    })
+
+    ; ==================================================================================================================
+    ; 6. Civil Engineering Adapters
+    ; ==================================================================================================================
+
+    ; --- Civil Unit Converter ---
+    ToolCatalog.Register({
+        id: "civil_unit_convert",
+        version: 1,
+        label: "Convert Civil Engineering Units",
+        category: "🏗️ Civil",
+        description: "Converts length, area, volume, and weight between Metric, Imperial, and Indian units",
+        inputs: [
+            {name: "text", type: "text", required: true, label: "Value and Units (e.g. '100 sqft to sqm')"}
+        ],
+        settings: [],
+        outputs: [
+            {name: "text", type: "text", primary: true, label: "Conversion Result"},
+            {name: "summary", type: "text", label: "Conversion Result"},
+            {name: "result", type: "text", label: "Conversion Result"},
+            {name: "value", type: "number", label: "Converted Number"}
+        ],
+        handler: (inputs, settings) => ToolAdapters.ExecuteCivilUnitConvert(inputs, settings)
+    })
+
+    ; --- Civil Pythagoras & 3-4-5 Triangle Solver ---
+    ToolCatalog.Register({
+        id: "civil_pythagoras",
+        version: 1,
+        label: "Pythagoras & 3-4-5 Triangle Solver",
+        category: "🏗️ Civil",
+        description: "Calculates hypotenuse, missing leg, or validates right-angle squareness (e.g. '3m 4m')",
+        inputs: [
+            {name: "text", type: "text", required: true, label: "Dimensions (e.g. '20ft 30ft' or '8m 10m 13.2m')"}
+        ],
+        settings: [],
+        outputs: [
+            {name: "text", type: "text", primary: true, label: "Solution Report"},
+            {name: "summary", type: "text", label: "Solution Report"},
+            {name: "result", type: "text", label: "Solution Report"},
+            {name: "value", type: "number", label: "Calculated Dimension"}
+        ],
+        handler: (inputs, settings) => ToolAdapters.ExecuteCivilPythagoras(inputs, settings)
     })
 }
 
@@ -383,21 +573,76 @@ class ToolAdapters {
         txt := inputs.Has("text") ? String(inputs["text"]) : ""
         p := ParseNumberOrCurrency(txt)
         if (p.isValid) {
+            val := (Round(p.value, 6) = Round(p.value, 0)) ? Integer(Round(p.value, 0)) : p.value
             res := Map()
-            res["number"] := p.value
+            res["number"] := val
+            res["text"] := String(val)
             res["is_valid"] := true
             return res
         }
 
         cleanMach := CleanToMachineNumber(txt)
         if (cleanMach != "" && IsNumber(cleanMach)) {
+            valNum := Number(cleanMach)
+            val := (Round(valNum, 6) = Round(valNum, 0)) ? Integer(Round(valNum, 0)) : valNum
             res := Map()
-            res["number"] := Number(cleanMach)
+            res["number"] := val
+            res["text"] := String(val)
             res["is_valid"] := true
             return res
         }
 
-        throw Error(Format("Parse Number: Unable to parse numeric value from '{1}'", txt))
+        ; In multiline input, check line-by-line for primary standalone number or currency
+        lines := StrSplit(txt, ["`r`n", "`n", "`r"])
+        for line in lines {
+            lineTrim := Trim(line)
+            if (lineTrim == "" || InStr(lineTrim, "@"))
+                continue
+            ; Skip date-only lines (e.g. 15/08/2026)
+            if RegExMatch(lineTrim, "^\d{1,4}[-/.]\d{1,2}[-/.]\d{1,4}$")
+                continue
+            pLine := ParseNumberOrCurrency(lineTrim)
+            if (pLine.isValid) {
+                val := (Round(pLine.value, 6) = Round(pLine.value, 0)) ? Integer(Round(pLine.value, 0)) : pLine.value
+                res := Map()
+                res["number"] := val
+                res["text"] := String(val)
+                res["is_valid"] := true
+                return res
+            }
+        }
+
+        ; In multiline input, check tokens on non-date lines
+        for line in lines {
+            lineTrim := Trim(line)
+            if (lineTrim == "" || InStr(lineTrim, "@"))
+                continue
+            if RegExMatch(lineTrim, "^\d{1,4}[-/.]\d{1,2}[-/.]\d{1,4}$")
+                continue
+            toks := ExtractNumericTokens(lineTrim)
+            if (toks.Length > 0) {
+                valNum := toks[1].value
+                val := (Round(valNum, 6) = Round(valNum, 0)) ? Integer(Round(valNum, 0)) : valNum
+                res := Map()
+                res["number"] := val
+                res["text"] := String(val)
+                res["is_valid"] := true
+                return res
+            }
+        }
+
+        tokens := ExtractNumericTokens(txt)
+        if (tokens.Length > 0) {
+            valNum := tokens[1].value
+            val := (Round(valNum, 6) = Round(valNum, 0)) ? Integer(Round(valNum, 0)) : valNum
+            res := Map()
+            res["number"] := val
+            res["text"] := String(val)
+            res["is_valid"] := true
+            return res
+        }
+
+        throw Error(Format("Parse Number: No numeric value found in '{1}'", SubStr(txt, 1, 60)))
     }
 
     static ExecuteFormatCurrencyInr(inputs, settings) {
@@ -680,13 +925,9 @@ class ToolAdapters {
         if (Type(settings) = "Map") {
             if settings.Has("format_id")
                 targetFmt := Integer(settings["format_id"])
-            else if settings.Has("target_format_id")
-                targetFmt := Integer(settings["target_format_id"])
         } else if IsObject(settings) {
             if settings.HasOwnProp("format_id")
                 targetFmt := Integer(settings.format_id)
-            else if settings.HasOwnProp("target_format_id")
-                targetFmt := Integer(settings.target_format_id)
         }
 
         if (targetFmt < 1 || targetFmt > 9)
@@ -724,23 +965,204 @@ class ToolAdapters {
         return res
     }
 
+    static ExecuteDateDifference(inputs, settings) {
+        txt := inputs.Has("text") ? String(inputs["text"]) : ""
+        dates := ExtractRawDatesList(txt)
+        if (dates.Length < 2)
+            throw Error("Date Difference: Requires at least 2 valid dates in input text")
+        diffReport := CalculateDateDifference(dates[1], dates[2])
+        res := Map()
+        res["summary"] := diffReport
+        res["result"] := diffReport
+        res["text"] := diffReport
+        return res
+    }
+
+    static ExecuteFinancialYear(inputs, settings) {
+        txt := inputs.Has("text") ? String(inputs["text"]) : ""
+        fyStr := ResolveIndianFinancialYear(txt)
+        if (fyStr = "Invalid Date")
+            throw Error(Format("Indian Financial Year: Unable to resolve financial year from '{1}'", SubStr(txt, 1, 40)))
+        res := Map()
+        res["fy"] := fyStr
+        res["result"] := fyStr
+        res["text"] := fyStr
+        return res
+    }
+
+    static ExecuteExtractPan(inputs, settings) {
+        txt := inputs.Has("text") ? String(inputs["text"]) : ""
+        pans := []
+        pos := 1
+        while RegExMatch(txt, "i)\b[a-z]{5}\d{4}[a-z]{1}\b", &m, pos) {
+            val := StrUpper(m[0])
+            found := false
+            for p in pans {
+                if (p = val) {
+                    found := true
+                    break
+                }
+            }
+            if !found
+                pans.Push(val)
+            pos := m.Pos + m.Len
+        }
+        resText := ""
+        for idx, p in pans
+            resText .= (idx > 1 ? "`n" : "") . p
+        res := Map()
+        res["text"] := resText
+        res["result"] := resText
+        res["items"] := pans
+        return res
+    }
+
+    static ExecuteMathEvaluate(inputs, settings) {
+        expr := inputs.Has("expression") ? String(inputs["expression"]) : (inputs.Has("text") ? String(inputs["text"]) : "")
+        if (!IsSet(SafeEvaluateMath))
+            throw Error("Math Evaluator engine is not loaded")
+        resObj := SafeEvaluateMath(expr)
+        if (!resObj.success)
+            throw Error(resObj.HasOwnProp("errorMessage") ? resObj.errorMessage : "Math evaluation failed")
+        numVal := (Round(resObj.result) == resObj.result) ? Integer(Round(resObj.result)) : resObj.result
+        res := Map()
+        res["result"] := numVal
+        res["number"] := numVal
+        res["text"] := resObj.resultStr
+        res["display"] := resObj.displayExpr
+        return res
+    }
+
+    static ExecutePercentageChange(inputs, settings) {
+        txt := inputs.Has("text") ? String(inputs["text"]) : ""
+        return ComputePercentageChange(txt)
+    }
+
     ; --- Text Transformation Handlers ---
     static ExecuteCleanText(inputs, settings) {
         txt := inputs.Has("text") ? String(inputs["text"]) : ""
         res := Map()
         res["text"] := CleanPlainText(txt)
+        res["result"] := res["text"]
         return res
     }
 
-    static ExecuteCaseTransform(inputs, settings, targetCase) {
+    static ExecuteCleanTextUnwrap(inputs, settings) {
         txt := inputs.Has("text") ? String(inputs["text"]) : ""
         res := Map()
-        if (targetCase = "upper")
-            res["text"] := StrUpper(txt)
-        else if (targetCase = "lower")
-            res["text"] := StrLower(txt)
-        else
-            res["text"] := txt
+        res["text"] := JoinLinesIntoParagraph(txt)
+        res["result"] := res["text"]
+        return res
+    }
+
+    static ExecuteConvertCase(inputs, settings) {
+        txt := inputs.Has("text") ? String(inputs["text"]) : ""
+        mode := "upper"
+        if (Type(settings) = "Map") {
+            if settings.Has("case_mode")
+                mode := StrLower(String(settings["case_mode"]))
+            else if settings.Has("mode")
+                mode := StrLower(String(settings["mode"]))
+        } else if IsObject(settings) {
+            if settings.HasOwnProp("case_mode")
+                mode := StrLower(String(settings.case_mode))
+            else if settings.HasOwnProp("mode")
+                mode := StrLower(String(settings.mode))
+        }
+
+        converted := ""
+        switch mode {
+            case "upper": converted := StrUpper(txt)
+            case "lower": converted := StrLower(txt)
+            case "title": converted := StrTitle(txt)
+            case "sentence": converted := ToSentenceCase(txt)
+            case "snake": converted := ToDelimitedCase(txt, "_")
+            case "kebab": converted := ToDelimitedCase(txt, "-")
+            case "camel": converted := ToCamelCase(txt)
+            default: converted := StrUpper(txt)
+        }
+        res := Map()
+        res["text"] := converted
+        res["result"] := converted
+        return res
+    }
+
+    static ExecuteFormatList(inputs, settings) {
+        txt := inputs.Has("text") ? String(inputs["text"]) : ""
+        listType := "checklist"
+        if (Type(settings) = "Map") {
+            if settings.Has("list_type")
+                listType := StrLower(String(settings["list_type"]))
+            else if settings.Has("list_mode")
+                listType := StrLower(String(settings["list_mode"]))
+            else if settings.Has("type")
+                listType := StrLower(String(settings["type"]))
+        } else if IsObject(settings) {
+            if settings.HasOwnProp("list_type")
+                listType := StrLower(String(settings.list_type))
+            else if settings.HasOwnProp("list_mode")
+                listType := StrLower(String(settings.list_mode))
+            else if settings.HasOwnProp("type")
+                listType := StrLower(String(settings.type))
+        }
+
+        formatted := ""
+        switch listType {
+            case "checklist": formatted := FormatChecklist(txt)
+            case "bullet": formatted := FormatBulletList(txt)
+            case "numbered": formatted := FormatNumberedList(txt)
+            case "sql": formatted := FormatSqlInList(txt)
+            default: formatted := FormatChecklist(txt)
+        }
+        res := Map()
+        res["text"] := formatted
+        res["result"] := formatted
+        return res
+    }
+
+    static ExecuteTextStatistics(inputs, settings) {
+        txt := inputs.Has("text") ? String(inputs["text"]) : ""
+        stats := GetTextStatistics(txt)
+        res := Map()
+        res["summary"] := stats["summary"]
+        res["result"] := stats["summary"]
+        res["text"] := stats["summary"]
+        res["words"] := stats["words"]
+        res["chars"] := stats["characters"]
+        res["chars_no_spaces"] := stats["characters_no_space"]
+        res["lines"] := stats["lines"]
+        return res
+    }
+
+    ; --- Civil Engineering Handlers ---
+    static ExecuteCivilUnitConvert(inputs, settings) {
+        txt := inputs.Has("text") ? String(inputs["text"]) : ""
+        if (!IsSet(CivilConverterEngine))
+            throw Error("CivilConverterEngine is not loaded")
+        resObj := CivilConverterEngine.Evaluate(txt)
+        if (!resObj.success)
+            throw Error(resObj.HasOwnProp("message") ? resObj.message : "Unit conversion failed")
+        res := Map()
+        outStr := resObj.HasOwnProp("resultStr") ? resObj.resultStr : (resObj.HasOwnProp("displayExpr") ? resObj.displayExpr : String(resObj.val))
+        res["summary"] := outStr
+        res["result"] := outStr
+        res["text"] := outStr
+        if (resObj.HasOwnProp("val"))
+            res["value"] := resObj.val
+        return res
+    }
+
+    static ExecuteCivilPythagoras(inputs, settings) {
+        txt := inputs.Has("text") ? String(inputs["text"]) : ""
+        resObj := CivilPythagoras.Evaluate(txt)
+        if (!resObj.success)
+            throw Error(resObj.HasOwnProp("message") ? resObj.message : "Pythagoras calculation failed")
+        res := Map()
+        res["summary"] := resObj.resultStr
+        res["result"] := resObj.resultStr
+        res["text"] := resObj.resultStr
+        if (resObj.HasOwnProp("val"))
+            res["value"] := resObj.val
         return res
     }
 

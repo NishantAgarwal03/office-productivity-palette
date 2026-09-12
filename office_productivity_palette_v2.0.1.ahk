@@ -13,6 +13,7 @@
 #Requires AutoHotkey v2.0
 #SingleInstance Force
 Persistent(true)
+A_MenuMaskKey := "vk07" ; Prevent Win/Alt masking from injecting synthetic Control keystrokes (PowerToys compatibility)
 
 ; --- Modular Component Inclusions ---
 #Include "Lib\Globals.ahk"
@@ -96,38 +97,11 @@ InitApp() {
 ;                                             GLOBAL HOTKEYS & TRIGGERS
 ; ======================================================================================================================
 
-; --- Ambient Selection Tooltip Watcher ---
-global DragStartX := 0
-global DragStartY := 0
-
-~LButton::
-{
-    global DragStartX, DragStartY
-    CoordMode("Mouse", "Screen")
-    MouseGetPos(&DragStartX, &DragStartY)
-}
-
-~LButton Up::
-{
-    global DragStartX, DragStartY
-    CoordMode("Mouse", "Screen")
-    MouseGetPos(&endX, &endY)
-    if (Abs(endX - DragStartX) > 30 || Abs(endY - DragStartY) > 20) {
-        sel := SafeGetSelection(0.2)
-        sLen := StrLen(Trim(sel))
-        if (sLen >= 30 && sLen <= 100) {
-            ShowToast("📌 Task Detected — Double-tap Ctrl to add to Action Board", 2500)
-        }
-    }
-}
-
-; --- In-Selection Find & Replace (Ctrl + H / F12) ---
+; --- In-Selection Find & Replace (Ctrl + H) ---
 ^h::ShowFindReplaceModal()
-F12::ShowFindReplaceModal()
 
-; --- Repeat Last Action (Win + 0 / Ctrl + 0) ---
+; --- Repeat Last Action (Win + 0) ---
 #0::RepeatLastAction()
-^0::RepeatLastAction()
 
 ; --- 1. Universal Command Palette: Double-Shift (JetBrains / IntelliJ Style) ---
 ~LShift Up::
@@ -146,9 +120,6 @@ F12::ShowFindReplaceModal()
     }
 }
 
-; Fallback Hotkey for Palette
-^Space::ShowCommandPalette()
-
 ; --- Double-Ctrl: Instant Task / Commitment Capture ---
 ~LCtrl Up::
 ~RCtrl Up::
@@ -165,7 +136,6 @@ F12::ShowFindReplaceModal()
 
 ; --- Action Board Hotkeys (Win + T / Ctrl + Shift + T) ---
 #t::ToggleActionBoard()
-#+t::ToggleActionBoard()
 ^+t::CaptureSelectedTextAsTask()
 
 ; --- 2. Instant Highlight & Save Snippet (Ctrl + Shift + H) ---
@@ -177,9 +147,8 @@ F12::ShowFindReplaceModal()
 ; --- 3. Visual Snippet Manager (Win + Esc) ---
 #Esc::ShowSnippetManagerGui()
 
-; --- 4. Leader Key Chords (Win + Shift + ; / Win + Shift + Space) ---
+; --- 4. Leader Key Chord (Win + Shift + ;) ---
 #+;::ActivateLeaderKey()
-#+Space::ActivateLeaderKey()
 
 ; --- 5. Word 2016 Parity Hotkeys (Active everywhere EXCEPT Microsoft Word) ---
 #HotIf !WinActive("ahk_exe WINWORD.EXE")

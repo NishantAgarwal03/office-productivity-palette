@@ -64,7 +64,7 @@ class RunHistory {
 
         try {
             content := FileRead(ledgerPath, "UTF-8")
-            parsed := JsonHelper.Parse(content, true)
+            parsed := JsonHelper.Parse(content, false)
             if (Type(parsed) = "Array")
                 return parsed
             return []
@@ -81,7 +81,8 @@ class RunHistory {
     static Get(runId) {
         history := RunHistory.LoadAll()
         for entry in history {
-            if (entry.HasOwnProp("run_id") && entry.run_id = runId)
+            eid := IsObject(entry) ? (Type(entry) = "Map" ? (entry.Has("run_id") ? entry["run_id"] : "") : (entry.HasOwnProp("run_id") ? entry.run_id : "")) : ""
+            if (eid = runId)
                 return entry
         }
         return ""
@@ -98,7 +99,8 @@ class RunHistory {
         found := false
 
         for entry in history {
-            if (entry.HasOwnProp("run_id") && entry.run_id = runId) {
+            eid := IsObject(entry) ? (Type(entry) = "Map" ? (entry.Has("run_id") ? entry["run_id"] : "") : (entry.HasOwnProp("run_id") ? entry.run_id : "")) : ""
+            if (eid = runId) {
                 found := true
                 continue
             }

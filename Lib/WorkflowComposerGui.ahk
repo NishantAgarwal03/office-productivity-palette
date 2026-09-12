@@ -18,6 +18,7 @@ global WcCurrentRecipe := ""
 global WcSelectedStepIdx := 0
 global WcStepSettingsModalGui := ""
 global WcAddStepModalGui := ""
+global WcOpenRecipeModalGui := ""
 
 ; Controls in Right Inspector Panel
 global WcInspectorTitle := ""
@@ -30,7 +31,7 @@ global WcSampleInput := ""
 
 ShowWorkflowComposer(recipeToEdit := "") {
     global WorkflowComposerGui, WcStepsListView, WcCurrentRecipe, WcSelectedStepIdx
-    global WcInspectorTitle, WcInspectorDesc, WcPreviewBox, WcStatusText
+    global WcInspectorTitle, WcInspectorDesc, WcPreviewBox, WcStatusText, WcSampleInput
     global ThemeBg, ThemeSurface, ThemeText, ThemeMuted, ThemeBorder, ThemePrimary, ThemeAccent
 
     if IsObject(WorkflowComposerGui) {
@@ -54,6 +55,7 @@ ShowWorkflowComposer(recipeToEdit := "") {
         }
     }
     WcSelectedStepIdx := 0
+    WcSampleInput := WcGetDefaultSampleForRecipe(WcCurrentRecipe)
 
     WorkflowComposerGui := Gui("+AlwaysOnTop -MaximizeBox -MinimizeBox +Owner", "Workflow Composer - Recipe Builder")
     WorkflowComposerGui.BackColor := ThemeBg
@@ -80,7 +82,7 @@ ShowWorkflowComposer(recipeToEdit := "") {
         if (s = WcCurrentRecipe.input_source)
             currSrcIdx := idx
     }
-    ddlSource := WorkflowComposerGui.Add("DropDownList", "x485 y12 w140 h26 Background" . ThemeSurface . " c" . ThemeText . " Choose" . currSrcIdx, srcDisplay)
+    ddlSource := WorkflowComposerGui.Add("DropDownList", "x485 y12 w140 r5 Background" . ThemeSurface . " c" . ThemeText . " Choose" . currSrcIdx, srcDisplay)
     ddlSource.OnEvent("Change", (ctrl, *) => (WcCurrentRecipe.input_source := srcValues[ctrl.Value]))
 
     WorkflowComposerGui.SetFont("s9.5 Bold c" . ThemePrimary)
@@ -93,7 +95,7 @@ ShowWorkflowComposer(recipeToEdit := "") {
         if (sk = WcCurrentRecipe.sink)
             currSinkIdx := idx
     }
-    ddlSink := WorkflowComposerGui.Add("DropDownList", "x695 y12 w125 h26 Background" . ThemeSurface . " c" . ThemeText . " Choose" . currSinkIdx, sinkDisplay)
+    ddlSink := WorkflowComposerGui.Add("DropDownList", "x695 y12 w125 r5 Background" . ThemeSurface . " c" . ThemeText . " Choose" . currSinkIdx, sinkDisplay)
     ddlSink.OnEvent("Change", (ctrl, *) => (WcCurrentRecipe.sink := sinkValues[ctrl.Value]))
 
     ; Steps ListView
@@ -158,9 +160,15 @@ ShowWorkflowComposer(recipeToEdit := "") {
     ; ==================================================================================================================
 
     WorkflowComposerGui.SetFont("s9 c" . ThemeMuted, "Segoe UI")
-    WcStatusText := WorkflowComposerGui.Add("Text", "x20 y472 w600 h22", "Ready. Build your recipe and click Save.")
+    WcStatusText := WorkflowComposerGui.Add("Text", "x20 y472 w350 h22", "Ready. Build your recipe and click Save.")
 
     WorkflowComposerGui.SetFont("s9 Bold")
+    btnOpen := WorkflowComposerGui.Add("Button", "x380 y466 w120 h34", "📂 Open Recipe")
+    btnOpen.OnEvent("Click", (*) => WcShowOpenRecipeModal())
+
+    btnCopyRes := WorkflowComposerGui.Add("Button", "x510 y466 w110 h34", "📋 Copy Result")
+    btnCopyRes.OnEvent("Click", (*) => WcCopyLatestTestResult())
+
     btnTest := WorkflowComposerGui.Add("Button", "x630 y466 w140 h34", "▶ Test Run")
     btnTest.OnEvent("Click", (*) => WcTestRun())
 
@@ -175,7 +183,11 @@ ShowWorkflowComposer(recipeToEdit := "") {
 }
 
 CloseWorkflowComposer() {
-    global WorkflowComposerGui, WcStepSettingsModalGui, WcAddStepModalGui
+    global WorkflowComposerGui, WcStepSettingsModalGui, WcAddStepModalGui, WcOpenRecipeModalGui
+    if IsObject(WcOpenRecipeModalGui) {
+        try WcOpenRecipeModalGui.Destroy()
+        WcOpenRecipeModalGui := ""
+    }
     if IsObject(WcStepSettingsModalGui) {
         try WcStepSettingsModalGui.Destroy()
         WcStepSettingsModalGui := ""
@@ -221,8 +233,6 @@ WcRefreshStepsList() {
         } else if (toolId = "loop_end") {
             toolLabel := "🏁 LOOP END (Collect)"
             inLoop := false
-        } else if (step.HasOwnProp("is_container") && step.is_container) {
-            toolLabel := "🔁 Loop Container"
         } else if (toolId != "" && ToolCatalog.Has(toolId)) {
             tool := ToolCatalog.Get(toolId)
             toolLabel := (inLoop ? "↳ " : "") . tool.label
@@ -248,6 +258,29 @@ WcRefreshStepsList() {
         WcSelectStep(1)
 }
 
+WcFormatValueForInspector(val) {
+    if !IsObject(val)
+        return String(val)
+    try {
+        if (Type(val) = "Array") {
+            if (val.Length = 0)
+                return "[]"
+            str := StrReplace(StrReplace(JsonHelper.Stringify(val), "`r`n", "`n"), "`n", "`r`n")
+            return "Array[" . val.Length . "] " . str
+        }
+        if (Type(val) = "Map") {
+            if (val.Count = 0)
+                return "{}"
+            str := StrReplace(StrReplace(JsonHelper.Stringify(val), "`r`n", "`n"), "`n", "`r`n")
+            return "Map[" . val.Count . "] " . str
+        }
+        str := StrReplace(StrReplace(JsonHelper.Stringify(val), "`r`n", "`n"), "`n", "`r`n")
+        return Type(val) . " " . str
+    } catch {
+        return "<" . Type(val) . ">"
+    }
+}
+
 WcSelectStep(stepIdx) {
     global WcCurrentRecipe, WcSelectedStepIdx
     global WcInspectorTitle, WcInspectorDesc, WcPreviewBox, WcStatusText
@@ -258,15 +291,14 @@ WcSelectStep(stepIdx) {
     WcSelectedStepIdx := stepIdx
     step := WcCurrentRecipe.steps[stepIdx]
 
-    if (step.HasOwnProp("is_container") && step.is_container) {
-        WcInspectorTitle.Text := "Loop Container (" . step.id . ")"
-    } else if (step.HasOwnProp("tool_id") && step.tool_id = "loop_start") {
+    if (step.HasOwnProp("tool_id") && step.tool_id = "loop_start") {
         WcInspectorTitle.Text := "LOOP START (" . step.id . ")"
     } else if (step.HasOwnProp("tool_id") && step.tool_id = "loop_end") {
         WcInspectorTitle.Text := "LOOP END (" . step.id . ")"
-    } else if !ToolCatalog.Has(step.tool_id) {
-        WcInspectorTitle.Text := "Unknown Tool: " . step.tool_id
-        WcPreviewBox.Value := "Error: Tool '" . step.tool_id . "' not found in ToolCatalog."
+    } else if !step.HasOwnProp("tool_id") || !ToolCatalog.Has(step.tool_id) {
+        tName := step.HasOwnProp("tool_id") ? step.tool_id : "undefined"
+        WcInspectorTitle.Text := "Unknown Tool: " . tName
+        WcPreviewBox.Value := "Error: Tool '" . tName . "' not found in ToolCatalog."
         return
     } else {
         tool := ToolCatalog.Get(step.tool_id)
@@ -287,7 +319,7 @@ WcSelectStep(stepIdx) {
             subRecipe.steps.Push(WcCurrentRecipe.steps[A_Index])
         }
 
-        execInput := (WcSampleInput != "") ? WcSampleInput : "15/08/2026`n50000`n12500`nadmin@example.com"
+        execInput := (WcSampleInput != "") ? WcSampleInput : WcGetDefaultSampleForRecipe(WcCurrentRecipe)
         res := PipelineRunner.Execute(subRecipe, execInput, {
             is_preview: true,
             suppress_sink: true,
@@ -296,12 +328,14 @@ WcSelectStep(stepIdx) {
         })
 
         selectedStepId := (Type(step) = "Map") ? step["id"] : step.id
-        stepToolName := (step.HasOwnProp("is_container") && step.is_container) ? "Loop Container" : (step.HasOwnProp("tool_id") ? step.tool_id : "Step")
+        stepToolName := step.HasOwnProp("tool_id") ? step.tool_id : "Step"
 
-        ; Find snapshot for selected step
+        ; Find snapshot for selected step (search backwards from end of execution trace)
         selectedSnap := ""
-        if (res.HasOwnProp("stepSnapshots") && IsObject(res.stepSnapshots)) {
-            for snap in res.stepSnapshots {
+        if (res.HasOwnProp("stepSnapshots") && IsObject(res.stepSnapshots) && res.stepSnapshots.Length > 0) {
+            Loop res.stepSnapshots.Length {
+                revIdx := res.stepSnapshots.Length - A_Index + 1
+                snap := res.stepSnapshots[revIdx]
                 snapId := (Type(snap) = "Map") ? snap["step_id"] : snap.step_id
                 if (snapId = selectedStepId) {
                     selectedSnap := snap
@@ -321,7 +355,9 @@ WcSelectStep(stepIdx) {
             inMap := (Type(selectedSnap) = "Map") ? selectedSnap["inputs"] : selectedSnap.inputs
             if (IsObject(inMap) && Type(inMap) = "Map" && inMap.Count > 0) {
                 for inKey, inVal in inMap {
-                    valStr := (Type(inVal) = "Array") ? ("Array[" . inVal.Length . "] " . JsonHelper.Stringify(inVal)) : String(inVal)
+                    if (inKey = "__results")
+                        continue
+                    valStr := WcFormatValueForInspector(inVal)
                     previewText .= "  " . inKey . ": " . valStr . "`r`n"
                 }
             } else {
@@ -334,7 +370,7 @@ WcSelectStep(stepIdx) {
             outMap := (Type(selectedSnap) = "Map") ? selectedSnap["outputs"] : selectedSnap.outputs
             if (IsObject(outMap) && Type(outMap) = "Map" && outMap.Count > 0) {
                 for outKey, outVal in outMap {
-                    valStr := (Type(outVal) = "Array") ? ("Array[" . outVal.Length . "] " . JsonHelper.Stringify(outVal)) : String(outVal)
+                    valStr := WcFormatValueForInspector(outVal)
                     previewText .= "  " . outKey . ": " . valStr . "`r`n"
                 }
             } else {
@@ -348,7 +384,8 @@ WcSelectStep(stepIdx) {
         }
 
         previewText .= "=== CHAIN OUTPUT (Up to this step) ===`r`n"
-        previewText .= (res.output != "") ? res.output : "(empty)"
+        chainOut := IsObject(res.output) ? JsonHelper.Stringify(res.output) : String(res.output)
+        previewText .= (chainOut != "") ? chainOut : "(empty)"
 
         ; Prepend validation notices if any exist for this step
         valRes := RecipeModel.Validate(WcCurrentRecipe)
@@ -383,10 +420,10 @@ WcUseClipboardSample() {
 }
 
 WcPromptCustomSample() {
-    global WcSampleInput, WcSelectedStepIdx, WorkflowComposerGui
+    global WcSampleInput, WcSelectedStepIdx, WcCurrentRecipe, WorkflowComposerGui
     if IsObject(WorkflowComposerGui)
         WorkflowComposerGui.Opt("+AlwaysOnTop +OwnDialogs")
-    initVal := (WcSampleInput != "") ? WcSampleInput : "15/08/2026`n50000`n12500`nadmin@example.com"
+    initVal := (WcSampleInput != "") ? WcSampleInput : WcGetDefaultSampleForRecipe(WcCurrentRecipe)
     ib := OfficeInputBox("Enter custom test input for live step preview:", "Workflow Test Input", initVal, true, WorkflowComposerGui)
     if (ib.Result = "OK") {
         WcSampleInput := ib.Value
@@ -397,9 +434,9 @@ WcPromptCustomSample() {
 }
 
 WcResetDefaultSample() {
-    global WcSampleInput, WcSelectedStepIdx
-    WcSampleInput := "15/08/2026`n50000`n12500`nadmin@example.com"
-    ShowToast("↺ Reset to default test input", 1500)
+    global WcSampleInput, WcSelectedStepIdx, WcCurrentRecipe
+    WcSampleInput := WcGetDefaultSampleForRecipe(WcCurrentRecipe)
+    ShowToast("↺ Reset to recipe default sample input", 1500)
     if (WcSelectedStepIdx > 0)
         WcSelectStep(WcSelectedStepIdx)
 }
@@ -444,25 +481,19 @@ WcShowStepSettingsModal(stepIdx) {
     }
 
     step := WcCurrentRecipe.steps[stepIdx]
-    isContainer := (step.HasOwnProp("is_container") && step.is_container)
-
-    tool := ""
-    toolLabel := "Loop Container"
-    toolDesc := "Configure loop bindings and return step."
-    if !isContainer {
-        if !ToolCatalog.Has(step.tool_id) {
-            ShowToast("Unknown tool: " . step.tool_id, 2500)
-            return
-        }
-        tool := ToolCatalog.Get(step.tool_id)
-        toolLabel := tool.label
-        if (step.tool_id = "loop_start")
-            toolDesc := "Configure loop input collection."
-        else if (step.tool_id = "loop_end")
-            toolDesc := "Configure value collected per item."
-        else
-            toolDesc := "Configure input bindings and tool settings."
+    if !step.HasOwnProp("tool_id") || !ToolCatalog.Has(step.tool_id) {
+        ShowToast("Unknown tool: " . (step.HasOwnProp("tool_id") ? step.tool_id : "undefined"), 2500)
+        return
     }
+
+    tool := ToolCatalog.Get(step.tool_id)
+    toolLabel := tool.label
+    if (step.tool_id = "loop_start")
+        toolDesc := "Configure loop input collection."
+    else if (step.tool_id = "loop_end")
+        toolDesc := "Configure value collected per item."
+    else
+        toolDesc := "Configure input bindings and tool settings."
 
     ; Compute in-scope upstream outputs available to this step
     inScopeOutputs := []
@@ -492,10 +523,7 @@ WcShowStepSettingsModal(stepIdx) {
     ; Add outputs from all steps prior to stepIdx
     Loop (stepIdx - 1) {
         prevStep := WcCurrentRecipe.steps[A_Index]
-        if (prevStep.HasOwnProp("is_container") && prevStep.is_container) {
-            inScopeOutputs.Push({sourceRef: prevStep.id . ".items", type: "items<any>", label: prevStep.id . ".items (Items)"})
-            inScopeOutputs.Push({sourceRef: prevStep.id . ".count", type: "number", label: prevStep.id . ".count (Count)"})
-        } else if (prevStep.HasOwnProp("tool_id") && ToolCatalog.Has(prevStep.tool_id)) {
+        if (prevStep.HasOwnProp("tool_id") && ToolCatalog.Has(prevStep.tool_id)) {
             pTool := ToolCatalog.Get(prevStep.tool_id)
             for out in pTool.outputs {
                 shortType := out.type
@@ -504,7 +532,12 @@ WcShowStepSettingsModal(stepIdx) {
                 lbl := prevStep.id . "." . out.name . " (" . shortType . ")"
                 if (StrLen(lbl) > 21)
                     lbl := prevStep.id . "." . out.name
-                inScopeOutputs.Push({sourceRef: prevStep.id . "." . out.name, type: out.type, label: lbl})
+                inScopeOutputs.Push({
+                    sourceRef: prevStep.id . "." . out.name,
+                    type: out.type,
+                    label: lbl,
+                    isPrimary: (out.HasOwnProp("primary") && out.primary)
+                })
             }
         }
     }
@@ -540,78 +573,48 @@ WcShowStepSettingsModal(stepIdx) {
     bindingCtrls := Map()
     bindingChoicesMap := Map()
 
-    if isContainer {
-        modal.SetFont("s8.5 c" . ThemeText)
-        modal.Add("Text", Format("x16 y{1} w120 h22", currY + 2), "Items to Loop *:")
-
-        itemsChoices := []
-        itemsDisplay := []
-        selectedIdx := 1
-        currentBound := ""
-        if step.HasOwnProp("bindings") {
-            currentBound := (Type(step.bindings) = "Map") ? (step.bindings.Has("items") ? step.bindings["items"] : "") : (step.bindings.HasOwnProp("items") ? step.bindings.items : "")
-        }
-
-        for src in inScopeOutputs {
-            itemsChoices.Push(src.sourceRef)
-            prefix := (SubStr(src.type, 1, 6) = "items<" || src.type = "any") ? "✔ " : "   "
-            itemsDisplay.Push(prefix . src.label)
-            if (src.sourceRef == currentBound)
-                selectedIdx := itemsChoices.Length
-        }
-        if (itemsChoices.Length = 0) {
-            itemsChoices.Push("input.text")
-            itemsDisplay.Push("input.text (Fallback)")
-        }
-
-        bindingChoicesMap["items"] := itemsChoices
-        ddl := modal.Add("DropDownList", Format("x142 y{1} w260 h24 Background{2} c{3} Choose{4}", currY, ThemeSurface, ThemeText, selectedIdx), itemsDisplay)
-        bindingCtrls["items"] := ddl
-        currY += 28
+    if (tool.inputs.Length = 0) {
+        modal.SetFont("s8.5 c" . ThemeMuted)
+        modal.Add("Text", Format("x16 y{1} w388 h18", currY), "(No upstream inputs required)")
+        currY += 22
     } else {
-        if (tool.inputs.Length = 0) {
-            modal.SetFont("s8.5 c" . ThemeMuted)
-            modal.Add("Text", Format("x16 y{1} w388 h18", currY), "(No upstream inputs required)")
-            currY += 22
-        } else {
-            for inp in tool.inputs {
-                modal.SetFont("s8.5 c" . ThemeText)
-                reqStar := inp.required ? " *" : " (opt)"
-                modal.Add("Text", Format("x16 y{1} w120 h22", currY + 2), inp.label . reqStar . ":")
+        for inp in tool.inputs {
+            modal.SetFont("s8.5 c" . ThemeText)
+            reqStar := inp.required ? " *" : " (opt)"
+            modal.Add("Text", Format("x16 y{1} w120 h22", currY + 2), inp.label . reqStar . ":")
 
-                choices := []
-                displayList := []
-                selectedIdx := 1
-                currentBound := ""
-                if step.HasOwnProp("bindings") {
-                    currentBound := (Type(step.bindings) = "Map") ? (step.bindings.Has(inp.name) ? step.bindings[inp.name] : "") : (step.bindings.HasOwnProp(inp.name) ? step.bindings.%inp.name% : "")
-                }
-
-                for src in inScopeOutputs {
-                    choices.Push(src.sourceRef)
-                    prefix := WorkflowTypes.AreCompatible(src.type, inp.type) ? "✔ " : "   "
-                    displayList.Push(prefix . src.label)
-                    if (src.sourceRef == currentBound)
-                        selectedIdx := choices.Length
-                }
-
-                if (choices.Length = 0) {
-                    choices.Push("none")
-                    displayList.Push("(No sources in scope)")
-                }
-
-                bindingChoicesMap[inp.name] := choices
-                ddl := modal.Add("DropDownList", Format("x142 y{1} w260 h24 Background{2} c{3} Choose{4}", currY, ThemeSurface, ThemeText, selectedIdx), displayList)
-                bindingCtrls[inp.name] := ddl
-                currY += 28
+            choices := []
+            displayList := []
+            selectedIdx := 1
+            currentBound := ""
+            if step.HasOwnProp("bindings") {
+                currentBound := (Type(step.bindings) = "Map") ? (step.bindings.Has(inp.name) ? step.bindings[inp.name] : "") : (step.bindings.HasOwnProp(inp.name) ? step.bindings.%inp.name% : "")
             }
+
+            for src in inScopeOutputs {
+                choices.Push(src.sourceRef)
+                prefix := WorkflowTypes.AreCompatible(src.type, inp.type) ? "✔ " : "   "
+                displayList.Push(prefix . src.label)
+                if (src.sourceRef == currentBound)
+                    selectedIdx := choices.Length
+            }
+
+            if (choices.Length = 0) {
+                choices.Push("none")
+                displayList.Push("(No sources in scope)")
+            }
+
+            bindingChoicesMap[inp.name] := choices
+            ddl := modal.Add("DropDownList", Format("x142 y{1} w260 r5 Background{2} c{3} Choose{4}", currY, ThemeSurface, ThemeText, selectedIdx), displayList)
+            bindingCtrls[inp.name] := ddl
+            currY += 28
         }
     }
 
     currY += 6
 
     ; --------------------------------------------------------------------------------------------------
-    ; SECTION 2: Tool Settings / Parameters
+    ; SECTION 2: Tool Parameters & Settings
     ; --------------------------------------------------------------------------------------------------
     modal.SetFont("s9 Bold c" . ThemePrimary)
     modal.Add("Text", Format("x16 y{1} w388 h18", currY), "Tool Parameters & Settings:")
@@ -620,101 +623,60 @@ WcShowStepSettingsModal(stepIdx) {
     settingCtrls := Map()
     settingChoicesMap := Map()
 
-    if isContainer {
-        subSteps := step.HasOwnProp("sub_steps") ? step.sub_steps : []
-        modal.SetFont("s8.5 c" . ThemeText)
-        modal.Add("Text", Format("x16 y{1} w120 h22", currY + 2), "Loop Output:")
-
-        subStepIds := []
-        subStepLabels := []
-        retIdx := 1
-        currentRet := step.HasOwnProp("loop_return_step") ? step.loop_return_step : ""
-
-        for sSub in subSteps {
-            subStepIds.Push(sSub.id)
-            subStepLabels.Push(sSub.id . " (" . (sSub.HasOwnProp("tool_id") ? sSub.tool_id : "step") . ")")
-            if (sSub.id == currentRet)
-                retIdx := subStepIds.Length
-        }
-        if (subStepIds.Length = 0) {
-            subStepIds.Push("")
-            subStepLabels.Push("(No sub-steps yet)")
-        }
-
-        settingChoicesMap["loop_return_step"] := subStepIds
-        ddlRet := modal.Add("DropDownList", Format("x142 y{1} w260 h24 Background{2} c{3} Choose{4}", currY, ThemeSurface, ThemeText, retIdx), subStepLabels)
-        settingCtrls["loop_return_step"] := ddlRet
-        currY += 28
-
+    if (tool.settings.Length = 0) {
         modal.SetFont("s8.5 c" . ThemeMuted)
-        modal.Add("Text", Format("x16 y{1} w240 h20", currY + 3), Format("Nested Sub-Steps: {1}", subSteps.Length))
-        btnSubAdd := modal.Add("Button", Format("x260 y{1} w142 h26", currY), "➕ Add Sub-Step")
-        btnSubAdd.OnEvent("Click", (*) => OnAddSubStepToContainer(step, modal))
-        currY += 32
+        modal.Add("Text", Format("x16 y{1} w388 h18", currY), "(No configurable parameters)")
+        currY += 22
     } else {
-        if (tool.settings.Length = 0) {
-            modal.SetFont("s8.5 c" . ThemeMuted)
-            modal.Add("Text", Format("x16 y{1} w388 h18", currY), "(No configurable parameters)")
-            currY += 22
-        } else {
-            for set in tool.settings {
-                modal.SetFont("s8.5 c" . ThemeText)
-                modal.Add("Text", Format("x16 y{1} w120 h22", currY + 2), set.label . ":")
+        for set in tool.settings {
+            modal.SetFont("s8.5 c" . ThemeText)
+            modal.Add("Text", Format("x16 y{1} w120 h22", currY + 2), set.label . ":")
 
-                currVal := set.default
-                if step.HasOwnProp("settings") {
-                    if (Type(step.settings) = "Map") {
-                        if step.settings.Has(set.name)
-                            currVal := step.settings[set.name]
-                        else if (set.name = "target_format_id" && step.settings.Has("format_id"))
-                            currVal := step.settings["format_id"]
-                        else if (set.name = "format_id" && step.settings.Has("target_format_id"))
-                            currVal := step.settings["target_format_id"]
-                    } else if IsObject(step.settings) {
-                        if step.settings.HasOwnProp(set.name)
-                            currVal := step.settings.%set.name%
-                        else if (set.name = "target_format_id" && step.settings.HasOwnProp("format_id"))
-                            currVal := step.settings.format_id
-                        else if (set.name = "format_id" && step.settings.HasOwnProp("target_format_id"))
-                            currVal := step.settings.target_format_id
+            currVal := set.default
+            if step.HasOwnProp("settings") {
+                if (Type(step.settings) = "Map") {
+                    if step.settings.Has(set.name)
+                        currVal := step.settings[set.name]
+                } else if IsObject(step.settings) {
+                    if step.settings.HasOwnProp(set.name)
+                        currVal := step.settings.%set.name%
+                }
+            }
+
+            if (set.HasOwnProp("options") && set.options.Length > 0) {
+                rawOpts := []
+                dispOpts := []
+                chooseIdx := 1
+
+                for o in set.options {
+                    rawOpts.Push(o)
+                    dispOpts.Push(WcFormatOptionLabel(step.HasOwnProp("tool_id") ? step.tool_id : "", set.name, o))
+                }
+
+                for oIdx, opt in rawOpts {
+                    if (String(opt) == String(currVal)) {
+                        chooseIdx := oIdx
+                        break
                     }
                 }
 
-                if (set.HasOwnProp("options") && set.options.Length > 0) {
-                    rawOpts := []
-                    dispOpts := []
-                    chooseIdx := 1
-
-                    for o in set.options {
-                        rawOpts.Push(o)
-                        dispOpts.Push(WcFormatOptionLabel(step.HasOwnProp("tool_id") ? step.tool_id : "", set.name, o))
-                    }
-
-                    for oIdx, opt in rawOpts {
-                        if (String(opt) == String(currVal)) {
-                            chooseIdx := oIdx
-                            break
-                        }
-                    }
-
-                    settingChoicesMap[set.name] := rawOpts
-                    ddlSet := modal.Add("DropDownList", Format("x142 y{1} w260 h24 Background{2} c{3} Choose{4}", currY, ThemeSurface, ThemeText, chooseIdx), dispOpts)
-                    settingCtrls[set.name] := ddlSet
-                    currY += 28
-                } else if (set.type = "boolean") {
-                    chk := modal.Add("CheckBox", Format("x142 y{1} w260 h22 c{2}", currY + 2, ThemeText), "Enabled")
-                    chk.Value := currVal ? 1 : 0
-                    settingCtrls[set.name] := chk
-                    currY += 28
-                } else if (set.name = "template") {
-                    edt := modal.Add("Edit", Format("x142 y{1} w260 h54 Background{2} c{3} Multi", currY, ThemeSurface, ThemeText), String(currVal))
-                    settingCtrls[set.name] := edt
-                    currY += 60
-                } else {
-                    edt := modal.Add("Edit", Format("x142 y{1} w260 h24 Background{2} c{3}", currY, ThemeSurface, ThemeText), String(currVal))
-                    settingCtrls[set.name] := edt
-                    currY += 28
-                }
+                settingChoicesMap[set.name] := rawOpts
+                ddlSet := modal.Add("DropDownList", Format("x142 y{1} w260 r9 Background{2} c{3} Choose{4}", currY, ThemeSurface, ThemeText, chooseIdx), dispOpts)
+                settingCtrls[set.name] := ddlSet
+                currY += 28
+            } else if (set.type = "boolean") {
+                chk := modal.Add("CheckBox", Format("x142 y{1} w260 h22 c{2}", currY + 2, ThemeText), "Enabled")
+                chk.Value := currVal ? 1 : 0
+                settingCtrls[set.name] := chk
+                currY += 28
+            } else if (set.name = "template") {
+                edt := modal.Add("Edit", Format("x142 y{1} w260 h54 Background{2} c{3} Multi", currY, ThemeSurface, ThemeText), String(currVal))
+                settingCtrls[set.name] := edt
+                currY += 60
+            } else {
+                edt := modal.Add("Edit", Format("x142 y{1} w260 h24 Background{2} c{3}", currY, ThemeSurface, ThemeText), String(currVal))
+                settingCtrls[set.name] := edt
+                currY += 28
             }
         }
     }
@@ -753,52 +715,35 @@ WcShowStepSettingsModal(stepIdx) {
         if !step.HasOwnProp("settings")
             step.settings := Map()
 
-        if isContainer {
-            if settingChoicesMap.Has("loop_return_step") {
-                rList := settingChoicesMap["loop_return_step"]
-                ddlVal := settingCtrls["loop_return_step"].Value
-                if (rList.Length > 0 && ddlVal <= rList.Length && rList[ddlVal] != "")
-                    step.loop_return_step := rList[ddlVal]
-            }
-        } else {
-            for setName, ctrlObj in settingCtrls {
-                if settingChoicesMap.Has(setName) {
-                    opts := settingChoicesMap[setName]
-                    rawVal := opts[ctrlObj.Value]
-                    for sDef in tool.settings {
-                        if (sDef.name = setName && sDef.type = "number")
-                            rawVal := Number(rawVal)
-                    }
-                    if (Type(step.settings) = "Map") {
-                        step.settings[setName] := rawVal
-                        if (setName = "target_format_id" || setName = "format_id") {
-                            step.settings["target_format_id"] := rawVal
-                            step.settings["format_id"] := rawVal
-                        }
-                    } else {
-                        step.settings.%setName% := rawVal
-                        if (setName = "target_format_id" || setName = "format_id") {
-                            step.settings.target_format_id := rawVal
-                            step.settings.format_id := rawVal
-                        }
-                    }
-                } else if (Type(ctrlObj) = "Gui.Checkbox") {
-                    bVal := (ctrlObj.Value = 1)
-                    if (Type(step.settings) = "Map")
-                        step.settings[setName] := bVal
-                    else
-                        step.settings.%setName% := bVal
-                } else {
-                    strVal := ctrlObj.Value
-                    for sDef in tool.settings {
-                        if (sDef.name = setName && sDef.type = "number" && IsNumber(strVal))
-                            strVal := Number(strVal)
-                    }
-                    if (Type(step.settings) = "Map")
-                        step.settings[setName] := strVal
-                    else
-                        step.settings.%setName% := strVal
+        for setName, ctrlObj in settingCtrls {
+            if settingChoicesMap.Has(setName) {
+                opts := settingChoicesMap[setName]
+                rawVal := opts[ctrlObj.Value]
+                for sDef in tool.settings {
+                    if (sDef.name = setName && sDef.type = "number")
+                        rawVal := Number(rawVal)
                 }
+                if (Type(step.settings) = "Map") {
+                    step.settings[setName] := rawVal
+                } else {
+                    step.settings.%setName% := rawVal
+                }
+            } else if (Type(ctrlObj) = "Gui.Checkbox") {
+                bVal := (ctrlObj.Value = 1)
+                if (Type(step.settings) = "Map")
+                    step.settings[setName] := bVal
+                else
+                    step.settings.%setName% := bVal
+            } else {
+                strVal := ctrlObj.Value
+                for sDef in tool.settings {
+                    if (sDef.name = setName && sDef.type = "number" && IsNumber(strVal))
+                        strVal := Number(strVal)
+                }
+                if (Type(step.settings) = "Map")
+                    step.settings[setName] := strVal
+                else
+                    step.settings.%setName% := strVal
             }
         }
 
@@ -809,53 +754,6 @@ WcShowStepSettingsModal(stepIdx) {
     }
 
     modal.Show(Format("w420 h{1}", totalModalH))
-}
-
-OnAddSubStepToContainer(containerStep, parentModal) {
-    global WcSelectedStepIdx
-    WcShowAddStepModal((chosenToolId) => AddSubStepCallback(containerStep, chosenToolId, parentModal))
-}
-
-AddSubStepCallback(containerStep, chosenToolId, parentModal) {
-    global WcSelectedStepIdx
-    if !containerStep.HasOwnProp("sub_steps")
-        containerStep.sub_steps := []
-
-    tool := ToolCatalog.Get(chosenToolId)
-    subIdx := containerStep.sub_steps.Length + 1
-    newSubId := containerStep.id . "_" . subIdx
-
-    innerScope := []
-    innerScope.Push({sourceRef: "loop.item", type: "any", label: "loop.item (Current Item)"})
-    innerScope.Push({sourceRef: "loop.index", type: "number", label: "loop.index (Item Index)"})
-    for s in containerStep.sub_steps {
-        if ToolCatalog.Has(s.tool_id) {
-            tObj := ToolCatalog.Get(s.tool_id)
-            for out in tObj.outputs {
-                innerScope.Push({sourceRef: s.id . "." . out.name, type: out.type, label: s.id . "." . out.name})
-            }
-        }
-    }
-
-    bindRes := ToolCatalog.ResolveDefaultBindings(chosenToolId, innerScope)
-    newSubStep := {
-        id: newSubId,
-        tool_id: chosenToolId,
-        tool_version: tool.version,
-        settings: Map(),
-        bindings: bindRes.bindings
-    }
-    containerStep.sub_steps.Push(newSubStep)
-    containerStep.loop_return_step := newSubId
-
-    if IsObject(parentModal) {
-        try parentModal.Destroy()
-    }
-
-    WcRefreshStepsList()
-    WcSelectStep(WcSelectedStepIdx)
-    WcShowStepSettingsModal(WcSelectedStepIdx)
-    ShowToast("✔ Added sub-step: " . newSubId, 2000)
 }
 
 WcShowAddStepModal(customCallback := "") {
@@ -890,7 +788,7 @@ WcShowAddStepModal(customCallback := "") {
     ]
 
     modal.SetFont("s9.5 norm c" . ThemeText)
-    ddlFilter := modal.Add("DropDownList", "x105 y12 w250 h26 Background" . ThemeSurface . " c" . ThemeText . " Choose1", categories)
+    ddlFilter := modal.Add("DropDownList", "x105 y12 w250 r9 Background" . ThemeSurface . " c" . ThemeText . " Choose1", categories)
 
     modal.SetFont("s9 c" . ThemeMuted)
     modal.Add("Text", "x375 y16 w50 h24", "Search:")
@@ -916,10 +814,7 @@ WcShowAddStepModal(customCallback := "") {
     }
 
     for s in WcCurrentRecipe.steps {
-        if (s.HasOwnProp("is_container") && s.is_container) {
-            currentScopeOutputs.Push({sourceRef: s.id . ".items", type: "items<any>", label: s.id . ".items"})
-            currentScopeOutputs.Push({sourceRef: s.id . ".count", type: "number", label: s.id . ".count"})
-        } else if (s.HasOwnProp("tool_id") && ToolCatalog.Has(s.tool_id)) {
+        if (s.HasOwnProp("tool_id") && ToolCatalog.Has(s.tool_id)) {
             tObj := ToolCatalog.Get(s.tool_id)
             for out in tObj.outputs {
                 currentScopeOutputs.Push({sourceRef: s.id . "." . out.name, type: out.type, label: s.id . "." . out.name})
@@ -930,7 +825,7 @@ WcShowAddStepModal(customCallback := "") {
     ; Build Master List of Addable Items
     allToolsList := []
 
-    ; 1. Structural Containers (Loop) - Top priority (only for top-level)
+    ; 1. Structural Containers (Flat Loop) - Top priority (only for top-level)
     if (!IsObject(customCallback)) {
         hasArrayInput := false
         for outRef in currentScopeOutputs {
@@ -946,15 +841,6 @@ WcShowAddStepModal(customCallback := "") {
             label: "Loop Block (Start ➔ End)",
             category: "🔁 Structural Containers",
             description: "Inserts matching LOOP START and LOOP END boundary steps directly in the workflow",
-            compat: loopCompat,
-            isCompat: hasArrayInput
-        })
-
-        allToolsList.Push({
-            id: "loop_container",
-            label: "Loop Container",
-            category: "🔁 Structural Containers",
-            description: "Iterates through an Items<T> collection, running nested sub-steps per item",
             compat: loopCompat,
             isCompat: hasArrayInput
         })
@@ -1058,10 +944,11 @@ WcShowAddStepModal(customCallback := "") {
 
         ; Flat Loop Pair Addition
         if (chosenId = "loop_pair") {
+            stepStartId := WcGetNextUniqueStepId(WcCurrentRecipe)
+            tempSteps := WcCurrentRecipe.steps.Clone()
+            tempSteps.Push({id: stepStartId})
+            stepEndId := WcGetNextUniqueStepId({steps: tempSteps})
             idxStart := WcCurrentRecipe.steps.Length + 1
-            idxEnd := WcCurrentRecipe.steps.Length + 2
-            stepStartId := "step_" . idxStart
-            stepEndId := "step_" . idxEnd
 
             itemsSrc := "input.text"
             for s in WcCurrentRecipe.steps {
@@ -1098,36 +985,6 @@ WcShowAddStepModal(customCallback := "") {
             return
         }
 
-        ; Loop Container Addition
-        if (chosenId = "loop_container") {
-            newStepId := "step_" . (WcCurrentRecipe.steps.Length + 1)
-            
-            itemsSrc := "input.text"
-            for s in WcCurrentRecipe.steps {
-                if (s.HasOwnProp("tool_id") && ToolCatalog.Has(s.tool_id)) {
-                    tObj := ToolCatalog.Get(s.tool_id)
-                    for out in tObj.outputs {
-                        if (SubStr(out.type, 1, 6) = "items<" || out.type = "any")
-                            itemsSrc := s.id . "." . out.name
-                    }
-                }
-            }
-
-            createdStep := {
-                id: newStepId,
-                is_container: 1,
-                bindings: Map("items", itemsSrc),
-                sub_steps: [],
-                loop_return_step: ""
-            }
-            WcCurrentRecipe.steps.Push(createdStep)
-            modal.Destroy()
-            WcRefreshStepsList()
-            WcSelectStep(WcCurrentRecipe.steps.Length)
-            ShowToast("✔ Loop Container added (" . newStepId . ")", 2000)
-            return
-        }
-
         tool := ToolCatalog.Get(chosenId)
 
         ; Compute in-scope outputs from current steps
@@ -1139,16 +996,14 @@ WcShowAddStepModal(customCallback := "") {
             inScopeOutputs.Push({sourceRef: "input.text", type: "text", label: "Initial Text"})
 
         for s in WcCurrentRecipe.steps {
-            if (s.HasOwnProp("is_container") && s.is_container) {
-                inScopeOutputs.Push({sourceRef: s.id . ".items", type: "items<any>", label: s.id . ".items"})
-                inScopeOutputs.Push({sourceRef: s.id . ".count", type: "number", label: s.id . ".count"})
-            } else if (s.HasOwnProp("tool_id") && ToolCatalog.Has(s.tool_id)) {
+            if (s.HasOwnProp("tool_id") && ToolCatalog.Has(s.tool_id)) {
                 tObj := ToolCatalog.Get(s.tool_id)
                 for out in tObj.outputs {
                     inScopeOutputs.Push({
                         sourceRef: s.id . "." . out.name,
                         type: out.type,
-                        label: s.id . " " . out.label
+                        label: s.id . " " . out.label,
+                        isPrimary: (out.HasOwnProp("primary") && out.primary)
                     })
                 }
             }
@@ -1156,7 +1011,7 @@ WcShowAddStepModal(customCallback := "") {
 
         bindingsRes := ToolCatalog.ResolveDefaultBindings(chosenId, inScopeOutputs)
 
-        newStepId := "step_" . (WcCurrentRecipe.steps.Length + 1)
+        newStepId := WcGetNextUniqueStepId(WcCurrentRecipe)
         createdStep := {
             id: newStepId,
             tool_id: chosenId,
@@ -1176,7 +1031,7 @@ WcShowAddStepModal(customCallback := "") {
 }
 
 WcTestRun() {
-    global WcCurrentRecipe, WcStatusText
+    global WcCurrentRecipe, WcStatusText, WcSampleInput, WcLatestTestResult
     valRes := RecipeModel.Validate(WcCurrentRecipe)
     if !valRes.valid {
         ShowToast("❌ Recipe Invalid: " . valRes.errors[1], 3000)
@@ -1185,12 +1040,112 @@ WcTestRun() {
     }
 
     WcStatusText.Text := "Running recipe test..."
-    res := PipelineRunner.Execute(WcCurrentRecipe)
+    sampleTxt := (IsSet(WcSampleInput) && WcSampleInput != "") ? WcSampleInput : WcGetDefaultSampleForRecipe(WcCurrentRecipe)
+    res := PipelineRunner.Execute(WcCurrentRecipe, sampleTxt)
     if res.success {
-        WcStatusText.Text := "✔ Test run succeeded in " . res.runId
+        outText := res.HasOwnProp("output") ? res.output : (res.HasOwnProp("final_output") ? res.final_output : "")
+        outText := IsObject(outText) ? JsonHelper.Stringify(outText) : String(outText)
+        WcLatestTestResult := outText
+        try A_Clipboard := outText
+        durMs := res.HasOwnProp("duration_ms") ? res.duration_ms : 0
+        WcStatusText.Text := Format("✔ Test run succeeded! Output copied to clipboard ({1}ms)", durMs)
+        ShowToast(Format("✔ Test Run Complete! Result copied to clipboard ({1}ms)", durMs), 2500)
     } else {
         WcStatusText.Text := "❌ Test run failed: " . res.error
+        ShowToast("❌ Test run failed: " . res.error, 3000)
     }
+}
+
+WcCopyLatestTestResult() {
+    global WcLatestTestResult
+    if (IsSet(WcLatestTestResult) && WcLatestTestResult != "") {
+        try A_Clipboard := WcLatestTestResult
+        ShowToast("📋 Copied test run output to clipboard", 2000)
+    } else {
+        ShowToast("⚠️ No test result available to copy", 2000)
+    }
+}
+
+WcGetNextUniqueStepId(recipe) {
+    if (!IsObject(recipe) || !recipe.HasOwnProp("steps") || recipe.steps.Length = 0)
+        return "step_1"
+
+    existingIds := Map()
+    maxIdx := 0
+    for s in recipe.steps {
+        sId := (Type(s) = "Map") ? (s.Has("id") ? String(s["id"]) : "") : (s.HasOwnProp("id") ? String(s.id) : "")
+        if (sId != "") {
+            existingIds[sId] := true
+            if RegExMatch(sId, "^(?:step_|s)(\d+)$", &m) {
+                val := Integer(m[1])
+                if (val > maxIdx)
+                    maxIdx := val
+            }
+        }
+    }
+
+    candidate := maxIdx + 1
+    while existingIds.Has("step_" . candidate) {
+        candidate++
+    }
+    return "step_" . candidate
+}
+
+WcGetDefaultSampleForRecipe(recipe) {
+    if !IsObject(recipe) || !recipe.HasOwnProp("steps") || recipe.steps.Length = 0
+        return "50000"
+
+    hasLoop := false
+    hasDateDiff := false
+    hasDate := false
+    hasCivilPyth := false
+    hasCivilUnit := false
+    hasPan := false
+    hasGstin := false
+    hasMath := false
+    hasListOrText := false
+
+    for s in recipe.steps {
+        tId := s.HasOwnProp("tool_id") ? s.tool_id : ""
+        if (tId = "loop_start")
+            hasLoop := true
+        else if (tId = "date_difference")
+            hasDateDiff := true
+        else if (tId = "date_convert_format" || tId = "date_financial_year")
+            hasDate := true
+        else if (tId = "civil_pythagoras")
+            hasCivilPyth := true
+        else if (tId = "civil_unit_convert")
+            hasCivilUnit := true
+        else if (tId = "extract_pan")
+            hasPan := true
+        else if (tId = "extract_gstin")
+            hasGstin := true
+        else if (tId = "math_evaluate" || tId = "math_percentage_change")
+            hasMath := true
+        else if (tId = "convert_case" || tId = "format_list" || tId = "clean_text_unwrap")
+            hasListOrText := true
+    }
+
+    if hasDateDiff
+        return "15/08/2026`n25/08/2026"
+    if hasDate
+        return "15/08/2026"
+    if hasCivilPyth
+        return "20ft 30ft"
+    if hasCivilUnit
+        return "100 sqft to sqm"
+    if hasPan
+        return "Vendor ABCDE1234F ref 99"
+    if hasGstin
+        return "Supplier GSTIN: 27ABCDE1234F1Z5"
+    if hasMath
+        return "1500 * 1.18 + 450"
+    if hasListOrText
+        return "Apple`nBanana`nOrange"
+    if hasLoop
+        return "50000`n12500`n75000"
+    return "50000"
 }
 
 WcSaveRecipe() {
@@ -1237,7 +1192,25 @@ WcFormatOptionLabel(toolId, settingName, rawVal) {
             8, "8: DD Month, YYYY",
             9, "9: DDDD, dd Month YYYY"
         )
-        _labels["target_format_id"] := _labels["format_id"]
+
+        ; Case modes (convert_case)
+        _labels["case_mode"] := Map(
+            "upper", "UPPERCASE",
+            "lower", "lowercase",
+            "title", "Title Case",
+            "sentence", "Sentence case",
+            "snake", "snake_case",
+            "kebab", "kebab-case",
+            "camel", "camelCase"
+        )
+
+        ; List types (format_list)
+        _labels["list_type"] := Map(
+            "checklist", "Checklist ([ ])",
+            "bullet", "Bullet List (• )",
+            "numbered", "Numbered List (1. 2. 3.)",
+            "sql", "SQL IN ('a', 'b')"
+        )
 
         ; GST rate labels
         _labels["rate"] := Map(
@@ -1295,4 +1268,91 @@ WcFormatOptionLabel(toolId, settingName, rawVal) {
         return _labels[settingName][rawVal]
 
     return String(rawVal)
+}
+
+; ======================================================================================================================
+; Modal Dialog: WcShowOpenRecipeModal
+; Allows browsing, selecting, and loading any saved recipe from Recipes/ catalog directly into Workflow Composer.
+; ======================================================================================================================
+WcShowOpenRecipeModal() {
+    global WcOpenRecipeModalGui, WcCurrentRecipe
+    global ThemeBg, ThemeSurface, ThemeText, ThemeMuted, ThemeBorder, ThemePrimary, ThemeAccent
+
+    if IsObject(WcOpenRecipeModalGui) {
+        try WcOpenRecipeModalGui.Destroy()
+        WcOpenRecipeModalGui := ""
+    }
+
+    allRecipes := RecipeModel.ListAll()
+    if (allRecipes.Length = 0) {
+        ShowToast("⚠️ No saved recipes found", 2000)
+        return
+    }
+
+    WcOpenRecipeModalGui := Gui("+AlwaysOnTop -MaximizeBox -MinimizeBox +Owner", "Open Saved Recipe")
+    WcOpenRecipeModalGui.BackColor := ThemeBg
+    WcOpenRecipeModalGui.SetFont("s10 c" . ThemeText, "Segoe UI")
+
+    ; Title Header
+    WcOpenRecipeModalGui.SetFont("s10 Bold c" . ThemeAccent)
+    WcOpenRecipeModalGui.Add("Text", "x20 y16 w580 h22", "📂 Saved Workflow Recipes")
+    WcOpenRecipeModalGui.SetFont("s9 c" . ThemeMuted)
+    WcOpenRecipeModalGui.Add("Text", "x20 y38 w580 h20", "Select a workflow recipe to open and edit in Composer.")
+
+    ; ListView
+    WcOpenRecipeModalGui.SetFont("s9 c" . ThemeText)
+    lvRecipes := WcOpenRecipeModalGui.Add("ListView", "x20 y65 w580 h230 Background" . ThemeSurface . " c" . ThemeText . " Grid -Multi", 
+                                        ["#", "Recipe Name", "Steps", "Input", "Sink", "Recipe ID"])
+    lvRecipes.ModifyCol(1, "35 Center")
+    lvRecipes.ModifyCol(2, 175)
+    lvRecipes.ModifyCol(3, "50 Center")
+    lvRecipes.ModifyCol(4, 75)
+    lvRecipes.ModifyCol(5, 75)
+    lvRecipes.ModifyCol(6, 150)
+
+    currSelectedRow := 1
+    for idx, r in allRecipes {
+        rName := r.HasOwnProp("name") ? r.name : r.id
+        numSteps := (r.HasOwnProp("steps") && Type(r.steps) = "Array") ? r.steps.Length : 0
+        src := r.HasOwnProp("input_source") ? r.input_source : "selection"
+        snk := r.HasOwnProp("sink") ? r.sink : "clipboard"
+        lvRecipes.Add("", idx, rName, numSteps, src, snk, r.id)
+        if (IsObject(WcCurrentRecipe) && WcCurrentRecipe.HasOwnProp("id") && WcCurrentRecipe.id = r.id)
+            currSelectedRow := idx
+    }
+    lvRecipes.Modify(currSelectedRow, "Select Focus")
+
+    ; Double-click to load
+    lvRecipes.OnEvent("DoubleClick", (ctrl, row) => (row > 0 ? WcDoLoadSelected(row) : ""))
+
+    ; Bottom Buttons
+    WcOpenRecipeModalGui.SetFont("s9 Bold")
+    btnLoad := WcOpenRecipeModalGui.Add("Button", "x20 y305 w140 h32 Default", "📂 Load Recipe")
+    btnLoad.OnEvent("Click", (*) => WcDoLoadSelected(lvRecipes.GetNext()))
+
+    btnCancel := WcOpenRecipeModalGui.Add("Button", "x480 y305 w120 h32", "Cancel [Esc]")
+    btnCancel.OnEvent("Click", (*) => CloseOpenRecipeModal())
+
+    CloseOpenRecipeModal() {
+        global WcOpenRecipeModalGui
+        if IsObject(WcOpenRecipeModalGui) {
+            try WcOpenRecipeModalGui.Destroy()
+            WcOpenRecipeModalGui := ""
+        }
+    }
+
+    WcDoLoadSelected(rowIdx) {
+        if (rowIdx <= 0 || rowIdx > allRecipes.Length) {
+            ShowToast("⚠️ Please select a recipe from the list", 2000)
+            return
+        }
+        chosenRecipe := allRecipes[rowIdx]
+        CloseOpenRecipeModal()
+        ShowWorkflowComposer(chosenRecipe)
+        ShowToast("📂 Loaded: " . (chosenRecipe.HasOwnProp("name") ? chosenRecipe.name : chosenRecipe.id), 2000)
+    }
+
+    WcOpenRecipeModalGui.OnEvent("Escape", (*) => CloseOpenRecipeModal())
+    WcOpenRecipeModalGui.OnEvent("Close", (*) => CloseOpenRecipeModal())
+    WcOpenRecipeModalGui.Show("w620 h350")
 }
