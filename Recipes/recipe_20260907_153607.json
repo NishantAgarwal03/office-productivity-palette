@@ -1,0 +1,81 @@
+﻿{
+  "category": "🔄 Recipe",
+  "description": "Custom user-composed workflow recipe",
+  "final_output_ref": "",
+  "id": "recipe_20260907_153607",
+  "input_source": "prompt",
+  "name": "New Workflow Recipe",
+  "sink": "toast",
+  "steps": [
+    {
+      "bindings": {
+        "text": "input.text"
+      },
+      "id": "step_1",
+      "settings": {},
+      "tool_id": "clean_whitespace",
+      "tool_version": 1
+    },
+    {
+      "bindings": {
+        "text": "step_1.text"
+      },
+      "id": "step_2",
+      "settings": {
+        "case_mode": "snake"
+      },
+      "tool_id": "convert_case",
+      "tool_version": 1
+    },
+    {
+      "bindings": {
+        "text": "step_2.text"
+      },
+      "id": "step_3",
+      "settings": {},
+      "tool_id": "parse_number",
+      "tool_version": 1
+    },
+    {
+      "bindings": {
+        "number": "step_3.number"
+      },
+      "id": "step_4",
+      "settings": {},
+      "tool_id": "number_to_words",
+      "tool_version": 1
+    },
+    {
+      "bindings": {
+        "text": "step_4.words"
+      },
+      "id": "step_5",
+      "settings": {
+        "case_mode": "kebab"
+      },
+      "tool_id": "convert_case",
+      "tool_version": 1
+    },
+    {
+      "bindings": {
+        "text": "step_5.result"
+      },
+      "id": "step_6",
+      "settings": {},
+      "tool_id": "text_statistics",
+      "tool_version": 1
+    },
+    {
+      "bindings": {
+        "amount": "step_6.chars"
+      },
+      "id": "step_7",
+      "settings": {
+        "rate": 18
+      },
+      "tool_id": "normal_gst",
+      "tool_version": 1
+    }
+  ],
+  "version": 1
+}
