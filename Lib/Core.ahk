@@ -207,8 +207,14 @@ CloseAllOfficeUIs() {
 
 ResolveCurrentFilePath() {
     global TargetWindowHwnd
-    hwnd := TargetWindowHwnd ? TargetWindowHwnd : WinActive("A")
+    hwnd := 0
+    try {
+        hwnd := TargetWindowHwnd ? TargetWindowHwnd : WinActive("A")
+    } catch {
+        hwnd := 0
+    }
     
+    ; 1. Try Explorer COM Resolution for active target window
     if (hwnd) {
         try {
             wClass := WinGetClass(hwnd)
@@ -217,61 +223,84 @@ ResolveCurrentFilePath() {
                 for window in shellApp.Windows {
                     try {
                         if (window && window.HWND = hwnd) {
-                            sel := window.Document.SelectedItems
-                            if (sel && sel.Count > 0) {
-                                res := ""
-                                for item in sel
-                                    res .= (A_Index > 1 ? "`n" : "") . item.Path
-                                if (res != "")
-                                    return res
+                            try {
+                                sel := window.Document.SelectedItems
+                                if (sel && sel.Count > 0) {
+                                    res := ""
+                                    for item in sel
+                                        res .= (A_Index > 1 ? "`n" : "") . item.Path
+                                    if (res != "")
+                                        return res
+                                }
                             }
-                            if IsObject(window.Document.Folder) {
-                                dirPath := window.Document.Folder.Self.Path
-                                if (dirPath != "")
-                                    return dirPath
+                            try {
+                                if IsObject(window.Document.Folder) {
+                                    dirPath := window.Document.Folder.Self.Path
+                                    if (dirPath != "")
+                                        return dirPath
+                                }
                             }
                         }
                     }
                 }
             }
+        } catch as err {
+            if IsSet(LogAppError)
+                LogAppError("ResolveCurrentFilePath (Active Explorer)", err)
         }
     }
     
+    ; 2. Fallback: Search any visible Explorer window
     try {
         shellApp := ComObject("Shell.Application")
         for window in shellApp.Windows {
             try {
-                if (window && window.Visible && IsObject(window.Document.Folder)) {
-                    sel := window.Document.SelectedItems
-                    if (sel && sel.Count > 0) {
-                        res := ""
-                        for item in sel
-                            res .= (A_Index > 1 ? "`n" : "") . item.Path
-                        if (res != "")
-                            return res
+                if (window && window.Visible) {
+                    try {
+                        sel := window.Document.SelectedItems
+                        if (sel && sel.Count > 0) {
+                            res := ""
+                            for item in sel
+                                res .= (A_Index > 1 ? "`n" : "") . item.Path
+                            if (res != "")
+                                return res
+                        }
                     }
-                    dirPath := window.Document.Folder.Self.Path
-                    if (dirPath != "")
-                        return dirPath
+                    try {
+                        if IsObject(window.Document.Folder) {
+                            dirPath := window.Document.Folder.Self.Path
+                            if (dirPath != "")
+                                return dirPath
+                        }
+                    }
                 }
             }
         }
+    } catch as err {
+        if IsSet(LogAppError)
+            LogAppError("ResolveCurrentFilePath (Visible Explorer Enum)", err)
     }
     
+    ; 3. Check Desktop Windows
     if (hwnd) {
         try {
             wClass := WinGetClass(hwnd)
             if (wClass = "Progman" || wClass = "WorkerW")
                 return A_Desktop
+        } catch {
         }
     }
     
-    sel := SafeGetSelection()
-    if (Trim(sel) != "" && (InStr(sel, "\\") || InStr(sel, "/")))
-        return Trim(sel)
-        
-    if (Trim(A_Clipboard) != "" && (InStr(A_Clipboard, "\\") || InStr(A_Clipboard, "/")))
-        return Trim(A_Clipboard)
+    ; 4. Check Selected Text or Clipboard for valid path strings
+    try {
+        sel := SafeGetSelection()
+        if (Trim(sel) != "" && (InStr(sel, "\") || InStr(sel, "/")))
+            return Trim(sel)
+            
+        if (Trim(A_Clipboard) != "" && (InStr(A_Clipboard, "\") || InStr(A_Clipboard, "/")))
+            return Trim(A_Clipboard)
+    } catch {
+    }
         
     return ""
 }
