@@ -3,7 +3,7 @@
 ; Part of Office Productivity Hub (v2.0.1) - Zero-Trust Quality Harness
 ;
 ; ARCHITECTURAL INVARIANTS:
-; 1. Numbered, traceable defect reproduction cases (DEFECT-001 through DEFECT-050).
+; 1. Numbered, traceable defect reproduction cases (DEFECT-001 through DEFECT-051).
 ; 2. Every historical, edge-case, and recently discovered bug has an isolated, permanent regression guard.
 ; 3. Zero UI dialog popups; outputs clean structured logs and schema-versioned results.json via TestHarness.
 ; ======================================================================================================================
@@ -1604,6 +1604,62 @@ try {
     AssertEqual("DEFECT-050", "ParseAnyDateToYyyyMmDd delegates for 'DD-MM-YYYY'", ParseAnyDateToYyyyMmDd("21-08-2026"), "20260821")
     AssertEqual("DEFECT-050", "ParseAnyDateToYyyyMmDd delegates for 'DD-MM-YY'", ParseAnyDateToYyyyMmDd("21-08-26"), "20260821")
     AssertEqual("DEFECT-050", "ParseAnyDateToYyyyMmDd now rejects a calendar-invalid date (Feb 30) instead of blindly formatting it", ParseAnyDateToYyyyMmDd("30-02-2026"), "")
+
+    ; --------------------------------------------------------------------------------------------------
+    ; DEFECT-051 (D3): RunHistory used to persist full recipe input/output text to
+    ; Logs\WorkflowRunHistory.json in plaintext, including anything the Extraction tools recognize
+    ; (GSTIN/PAN/phone/email). RedactSensitiveData() now masks known-sensitive patterns before
+    ; RunHistory.Record() ever writes a run entry to disk.
+    ; --------------------------------------------------------------------------------------------------
+    d051Gstin := "07AABCU9603R1ZM"
+    d051Pan := "AABCU9603R"
+    d051Phone := "+91 9876543210"
+    d051Email := "someone@example.com"
+
+    AssertEqual("DEFECT-051", "RedactSensitiveData masks a GSTIN", RedactSensitiveData("GSTIN: " . d051Gstin . " on invoice"), "GSTIN: [REDACTED:GSTIN] on invoice")
+    AssertEqual("DEFECT-051", "RedactSensitiveData masks a PAN not embedded in a GSTIN", RedactSensitiveData("PAN: " . d051Pan), "PAN: [REDACTED:PAN]")
+    AssertEqual("DEFECT-051", "RedactSensitiveData masks a phone number", RedactSensitiveData("Call " . d051Phone . " now"), "Call [REDACTED:PHONE] now")
+    AssertEqual("DEFECT-051", "RedactSensitiveData masks an email address", RedactSensitiveData("Contact " . d051Email . " please"), "Contact [REDACTED:EMAIL] please")
+    AssertFalse("DEFECT-051", "Redacting a GSTIN leaves no unredacted PAN-shaped fragment behind", InStr(RedactSensitiveData(d051Gstin), d051Pan) > 0)
+    AssertEqual("DEFECT-051", "Text with nothing sensitive passes through unchanged", RedactSensitiveData("Plain ordinary text, no PII here."), "Plain ordinary text, no PII here.")
+
+    ; End-to-end: RunHistory.Record() must redact before the entry ever reaches LoadAll()/Get(), and
+    ; masking must reach nested Strings inside step_snapshots (Array of Objects containing Maps), not
+    ; just the top-level input/output snapshots.
+    d051RunId := "defect051_test_" . Random(100000, 999999)
+    d051Entry := {
+        run_id: d051RunId,
+        timestamp: FormatTime(A_Now, "yyyy-MM-dd HH:mm:ss"),
+        recipe_id: "recipe_d051",
+        recipe_name: "DEFECT-051 Test",
+        recipe_version: 1,
+        status: "success",
+        duration_ms: 1,
+        input_snapshot: "GSTIN " . d051Gstin . " and phone " . d051Phone,
+        output_snapshot: "Email " . d051Email,
+        failed_step: "",
+        error_message: "",
+        step_snapshots: [
+            {
+                step_id: "step_1",
+                status: "success",
+                inputs: Map("text", d051Gstin),
+                outputs: Map("result", [d051Email, "clean text"])
+            }
+        ]
+    }
+    RunHistory.Record(d051Entry)
+    d051Loaded := RunHistory.Get(d051RunId)
+    AssertTrue("DEFECT-051", "Recorded entry is retrievable", IsObject(d051Loaded))
+    AssertFalse("DEFECT-051", "input_snapshot no longer contains the raw GSTIN on disk", InStr(String(d051Loaded.input_snapshot), d051Gstin) > 0)
+    AssertFalse("DEFECT-051", "output_snapshot no longer contains the raw email on disk", InStr(String(d051Loaded.output_snapshot), d051Email) > 0)
+    ; Round-tripped through JsonHelper.Parse(..., asMap: false), so nested Maps come back as plain Objects.
+    d051StepIn := d051Loaded.step_snapshots[1].inputs
+    d051StepOut := d051Loaded.step_snapshots[1].outputs
+    AssertFalse("DEFECT-051", "Nested step_snapshots input (Map) is also redacted", InStr(String(d051StepIn.text), d051Gstin) > 0)
+    AssertFalse("DEFECT-051", "Nested step_snapshots output (Array inside Map) is also redacted", InStr(String(d051StepOut.result[1]), d051Email) > 0)
+    AssertEqual("DEFECT-051", "Non-sensitive nested Array entry is preserved as-is", d051StepOut.result[2], "clean text")
+    RunHistory.Delete(d051RunId)
 
 } catch as testErr {
     FailCount++

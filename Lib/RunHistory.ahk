@@ -31,26 +31,71 @@ class RunHistory {
         if !DirExist(logDir)
             DirCreate(logDir)
 
+        ; DEFECT-051 (D3): mask known-sensitive patterns (GSTIN/PAN/phone/email) in every String field of
+        ; the run record — recursively, since input/output snapshots and step_snapshots can carry Strings
+        ; nested inside Arrays/Maps/Objects — before this entry ever touches disk. See RedactSensitiveData()
+        ; in Lib\Actions_Extraction.ahk for the exact scope and known limitations of this defense-in-depth.
+        redactedEntry := RunHistory._RedactRecursive(runEntry)
+
         history := RunHistory.LoadAll()
-        history.InsertAt(1, runEntry) ; Most recent first
+        history.InsertAt(1, redactedEntry) ; Most recent first
 
         ; Keep up to 200 runs locally
         while (history.Length > 200)
             history.Pop()
 
         tempFile := ledgerPath . ".tmp"
+        fileObj := ""
         try {
             jsonStr := JsonHelper.Stringify(history)
             fileObj := FileOpen(tempFile, "w", "UTF-8")
-            if (fileObj) {
+            if (fileObj)
                 fileObj.Write(jsonStr)
-                fileObj.Close()
-                FileMove(tempFile, ledgerPath, 1)
-            }
         } catch as recordErr {
             if IsSet(LogAppError)
                 LogAppError("RunHistory.Record", recordErr)
+        } finally {
+            if IsObject(fileObj)
+                fileObj.Close()
         }
+        if FileExist(tempFile)
+            FileMove(tempFile, ledgerPath, 1)
+    }
+
+    /**
+     * Recursively masks known-sensitive String values (GSTIN/PAN/phone/email) anywhere inside a
+     * run-record value tree (String/Array/Map/Object). Numbers, booleans, and unrecognized object
+     * types pass through unchanged.
+     * @param {Any} val
+     * @returns {Any}
+     */
+    static _RedactRecursive(val) {
+        vType := Type(val)
+        if (vType = "String")
+            return IsSet(RedactSensitiveData) ? RedactSensitiveData(val) : val
+
+        if (vType = "Array") {
+            out := []
+            for item in val
+                out.Push(RunHistory._RedactRecursive(item))
+            return out
+        }
+
+        if (vType = "Map") {
+            out := Map()
+            for k, v in val
+                out[k] := RunHistory._RedactRecursive(v)
+            return out
+        }
+
+        if (IsObject(val)) {
+            out := {}
+            for propName in val.OwnProps()
+                out.DefineProp(propName, {value: RunHistory._RedactRecursive(val.%propName%)})
+            return out
+        }
+
+        return val
     }
 
     /**
