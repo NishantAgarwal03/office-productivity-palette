@@ -83,6 +83,7 @@ InitApp() {
         InitActionBoardEngine()
         InitWindowPeekEngine()
         InitXRayEngine()
+        InitCapsLockStuckWatchdog()
 
         ; CapsLock State Protection: Never accidentally type ALL CAPS
         SetStoreCapsLockMode(false)
@@ -225,5 +226,5 @@ InitApp() {
                 targetLV.Modify(1, "Select Focus")
         }
     }
-#HotIf
+#HotIf
 

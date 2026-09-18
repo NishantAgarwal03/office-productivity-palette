@@ -180,6 +180,46 @@
 | 2026-09-18 | Implement D3: pattern-redact known-sensitive fields (GSTIN/PAN/phone/email) before RunHistory persists a run record, reusing the Extraction tools' own detection regexes rather than duplicating them. | Completed (100% Pass, 1,374/1,374, DEFECT-051) |
 | 2026-09-18 | Fix R5 (WinActivate not try-catch guarded in PaletteExecuteSelection) and update Docs/PENDING_NEXT_SESSION.md checkpoint. | Completed (100% Pass, 1,377/1,377, DEFECT-052) |
 
+## Subject: Keyboard Freeze Diagnosis & Stuck-CapsLock Watchdog (Lib\WindowPeekHotkeys.ahk)
+- **Status**: 🔴 Active (uncommitted — see `Docs/PENDING_NEXT_SESSION.md`)
+- **Initial Score**: 9.0/10
+- **Final Score**: TBD
+- **Satisfaction Level**: TBD (user has not yet given closing feedback)
+
+### Remarks
+- User reported a real incident: keyboard input froze system-wide ("not able to type, every key pressed opened something else"), and neither exiting nor restarting the script fixed it — only a full Windows logoff/logon recovered it.
+- Diagnosed via telemetry (`%AppData%\OfficeProductivityHub\error_telemetry.log`, `usage_analytics.ini`): no exception was logged for the incident window, ruling out a script-level crash and pointing to an OS/keyboard-hook state problem invisible to the app's own `TelemetryGlobalErrorHandler`.
+- Root-caused to `Lib\WindowPeekHotkeys.ahk`'s `#HotIf GetKeyState("CapsLock", "P")` block (lines 80-114), which hijacks `t/v/s/x/c/p/w/n/Space/Tab/Esc/Up/Down` system-wide for as long as CapsLock reads physically held. That physical state is OS-level and outside the script's control — a dropped key-up event (UAC prompt, lock screen, focus-stealing dialog, RDP hiccup) can leave Windows reporting CapsLock as permanently held, silently rerouting ordinary typing of those 13 keys into chord/peek actions. This also explains why restarting the script alone didn't help: the stuck state lives in the OS input session, not in script variables, so reloading just re-registers the same `#HotIf` condition against the same stuck OS state — only a logoff resets the session.
+- Implemented a self-healing watchdog in `Lib\WindowPeekHotkeys.ahk` (new Section 4): `CheckCapsLockStuckWatchdog()` polls physical CapsLock state every 1s via `SetTimer`, yielding whenever `PeekState`/`XRayState` is non-IDLE (both already run their own 10s-capped watchdogs in `Lib\WindowPeekEngine.ahk`, so this never fights a real long hold). If CapsLock reads continuously down for 12s+ outside those legitimate sessions, `ForceReleaseStuckCapsLock()` sends a synthetic `{CapsLock Up}` via `SendInput` (injected input still passes through the low-level hook and resyncs AHK's internal physical-key state — this is what actually clears the condition without a logoff), resets `CapsLockPressTick`/`CapsLockChordFired`, logs the event via `LogAppError` so it's now visible in telemetry, and shows a toast.
+- Wired into startup via `InitCapsLockStuckWatchdog()` in `InitApp()` (`office_productivity_palette_v2.0.1.ahk:86`). Added the two new module-owned globals (`CapsLockStuckSince`, `CapsLockStuckThresholdMs`) to the Global State Registry in `Lib\Globals.ahk` per the project's own documentation convention.
+- Verified with `AutoHotkey64.exe /validate` (clean load) and the full Zero-Trust Master Test Suite: **1,377/1,377** unchanged — no regressions, since the change is purely additive (new timer + new functions) and doesn't alter any existing hotkey or control-flow path.
+- **Not yet done**: no DEFECT-0XX regression test was added (a real stuck-physical-CapsLock condition isn't reproducible through the suite's normal `GetKeyState` test harness the way other defects are); the fix is **uncommitted** (no branch/PR opened); the `.exe` has not been recompiled since. Full handoff detail in `Docs/PENDING_NEXT_SESSION.md`.
+
+| Timestamp | Instruction | Status |
+| :--- | :--- | :--- |
+| 2026-09-18 | Diagnose keyboard-input freeze incident (required a logoff/logon to recover) via telemetry logs and give reasons. | Completed — root-caused to stuck physical CapsLock state hijacking the `#HotIf` hotkeys in `Lib\WindowPeekHotkeys.ahk` |
+| 2026-09-18 | Implement a stuck-key watchdog so this self-recovers without a logoff next time. | Completed (1,377/1,377 pass, no regressions; uncommitted) |
+| 2026-09-18 | Prepare handoff and update checkpoint. | Completed — `subject_tracker.md` and `Docs/PENDING_NEXT_SESSION.md` updated |
+
+## Subject: docs\README_office_productivity_palette.md
+- **Status**: 🔴 Active
+- **Initial Score**: 6.0/10 (stale — dated v2.0.0, 3 test suites, 199 assertions, missing whole feature areas)
+- **Final Score**: TBD
+- **Satisfaction Level**: TBD (user has not yet given closing feedback)
+
+### Remarks
+- Full refresh per user's explicit choice (offered 3 scopes; user picked "Full refresh"): synced the version header to v2.0.1, added a PowerToys-compatibility callout (`A_MenuMaskKey := "vk07"`), and corrected the Automated Test Verification table from the stale 3-suite/199-assertion claim to the real 8-suite/1,377-assertion Zero-Trust harness with per-suite file names and counts pulled directly from a fresh `python Tests/run_tests.py` run.
+- Added two entirely missing feature sections: **Workflow Composer & Pipeline Runner** (linear visual model, auto-wiring, flat-flow loop blocks, non-destructive test run, prevalidated saving, redacted run history) and expanded the tool catalog with the **Universal Bidirectional Date Format Converter** (`Lib\DateFormatConverter.ahk`) and **Set Intersect & Difference / CorpusSetEngine** (5-tier distinctiveness toast), neither of which existed in the doc despite being shipped, tested, and documented elsewhere in the repo for days.
+- Cross-checked every tool-catalog bullet against the actual `RegisterAction(...)` call sites in `Lib\Actions_*.ahk` (not just skimmed) and fixed several factually wrong claims: the Leader Key chord table listed `g`=GST/`f`=FY which don't exist (real chords are `c/v/s/x/p/w/t/n` + `Space`, verified against `Lib\Core.ahk` + `Lib\WindowPeekHotkeys.ahk`); Finance section claimed a standalone "Validate GSTIN Checksum" tool and a `Win+Shift+;`→`f` chord that don't exist; Utility section described "Convert Windows Path to Unix Path" / "Escape Backslashes in Path" tools that were actually renamed/merged into "Copy Clean File Path (Forward/Escaped Slashes)" and were also missing 6 real tools (Prefix File with Timestamp, Google Search/Translate, Toggle Transparency, Empty Recycle Bin, Quick Privacy Lock, Export Diagnostics); Master Hotkeys table advertised `F12` and `Ctrl+0` bindings that were removed during the PowerToys Harmonization work (per this repo's own `subject_tracker.md` history) to stop conflicting with PowerToys Peek.
+- Documented the same session's **Stuck-CapsLock Watchdog** (new `## 🛡️ Self-Healing` subsection under Telemetry) so the fix implemented in the prior subject is user-discoverable from the README, not just buried in code comments.
+- Renumbered the duplicate "### 3." heading bug (Text Formatting and Regex Extraction were both numbered 3) into a clean 1-6 sequence, folding in the two new sections.
+- No test suite applies to a documentation-only file; verified instead by direct comparison against the current source (`RegisterAction` call sites, live hotkey definitions in the main script) rather than by running anything.
+
+| Timestamp | Instruction | Status |
+| :--- | :--- | :--- |
+| 2026-09-18 | Update `docs\README_office_productivity_palette.md`. | Clarified scope via 3-option question; user chose "Full refresh" |
+| 2026-09-18 | Full refresh: sync version/test numbers, add missing feature sections (Workflow Composer, Date Format Converter, CorpusSetEngine), document the stuck-CapsLock watchdog, and correct factually wrong tool/hotkey claims found while cross-checking against source. | Completed |
+
 ## Archived Subjects
 | Subject | Final Score | Date Archived |
 | :--- | :--- | :--- |

@@ -67,6 +67,7 @@ ApplyDarkListViewTheme(listViewCtrl) {
 ;                                  BtnHelp, SnippetPos
 ;   Lib/WindowPeekEngine.ahk     - IsWindowPeekEnabled, PeekState, CapsLockPressTick,
 ;                                  CapsLockChordFired, XRayState, XRayOpacityPercent, XRayAlphaValue
+;   Lib/WindowPeekHotkeys.ahk    - CapsLockStuckSince, CapsLockStuckThresholdMs
 ;   Lib/DateFormatGui.ahk        - DateFormatGui, DateFormatListView, DateFormatCurrentItems
 ;   Lib/RunHistoryGui.ahk        - RunHistoryGui, HistoryListView, HistoryRunsList
 ;

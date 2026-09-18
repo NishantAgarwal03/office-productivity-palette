@@ -1,10 +1,29 @@
 # Pending Work — Next Session
 
-**Written:** 2026-09-18, at the close of a session covering a deep audit (`Docs/LLM_DEVELOPMENT_GUIDELINES.md`) plus a round of bug fixes and architecture remediation. **Updated:** same day, session resumed — closed stale PR #1 and fixed 10 items (D2, D1-adjacent follow-up, D3, D5, D7, D8, D9, D10, R5, R6); see `subject_tracker.md` "Deep Audit, Bug Fixes & Architecture Remediation" for the full account of what changed and why, and DEFECT-043 through DEFECT-052 (DEFECT-051 in `Tests\test_regression_defects.ahk`, DEFECT-052 in `Tests\test_ui_interaction_runner.ahk`) for the regression coverage.
+**Written:** 2026-09-18, at the close of a session covering a deep audit (`Docs/LLM_DEVELOPMENT_GUIDELINES.md`) plus a round of bug fixes and architecture remediation. **Updated:** same day, session resumed — closed stale PR #1 and fixed 10 items (D2, D1-adjacent follow-up, D3, D5, D7, D8, D9, D10, R5, R6); see `subject_tracker.md` "Deep Audit, Bug Fixes & Architecture Remediation" for the full account of what changed and why, and DEFECT-043 through DEFECT-052 (DEFECT-051 in `Tests\test_regression_defects.ahk`, DEFECT-052 in `Tests\test_ui_interaction_runner.ahk`) for the regression coverage. **Updated again:** same day — diagnosed a real user-reported keyboard-freeze incident and implemented a fix; see `subject_tracker.md` "Keyboard Freeze Diagnosis & Stuck-CapsLock Watchdog" and Section 0 below.
 
-**Project state right now:** `master` is clean, all work is committed, and the full Zero-Trust suite passes **1,377/1,377** across 8 suites with a clean closed-world manifest. The compiled `.exe` has **not** been recompiled since this update — do that before treating the binary as current. Working tree is clean, no stray branches, no stray processes.
+**Project state right now:** working tree is **not clean** — 3 files are modified and **uncommitted** (see Section 0). The Zero-Trust suite still passes **1,377/1,377** across all 8 suites with the changes applied (verified after making them; the change is additive, no test file touched, closed-world manifest still clean at 119 files). The compiled `.exe` is stale relative to both this update and the prior one — recompile before treating the binary as current. No stray branches, no stray processes.
 
 This file exists because the audit found more issues than one session should try to fix at once. Everything below is deferred **on purpose**, not forgotten. Read `Docs/LLM_DEVELOPMENT_GUIDELINES.md` first for full context on each finding's ID (R#/A#/D#) before touching any of this — it has the reasoning, not just the location.
+
+---
+
+## 0. Uncommitted right now — pick this up first
+
+**What happened:** the user reported that keyboard input froze system-wide during actual use ("not able to type, every key pressed opened something else"), and neither exiting nor restarting the script fixed it — only a full Windows logoff/logon recovered it.
+
+**Root cause (confirmed via telemetry, no script exception logged for the incident):** `Lib\WindowPeekHotkeys.ahk`'s `#HotIf GetKeyState("CapsLock", "P")` block (lines 80-114) hijacks `t/v/s/x/c/p/w/n/Space/Tab/Esc/Up/Down` system-wide for as long as CapsLock reads *physically* held. That's OS-level state outside the script's control — a dropped key-up event (UAC prompt, lock screen, focus-stealing dialog, RDP hiccup) can leave Windows reporting CapsLock as permanently held, silently rerouting ordinary typing into chord/peek actions. Restarting the script doesn't help because the stuck state lives in the OS input session, not script variables.
+
+**Fix implemented (uncommitted):**
+- `Lib\WindowPeekHotkeys.ahk` — new Section 4: `CheckCapsLockStuckWatchdog()` (polls every 1s, yields to `PeekState`/`XRayState` while either is non-IDLE) and `ForceReleaseStuckCapsLock()` (sends synthetic `{CapsLock Up}` via `SendInput` once physical-down persists 12s+ outside a legitimate Peek/X-Ray session, resets chord-tracking globals, logs via `LogAppError`, shows a toast). New globals: `CapsLockStuckSince`, `CapsLockStuckThresholdMs`.
+- `office_productivity_palette_v2.0.1.ahk:86` — calls `InitCapsLockStuckWatchdog()` from `InitApp()`.
+- `Lib\Globals.ahk` — Global State Registry entry added for the two new globals.
+
+**What's left before this is "done" by this project's own standards:**
+1. **No regression test yet** — this project pairs every fix with a DEFECT-0XX test in `Tests\test_regression_defects.ahk` verified to fail without the fix. A real stuck-physical-CapsLock condition can't be forced through `GetKeyState` the way the suite mocks other conditions; worth designing a harness for this (e.g. exposing `CheckCapsLockStuckWatchdog`/`ForceReleaseStuckCapsLock` to direct unit-style invocation with a stubbed physical-state source) before calling it covered.
+2. **Not committed** — no branch/PR opened yet, just working-tree changes.
+3. **`.exe` not recompiled** since these changes (or since the prior D2/D1-adjacent/D3/D5/D7/D8/D9/D10/R5/R6 update either).
+4. Ran `AutoHotkey64.exe /validate` (clean) and the full suite (1,377/1,377, unchanged) as verification so far — that's syntax + no-regression, not new-behavior coverage.
 
 ---
 
@@ -58,6 +77,7 @@ Also closed pre-existing stale **PR #1** (`fix/defect-034-math-evaluator-com-reg
 
 1. Read `Docs/LLM_DEVELOPMENT_GUIDELINES.md` in full — it has the reasoning, severity, and evidence behind every ID referenced above, plus a 16-point guideline checklist for how to work in this codebase (commit discipline, test-coverage depth, the FileOpen/Sleep/WinActivate patterns, etc.).
 2. Re-run `python Tests/run_tests.py` first thing, before touching anything, to confirm the baseline is still 1,377/1,377 clean (things may have drifted if the user made manual edits between sessions).
-3. Pick one row from Section 1 above, fix it with a regression test that would fail without the fix (verify this by temporarily reverting and confirming the test actually fails — every fix in this update was checked that way), then commit/PR/merge it on its own rather than batching unrelated fixes together.
-4. Update `subject_tracker.md` per the project's own convention as you go (see `.agents\skills\subject_tracker\SKILL.md`) — and if you complete a subject, mark it 🟢 Finalized so it doesn't linger as 🔴 Active in the file indefinitely.
-5. The compiled `.exe` is stale relative to this update's source changes — recompile with Ahk2Exe before considering the binary current.
+3. **Start with Section 0** — it's uncommitted working-tree state, not a queued idea. Decide whether to add regression coverage for the stuck-CapsLock watchdog before committing, or commit as-is and track the missing test separately; either way get it off the working tree (branch + PR, per this project's normal flow) so it doesn't get lost or conflated with the next piece of work.
+4. Then pick one row from Section 1 above, fix it with a regression test that would fail without the fix (verify this by temporarily reverting and confirming the test actually fails — every fix in this update was checked that way), then commit/PR/merge it on its own rather than batching unrelated fixes together.
+5. Update `subject_tracker.md` per the project's own convention as you go (see `.agents\skills\subject_tracker\SKILL.md`) — and if you complete a subject, mark it 🟢 Finalized so it doesn't linger as 🔴 Active in the file indefinitely.
+6. The compiled `.exe` is stale relative to Section 0's changes and the prior update's — recompile with Ahk2Exe once both are settled, before considering the binary current.

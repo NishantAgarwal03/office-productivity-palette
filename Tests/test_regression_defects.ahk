@@ -1661,6 +1661,26 @@ try {
     AssertEqual("DEFECT-051", "Non-sensitive nested Array entry is preserved as-is", d051StepOut.result[2], "clean text")
     RunHistory.Delete(d051RunId)
 
+    ; --------------------------------------------------------------------------------------------------
+    ; DEFECT-053: CleanPlainText fails to rejoin flattened HTML-table cells
+    ; A copied HTML <table> pastes with each cell on its own line and a lone leftover tab/space
+    ; character stranded on its own line where the cell boundary used to be. CleanPlainText used to
+    ; just tidy the whitespace and leave every cell isolated on its own line, destroying the
+    ; label/value association. RejoinFlattenedTableCells() must detect the tab-only separator line
+    ; and rejoin adjacent cells into one tab-delimited row, while leaving genuine blank-line paragraph
+    ; breaks (which have zero characters, not a tab) completely alone.
+    ; --------------------------------------------------------------------------------------------------
+    d053TwoRowTable := "Smart Replace mode`r`n`t`r`nSuggested target`r`n`r`n`r`nDate`r`n`t`r`nDD-MM-YYYY"
+    d053Out := CleanPlainText(d053TwoRowTable)
+    AssertEqual("DEFECT-053", "2-column, 2-row flattened table rejoins into tab-delimited rows", d053Out, "Smart Replace mode`tSuggested target`r`n`r`nDate`tDD-MM-YYYY")
+
+    d053ThreeCol := "H1`r`n`t`r`nH2`r`n`t`r`nH3"
+    AssertEqual("DEFECT-053", "3-column row chains through all cell separators in one call", RejoinFlattenedTableCells(d053ThreeCol), "H1`tH2`tH3")
+
+    d053Paragraphs := "Line 1`r`n`r`nParagraph 2"
+    AssertEqual("DEFECT-053", "Ordinary blank-line paragraph break (no tab) is never rejoined", RejoinFlattenedTableCells(d053Paragraphs), d053Paragraphs)
+    AssertTrue("DEFECT-053", "CleanPlainText on real paragraphs still preserves the paragraph break", InStr(CleanPlainText(d053Paragraphs), "`r`n`r`n") > 0)
+
 } catch as testErr {
     FailCount++
     TestLogs.Push("[FATAL_REGRESSION_CRASH] " . testErr.Message . " (Line: " . testErr.Line . ")")

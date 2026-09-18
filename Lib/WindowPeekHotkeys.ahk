@@ -117,3 +117,74 @@
 *Down:: XRayStepDown()
 *Up:: XRayStepUp()
 #HotIf
+
+; --------------------------------------------------------------------------------------------------
+; 4. Stuck Physical-Key Watchdog (Self-Healing for Dropped Key-Up Events)
+;
+; The #HotIf blocks above hijack t/v/s/x/c/p/w/n/Space/Tab/Esc/Up/Down system-wide for as long as
+; GetKeyState("CapsLock", "P") reports the key physically held. That OS-level physical state is
+; outside this script's control: if a key-up event is ever dropped (a UAC prompt, lock screen, or
+; other focus-stealing surface steals the up-event while CapsLock is down), Windows can keep
+; reporting CapsLock as held indefinitely. When that happens every press of those keys silently
+; fires a chord/peek action instead of typing — and reloading or exiting the script does NOT fix it,
+; because the stuck state lives in the OS input session, not in script variables. This watchdog
+; detects that condition and forces a synthetic release so the hook resyncs without a logoff.
+; --------------------------------------------------------------------------------------------------
+
+; Catalogued in the "Global State Registry" in Lib/Globals.ahk — update that list if you add,
+; rename, or remove either global below.
+global CapsLockStuckSince      := 0      ; Tick when the watchdog first saw an unexplained hold
+global CapsLockStuckThresholdMs := 12000 ; Longer than CheckPeekWatchdog/CheckXRayWatchdog's own 10s cap
+
+InitCapsLockStuckWatchdog() {
+    SetTimer CheckCapsLockStuckWatchdog, 1000
+}
+
+CheckCapsLockStuckWatchdog() {
+    global CapsLockStuckSince, CapsLockStuckThresholdMs, PeekState, XRayState
+
+    isPhysicallyDown := false
+    try isPhysicallyDown := GetKeyState("CapsLock", "P")
+
+    if !isPhysicallyDown {
+        CapsLockStuckSince := 0
+        return
+    }
+
+    ; Window Peek and X-Ray legitimately hold CapsLock down and already run their own watchdogs
+    ; (10s cap) — never fight those; only act once both are back to IDLE.
+    if (PeekState.status != "IDLE" || XRayState.status != "IDLE") {
+        CapsLockStuckSince := 0
+        return
+    }
+
+    if (CapsLockStuckSince == 0) {
+        CapsLockStuckSince := A_TickCount
+        return
+    }
+
+    if (A_TickCount - CapsLockStuckSince > CapsLockStuckThresholdMs)
+        ForceReleaseStuckCapsLock()
+}
+
+ForceReleaseStuckCapsLock() {
+    global CapsLockPressTick, CapsLockChordFired, CapsLockStuckSince, CapsLockStuckThresholdMs
+
+    try {
+        ; Injected input still passes through the low-level keyboard hook, which resyncs AHK's
+        ; internal physical-key state from it — this is what actually clears the stuck condition.
+        SendInput("{CapsLock Up}")
+    } catch as err {
+        if IsSet(LogAppError)
+            LogAppError("ForceReleaseStuckCapsLock (SendInput)", err)
+    }
+
+    CapsLockPressTick  := 0
+    CapsLockChordFired := false
+    CapsLockStuckSince := 0
+
+    if IsSet(LogAppError)
+        LogAppError("ForceReleaseStuckCapsLock", Error("Stuck physical CapsLock auto-released by watchdog after " . CapsLockStuckThresholdMs . "ms with no active Peek/X-Ray session"))
+
+    try ShowToast("⚠ Stuck CapsLock auto-released (keyboard hijack watchdog)", 2500)
+}
