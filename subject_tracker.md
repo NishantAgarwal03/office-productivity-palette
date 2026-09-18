@@ -245,7 +245,7 @@
 | 2026-09-18 | Commit together with the stuck-CapsLock watchdog and the README refresh. | Completed — commit `ebdd4ac`, unpushed |
 
 ## Subject: docs\README_COMPLETE_TOOL_CASES.md Re-audit (v2.0.0 -> v2.0.1)
-- **Status**: 🟢 Finalized (PR #9 open, branch pushed)
+- **Status**: 🟢 Finalized (PR #9 merged into `master` as `f1a5b4f`; branch `docs/readme-reaudit-v2.0.1` deleted locally and on `origin`)
 - **Initial Score**: 5.0/10 (stale — audited a `v2.0.0.ahk` file/hash that no longer exists, carried a duplicate-registration defect that was already fixed, and undercounted several tool families)
 - **Final Score**: TBD
 - **Satisfaction Level**: TBD (user has not yet given closing feedback)
@@ -269,6 +269,10 @@
 | 2026-09-18 | Run the full re-audit and update the doc. | Completed — recounted every tool family against current `v2.0.1` source; document now matches source |
 | 2026-09-18 | Create a (non-draft) PR for the session's changes. | Completed — branch `docs/readme-reaudit-v2.0.1` pushed, PR #9 opened against `master`, carrying this work plus 6 prior unpushed commits |
 | 2026-09-18 | Have a clean tree and update checkpoint. | Completed — tree was already clean post-push; `subject_tracker.md` and `Docs/PENDING_NEXT_SESSION.md` updated to reflect PR #9 and current branch state |
+| 2026-09-18 | Merge PR #9. | Completed — `gh pr merge 9 --merge`, merge commit `f1a5b4f`; local `master` reset to match `origin/master` |
+| 2026-09-18 | Close PR #1. | Reported — already `CLOSED` earlier this session as superseded; no action needed |
+| 2026-09-18 | Delete the branch `docs/readme-reaudit-v2.0.1`. | Completed — deleted locally and on `origin` (already fully merged) |
+| 2026-09-18 | Have a clean tree and update checkpoint. | Completed — `subject_tracker.md` and `Docs/PENDING_NEXT_SESSION.md` updated to reflect the merge and branch deletion |
 
 ## Archived Subjects
 | Subject | Final Score | Date Archived |
