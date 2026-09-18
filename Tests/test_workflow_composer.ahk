@@ -334,6 +334,40 @@ try {
     AssertTrue("PipelineRunner", "corpus_set_analyzer output contains unique term Alpha", InStr(corpusRunRes.output, "Alpha"))
     AssertFalse("PipelineRunner", "corpus_set_analyzer stripped universal text", InStr(corpusRunRes.output, "Standard disclaimer text"))
 
+    ; DEFECT-042: corpus_set_analyzer must not crash when its "source" input is bound to an
+    ; Array-typed upstream output (e.g. primitive_split.items), which WorkflowTypes legally
+    ; allows since the tool declares its input type as "any".
+    arraySourceRecipe := {
+        id: "recipe_test_corpus_array_source",
+        name: "Test Corpus Set Array Source Recipe",
+        description: "Chains primitive_split.items into corpus_set_analyzer.source",
+        input_source: "text",
+        output_sink: "silent",
+        steps: [
+            {
+                id: "step_split",
+                tool_id: "primitive_split",
+                tool_version: 1,
+                settings: Map("delimiter", "\n\n"),
+                bindings: Map("text", "input.text")
+            },
+            {
+                id: "step_corpus",
+                tool_id: "corpus_set_analyzer",
+                tool_version: 1,
+                settings: Map("operation", "difference", "filter_stopwords", true),
+                bindings: Map("source", "step_split.items")
+            }
+        ]
+    }
+    arraySourceRunRes := PipelineRunner.Execute(arraySourceRecipe, corpusInput)
+    AssertTrue("PipelineRunner", "corpus_set_analyzer does not crash on Array-typed source binding", arraySourceRunRes.success)
+    AssertTrue("PipelineRunner", "corpus_set_analyzer Array source still finds unique term Alpha", InStr(arraySourceRunRes.output, "Alpha"))
+
+    ; DEFECT-042: DetectDelimiter itself must degrade gracefully for non-String input
+    AssertEqual("CorpusSetEngine", "DetectDelimiter falls back to CRLF for Array input", CorpusSetEngine.DetectDelimiter(["a", "b"]), "`r`n")
+    AssertEqual("CorpusSetEngine", "DetectDelimiter still detects double-CRLF for String input", CorpusSetEngine.DetectDelimiter("a`r`n`r`nb"), "`r`n`r`n")
+
 } catch as testErr {
     FailCount++
     TestLogs.Push("[FATAL_TEST_CRASH] " . testErr.Message . " (Line: " . testErr.Line . ")")

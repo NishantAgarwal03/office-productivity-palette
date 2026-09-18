@@ -423,10 +423,14 @@ class CorpusSetEngine {
     /**
      * Detects the natural inter-document delimiter of the raw text
      * Preserves Excel/table row structure (single newline) vs paragraph structure (double newline)
+     * Non-String input (e.g. an Array of items/file paths bound from an upstream Workflow
+     * Composer step) has no "original formatting" to preserve, so it falls back to CRLF.
      * @param {String} rawText
      * @returns {String}
      */
     static DetectDelimiter(rawText) {
+        if (Type(rawText) != "String")
+            return "`r`n"
         crlf := InStr(rawText, "`r`n")
         if (InStr(rawText, "`r`n`r`n") || InStr(rawText, "`n`n"))
             return crlf ? "`r`n`r`n" : "`n`n"
