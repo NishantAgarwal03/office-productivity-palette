@@ -212,6 +212,27 @@ try {
     AssertTrue("Presentation_Decoupling", "Formatted resultStr contains ft unit and imperial display", InStr(rDecouple.resultStr, "50.000 ft") && InStr(rDecouple.resultStr, "(50'-0.00`")"))
     AssertTrue("Presentation_Decoupling", "Display expression preserves mathematical formula", InStr(rDecouple.displayExpr, "30") && InStr(rDecouple.displayExpr, "40") && InStr(rDecouple.displayExpr, "²"))
 
+    ; ==================================================================================================================
+    ; 6. DEFECT-042: Division-by-Zero Guards (CivilSurvey Slope Fall, CivilRebar Spacing Substitution)
+    ; ==================================================================================================================
+    rZeroFall := CivilSurvey.Evaluate("fall 0mm in 10m")
+    AssertTrue("DEFECT-042", "CivilSurvey rejects zero fall instead of crashing", IsObject(rZeroFall) && rZeroFall.success == false)
+
+    rZeroRun := CivilSurvey.Evaluate("fall 100mm in 0m")
+    AssertTrue("DEFECT-042", "CivilSurvey rejects zero run instead of crashing", IsObject(rZeroRun) && rZeroRun.success == false)
+
+    rValidFall := CivilSurvey.Evaluate("fall 100mm in 10m")
+    AssertTrue("DEFECT-042", "CivilSurvey still evaluates valid non-zero fall/run", IsObject(rValidFall) && rValidFall.success == true)
+
+    rZeroDia := CivilRebar.Evaluate("0mm @ 150 to 12mm")
+    AssertTrue("DEFECT-042", "CivilRebar rejects zero existing diameter instead of crashing", IsObject(rZeroDia) && rZeroDia.success == false)
+
+    rZeroSpacing := CivilRebar.Evaluate("10mm @ 0 to 12mm")
+    AssertTrue("DEFECT-042", "CivilRebar rejects zero existing spacing instead of crashing", IsObject(rZeroSpacing) && rZeroSpacing.success == false)
+
+    rValidRebar := CivilRebar.Evaluate("10mm @ 150 to 12mm")
+    AssertTrue("DEFECT-042", "CivilRebar still evaluates valid non-zero substitution", IsObject(rValidRebar) && rValidRebar.success == true)
+
 
 } catch as err {
     FailCount++

@@ -55,6 +55,8 @@ class CivilSurvey {
 
             if (runM <= 0)
                 return {success: false, message: "Slope run cannot be zero"}
+            if (riseM <= 0)
+                return {success: false, message: "Slope fall/rise cannot be zero"}
 
             slopeRatio := runM / riseM
             slopePct := (riseM / runM) * 100.0

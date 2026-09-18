@@ -194,7 +194,7 @@ GenerateRandomChars(len) {
 
 GenerateUUID() {
     guid := Buffer(16, 0)
-    if DllCall("ole32\\CoCreateGuid", "Ptr", guid.Ptr) = 0 {
+    if DllCall("ole32\CoCreateGuid", "Ptr", guid.Ptr) = 0 {
         return Format("{:08X}-{:04X}-{:04X}-{:02X}{:02X}-{:02X}{:02X}{:02X}{:02X}{:02X}{:02X}",
             NumGet(guid, 0, "UInt"),
             NumGet(guid, 4, "UShort"),
