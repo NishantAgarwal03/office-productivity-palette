@@ -244,6 +244,32 @@
 | 2026-09-18 | Extend `CleanPlainText` to detect and rejoin table cells. | Completed (1,381/1,381 pass, DEFECT-053, verified fail-without-fix) |
 | 2026-09-18 | Commit together with the stuck-CapsLock watchdog and the README refresh. | Completed — commit `ebdd4ac`, unpushed |
 
+## Subject: docs\README_COMPLETE_TOOL_CASES.md Re-audit (v2.0.0 -> v2.0.1)
+- **Status**: 🟢 Finalized (PR #9 open, branch pushed)
+- **Initial Score**: 5.0/10 (stale — audited a `v2.0.0.ahk` file/hash that no longer exists, carried a duplicate-registration defect that was already fixed, and undercounted several tool families)
+- **Final Score**: TBD
+- **Satisfaction Level**: TBD (user has not yet given closing feedback)
+
+### Remarks
+- User asked whether the app's stated 4-category Workflow Composer primitive list (Split/Join, Filter/Dedupe, Interactive Interceptor, Loop & Template) was complete; direct source read of `Lib\WorkflowPrimitives.ahk` found it is actually **9 distinct registrations**, missing `primitive_slice` (Slice/Limit Items) entirely and treating the two `loop_start`/`loop_end` structural nodes as one.
+- Added a new `## 16. Workflow Composer primitives (9 registrations)` section to `docs\README_COMPLETE_TOOL_CASES.md` documenting all 9 (`Lib\WorkflowPrimitives.ahk`), each with its own source-verified behavior notes.
+- User then asked whether the rest of the document's claims were still accurate. A background verification agent compared the doc's registration counts and its central "duplicate `Configure Civil Converter Defaults` registration" defect against current `v2.0.1` source and found the doc was auditing a stale `v2.0.0.ahk` (wrong filename, wrong SHA-256) and the duplicate defect no longer exists — it was fixed sometime between the prior audit and now (per `.agents\skills\subject_tracker\ARCHIVE.md`'s "De-duplicate Word & Character Tool & Modularize Civil Defaults" entry).
+- Ran a full re-audit against `v2.0.1.ahk` and its `Lib\*.ahk` include graph, recounting every `RegisterAction()` call directly from source rather than trusting the prior document: Date/Time 10→**12** (added `Convert Date Format`, `Configure Default Date Format`, `Cycle Date Format (9 Formats)`; removed the no-longer-registered "Work Week Date Range"), Text 15→**18** (added `Deduplicate Lines`, `Insert Lorem Ipsum Dummy Text`, `Set Intersect & Difference (Corpus Comparison)`), Math 11→**9** (two entries — "Word & Character Counter," "Format Number with Commas" — no longer exist in `Actions_Math.ahk`; renumbered 5.1-5.9), Utility 12→**11** (the phantom duplicate 8.12 removed; Civil-defaults documented once, under Civil §12.5 only).
+- Discovered and documented the **dynamic recipe registration mechanism** (`Lib\Actions_Workflow.ahk:47`, `LoadAndRegisterSavedRecipes()`), which registers one `Recipe: <name>` palette row per valid file under `Recipes\` at startup — never mentioned in any prior revision of this document. Total reachable rows is therefore **91 fixed + a variable number of dynamic recipe rows (4 currently) = 96**, not the prior document's static "86."
+- Corrected two Finance-tool names (6.7/6.8) and one Math-tool name (5.3) that didn't match their actual registered palette strings.
+- Updated the "Audit conclusion" and "Current code rating" table: 40/50 → **41/50** (Architecture and maintainability 7/8 → 8/8, since the duplicate-registration defect that cost that point is fixed), while explicitly flagging that Reliability, Input validation, and Verification scores were carried over from the prior audit, not independently re-verified in this pass — and that Extraction/Action Board/Window Peek/Civil §12.1-12.4 body text was spot-checked by the background agent but not re-derived line-by-line.
+- No test suite applies to a documentation-only file; verified by direct comparison against current `Lib\*.ahk` `RegisterAction()` call sites and `Lib\WorkflowPrimitives.ahk`'s `ToolCatalog.Register()` calls, not by running anything.
+- Committed as `c57f9ef` on a new branch `docs/readme-reaudit-v2.0.1` (created off `master`, which was already 6 commits ahead of `origin/master`), pushed, and opened as **PR #9** against `master` — since a branch cannot be merged into itself, this PR also carries the prior session's 6 unpushed local commits (watchdog fix, `CleanPlainText` rejoin, README refresh, checkpoint update).
+
+| Timestamp | Instruction | Status |
+| :--- | :--- | :--- |
+| 2026-09-18 | Determine whether the Workflow Composer's primitives are limited to the 4 categories the user listed. | Completed — found 9 distinct registrations including a previously-unlisted Slice/Limit primitive |
+| 2026-09-18 | Update `docs\README_COMPLETE_TOOL_CASES.md` to document the Workflow Composer primitives. | Completed — added `## 16. Workflow Composer primitives (9 registrations)` |
+| 2026-09-18 | Check whether the rest of the document's text is still correct and up to date. | Completed — background agent found the doc was auditing a stale `v2.0.0.ahk` and a since-fixed duplicate-registration defect |
+| 2026-09-18 | Run the full re-audit and update the doc. | Completed — recounted every tool family against current `v2.0.1` source; document now matches source |
+| 2026-09-18 | Create a (non-draft) PR for the session's changes. | Completed — branch `docs/readme-reaudit-v2.0.1` pushed, PR #9 opened against `master`, carrying this work plus 6 prior unpushed commits |
+| 2026-09-18 | Have a clean tree and update checkpoint. | Completed — tree was already clean post-push; `subject_tracker.md` and `Docs/PENDING_NEXT_SESSION.md` updated to reflect PR #9 and current branch state |
+
 ## Archived Subjects
 | Subject | Final Score | Date Archived |
 | :--- | :--- | :--- |
