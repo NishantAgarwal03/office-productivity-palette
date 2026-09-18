@@ -146,6 +146,42 @@ try {
     Sleep(20)
     AssertUI("Palette_Lifecycle", "Palette closed after CloseCommandPalette", !IsPaletteVisible(), IsPaletteVisible())
 
+    ; --------------------------------------------------------------------------------------------------
+    ; DEFECT-052 (R5): PaletteExecuteSelection's WinActivate call must not crash when TargetWindowHwnd
+    ; is stale/invalid (e.g. the target window closed between the palette opening and the user picking
+    ; an action) — same guard pattern already used for every other WinActivate call in the codebase.
+    ; --------------------------------------------------------------------------------------------------
+    global TargetWindowHwnd, PaletteItems, PaletteListView
+    ShowCommandPalette()
+    Sleep(30)
+    d052Flag := {ran: false}
+    PaletteItems := [{name: "DEFECT-052 Test Action", category: "Test", callback: (*) => (d052Flag.ran := true)}]
+    PaletteListView.Delete()
+    PaletteListView.Add(, "A+1", "DEFECT-052 Test Action", "Test", "", "")
+    PaletteListView.Modify(1, "Select Focus")
+
+    TargetWindowHwnd := 999999999 ; Stale/nonexistent handle
+    d052Threw := false
+    try {
+        PaletteExecuteSelection(1)
+    } catch {
+        d052Threw := true
+    }
+    AssertUI("DEFECT-052", "PaletteExecuteSelection does not throw when TargetWindowHwnd is stale/invalid", !d052Threw, d052Threw)
+    AssertUI("DEFECT-052", "Selected action still executes despite the invalid target handle", d052Flag.ran, d052Flag.ran)
+    TargetWindowHwnd := 0
+
+    ; The dynamic test above can't force WinActivate itself to throw (WinExist gates the call, and
+    ; AHK's WinActivate does not throw for a simply-missing window — only for a genuine close-timing
+    ; race that isn't reproducible deterministically in a single-threaded test). So also statically
+    ; verify the actual coding-standard compliance: the call site in the real source is try/catch
+    ; guarded, matching the pattern already used for every other WinActivate call in the codebase
+    ; (Lib\WindowPeekEngine.ahk) and Rule 5 of MY_CODING_STYLE_AND_STANDARDS.txt.
+    d052Source := FileRead(A_ScriptDir . "\..\Lib\PaletteGui.ahk", "UTF-8")
+    d052CallPos := InStr(d052Source, 'WinActivate("ahk_id " . TargetWindowHwnd)')
+    d052Before := SubStr(d052Source, Max(1, d052CallPos - 120), 120)
+    AssertUI("DEFECT-052", "WinActivate call site in PaletteGui.ahk source is try-guarded", InStr(d052Before, "try"), d052Before)
+
     ; ==================================================================================================
     ; 2. Action Board GUI Focus, Quadrants & Task Lifecycle Tests
     ; ==================================================================================================
