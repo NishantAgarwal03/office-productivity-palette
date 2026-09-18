@@ -10,6 +10,7 @@
 ; ======================================================================================================================
 
 #Requires AutoHotkey v2.0
+#Include "CorpusSetEngine.ahk"
 
 RegisterBuiltinToolAdapters() {
     ; ==================================================================================================================
@@ -565,6 +566,29 @@ RegisterBuiltinToolAdapters() {
         ],
         handler: (inputs, settings) => ToolAdapters.ExecuteCivilPythagoras(inputs, settings)
     })
+    ; --- Corpus Set & Vocabulary Deviation Analyzer ---
+    ToolCatalog.Register({
+        id: "corpus_set_analyzer",
+        version: 1,
+        label: "Corpus Set & Vocabulary Analyzer",
+        category: "Analysis",
+        description: "Computes set intersection, difference, and 5-tier vocabulary profiling across 2+ documents/files",
+        inputs: [
+            {name: "source", type: "any", required: true, label: "Text / Files / Items"}
+        ],
+        settings: [
+            {name: "operation", type: "text", default: "difference", options: ["difference", "intersection", "tags", "stats_table"], label: "Set Operation"},
+            {name: "filter_stopwords", type: "boolean", default: true, label: "Ignore Stopwords"}
+        ],
+        outputs: [
+            {name: "result", type: "text", primary: true, label: "Transformed Result"},
+            {name: "stats_table", type: "text", label: "4-Column Stats TSV"},
+            {name: "intersection", type: "items<text>", label: "Common 100% Tokens"},
+            {name: "differences", type: "items<text>", label: "Unique Deviations"}
+        ],
+        handler: (inputs, settings) => ToolAdapters.ExecuteCorpusSetAnalyzer(inputs, settings)
+    })
+
 }
 
 class ToolAdapters {
@@ -1191,4 +1215,9 @@ class ToolAdapters {
         res["record"] := rec
         return res
     }
+    ; --- Corpus Set Analyzer Handler ---
+    static ExecuteCorpusSetAnalyzer(inputs, settings) {
+        return CorpusSetEngine.ExecutePipeline(inputs, settings)
+    }
+
 }

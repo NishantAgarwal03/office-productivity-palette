@@ -31,3 +31,7 @@ user00,user_change_log,false
 hare,Hare Krishna Prabhuji Dandavat Pranam,true
 interviewme,interview me to identify the actual goal and core decisions this task is intended to drive,true
 007code,"Every modification must be guided by deep root-cause thinking and the 80/20 principle. This means: (1) strictly preserving raw user data against destructive conversions, (2) consolidating scattered, repetitive logic into elegant shared primitives so future tools inherit improvements automatically, (3) favoring decoupled, presentation-layer fixes over modifying numerous tool definitions to achieve massive leverage, and (4) fixing underlying structural issues at their source rather than applying superficial patches—all while maintaining the absolute minimum code footprint and zero regressions.",true
+rewrite1,"Rewrite this message in a respectful, humble, and devotional ISKCON Vaishnava style. Preserve the original meaning and use natural language suitable for devotees and others. 
+",false
+rewrite1,"Rewrite this message in a respectful, humble, and devotional ISKCON Vaishnava style. Preserve the original meaning and use warm natural language suitable for devotees and others. 
+",true

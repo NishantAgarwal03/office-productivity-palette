@@ -280,6 +280,9 @@ SafeEvaluateMath(rawExpr) {
 ShowCalculationResult(exprStr, resultStr) {
     global YellowHudGui, ThemeSurface, ThemeBorder, ThemeText, ThemeAccent, ThemeMuted
     
+    if IsSet(NotifyVisualFeedbackDispatched)
+        NotifyVisualFeedbackDispatched()
+
     ; Auto-dismiss any pending toast notification to prevent visual HUD overlap
     if IsSet(DismissToastHud)
         DismissToastHud()

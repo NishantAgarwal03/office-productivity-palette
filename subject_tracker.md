@@ -115,9 +115,38 @@
 | 2026-09-12 19:44 | Explain 'no common ancestor' / unrelated histories error in Git, provide forensic diagnosis of master vs origin/main divergence in this repository, and outline safe resolution strategies. | Completed |
 | 2026-09-12 19:48 | Execute Option A: push master to origin/master, set default branch to master on GitHub via gh CLI, and update origin/HEAD to point to master. | Completed (100% Pass) |
 
+## Subject: CorpusSetEngine: Universal Corpus Set & Vocabulary Deviation Analyzer
+- **Status**: 🔴 Active
+- **Initial Score**: 9.5/10
+- **Final Score**: TBD
+- **Satisfaction Level**: TBD (user feedback)
+
+### Remarks
+- Successfully implemented `CorpusSetEngine` (`Lib\CorpusSetEngine.ahk`): a universal mathematical set and vocabulary deviation engine based on strict 100% mutual baseline intersection, grammar-preserving phrase difference stripping, and 5-tier document frequency profiling (Common >75%, Moderately distinctive >50%, Distinctive >20%, Low distinctive >4%, Very distinctive <=4%).
+- Implemented Dual-Tier Architecture:
+  1. Default 1-click `set.intersection` & difference action (`ExecuteSetIntersectAction` in `Lib\Actions_Text.ahk`) providing instant, non-modal count-only sovereign toast HUD (`📊 Common: X · Moderate: Y · Distinctive: Z · Low: A · Very Distinct: B`) with zero clipboard pollution and fallback to clipboard/file comparison.
+  2. Workflow Composer `corpus_set_analyzer` tool (`Lib\ToolAdapters_Builtin.ahk`) delivering structured payload (`result`, `stats_table`, `intersection`, `differences`) for full pipeline orchestration.
+- Non-destructive preservation: Uses lookaround boundary matching `(?<!\w)\Qtoken\E(?!\w)` to safely isolate terms containing internal hyphens or symbols (`M-25`, `1:2:4`), followed by whitespace collapse and punctuation cleanup.
+- File-path detection guard: Strict verification that input lines are only treated as files if all lines pass `FileExist()` and contain path separators.
+- Expanded Zero-Trust regression coverage in `Tests\test_regression_defects.ahk` (DEFECT-038) and pipeline testing in `Tests\test_workflow_composer.ahk`.
+- 100% Zero-Trust Master Test Suite verified: 1,341 / 1,341 assertions passing across all 8 suites with zero leaks, zero mutations, and sealed closed-world manifest integrity.
+- Recompiled `office_productivity_palette_v2.0.1.exe` with Ahk2Exe.
+
+| Timestamp | Instruction | Status |
+| :--- | :--- | :--- |
+| 2026-09-15 18:21 | Implement CorpusSetEngine: Universal Corpus Set & Vocabulary Deviation Analyzer with dual-tier architecture (Default 1-Click set.intersection & difference with count-only toast, and Workflow Composer corpus_set_analyzer tool), non-destructive 100% boilerplate stripping with lookaround regex, and 4-column TSV statistics table. | Completed (100% Pass) |
+| 2026-09-16 19:12 | Resolve all failing assertions in test_regression_defects.ahk (DEFECT-038) and test_workflow_composer.ahk, achieve 1,341/1,341 test pass across all 8 suites, and recompile office_productivity_palette_v2.0.1.exe. | Completed (100% Pass) |
+| 2026-09-16 19:18 | Check telemetry and diagnose why intersection tool is not working on user text in editors.exe. | Completed |
+| 2026-09-16 19:27 | Fix 2 user-reported defects in CorpusSetAction: (1) Toast duration too short (increased to 6500ms for ergonomic reading), (2) Content changed in Excel by adding extra blank rows after each row (added CorpusSetEngine.DetectDelimiter to strictly preserve single CRLF row structure in spreadsheets/tables without injecting blank rows); verified with DEFECT-039 (1,346/1,346 pass). | Completed (100% Pass) |
+| 2026-09-16 19:39 | Address 2 user concerns: (1) Repeat last action (RepeatLastAction) shows generic "Command Repeated" tooltip which immediately overwrites the statistical toast tooltip (fixed in Lib\Core.ahk by checking if action updated Toast HUD), (2) On selecting 2 cells the content changed from original showing fewer characters (diagnosed 100% universal baseline stripping and fixed FormatToastMessage to explicitly display Universal (100%): N); verified with DEFECT-040 (1,348/1,348 pass). | Completed (100% Pass) |
+| 2026-09-16 19:54 | Correct core invariants per user clarification: (1) Default tool must be strictly NON-DESTRUCTIVE (removed in-place cell mutation/replacement; raw user data strictly preserved with zero character loss), (2) Eliminated "Universal 100%" tier concept; all coverage >75% mapped directly to "Common" tier per user 5-tier specification and toast displays strictly the 5 tiers; verified with DEFECT-040 updates (1,351/1,351 pass). | Completed (100% Pass) |
+| 2026-09-16 21:18 | Root Architectural Fix for RepeatLastAction visual feedback preservation across all 18 informative tools: implemented unified GlobalFeedbackEpoch and NotifyVisualFeedbackDispatched primitive in Lib\ClipboardHelper.ahk, wired into ShowToast, ShowCursorTooltip, Math Yellow HUD, Civil HUD, and Word Count Tooltip; eliminated textAfter == textBefore clobbering in Lib\Core.ahk; verified with DEFECT-041 (1,361/1,361 pass across all 8 suites); recompiled executable. | Completed (100% Pass) |
+| 2026-09-17 08:22 | Embed non-duplicative design intent, 5-tier documentation (Common: > 75% and < 100%), and intentional non-goals into Lib\CorpusSetEngine.ahk and Lib\Actions_Text.ahk for LLM context alignment; verified with zero-trust test suite (1,361/1,361 pass). | Completed (100% Pass) |
+
 ## Archived Subjects
 | Subject | Final Score | Date Archived |
 | :--- | :--- | :--- |
 | `office_productivity_palette_v2.0.0.ahk` | 10/10 | 2026-09-07 |
 | `Git Repository Audit & Upstream Synchronization` | 10/10 | 2026-09-07 |
+
 

@@ -86,14 +86,26 @@ OnLeaderHookEnd(ih) {
 }
 
 RepeatLastAction() {
-    global LastExecutedAction
+    global LastExecutedAction, GlobalFeedbackEpoch
     if (!IsObject(LastExecutedAction) || !LastExecutedAction.HasOwnProp("callback")) {
         ShowToast("⚠️ No previous action to repeat", 2000)
         return
     }
+    epochBefore := IsSet(GlobalFeedbackEpoch) ? GlobalFeedbackEpoch : 0
     try {
         LastExecutedAction.callback.Call()
-        ShowToast("🔁 Repeated: " . LastExecutedAction.name, 1500)
+        epochAfter := IsSet(GlobalFeedbackEpoch) ? GlobalFeedbackEpoch : 0
+        
+        ; Win32 native tooltip window detection in case raw ToolTip was called
+        hasNativeTooltip := false
+        try {
+            hasNativeTooltip := WinExist("ahk_class tooltips_class32 ahk_pid " . ProcessExist())
+        }
+        
+        ; Only show generic "Repeated" toast if the action was purely silent and dispatched no visual feedback/HUD/tooltip
+        if (epochAfter == epochBefore && !hasNativeTooltip && !IsAnyOfficeFeedbackVisible()) {
+            ShowToast("🔁 Repeated: " . LastExecutedAction.name, 1500)
+        }
     } catch as err {
         if IsSet(LogAppError)
             LogAppError("RepeatLastAction (" . LastExecutedAction.name . ")", err)
@@ -112,6 +124,14 @@ SafeIsWindowVisible(guiObj) {
     } catch {
         return false
     }
+}
+
+IsAnyOfficeFeedbackVisible() {
+    global ToastHudGui, YellowHudGui, CivilResultHudGui, NudgeHudGui
+    return SafeIsWindowVisible(ToastHudGui)
+        || SafeIsWindowVisible(YellowHudGui)
+        || SafeIsWindowVisible(CivilResultHudGui)
+        || SafeIsWindowVisible(NudgeHudGui)
 }
 
 IsAnyOfficeUIVisible() {

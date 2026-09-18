@@ -162,4 +162,5 @@ global LeaderActive       := false
 global LastShiftTime      := 0
 global LastCtrlTime       := 0
 global LastExecutedAction := ""
+global GlobalFeedbackEpoch := 0
 global SessionStartTime   := A_Now
