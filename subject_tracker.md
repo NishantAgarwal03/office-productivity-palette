@@ -181,7 +181,7 @@
 | 2026-09-18 | Fix R5 (WinActivate not try-catch guarded in PaletteExecuteSelection) and update Docs/PENDING_NEXT_SESSION.md checkpoint. | Completed (100% Pass, 1,377/1,377, DEFECT-052) |
 
 ## Subject: Keyboard Freeze Diagnosis & Stuck-CapsLock Watchdog (Lib\WindowPeekHotkeys.ahk)
-- **Status**: 🔴 Active (uncommitted — see `Docs/PENDING_NEXT_SESSION.md`)
+- **Status**: 🔴 Active (committed as `ebdd4ac`, unpushed — regression test still outstanding, see `Docs/PENDING_NEXT_SESSION.md` Section 0a)
 - **Initial Score**: 9.0/10
 - **Final Score**: TBD
 - **Satisfaction Level**: TBD (user has not yet given closing feedback)
@@ -193,16 +193,18 @@
 - Implemented a self-healing watchdog in `Lib\WindowPeekHotkeys.ahk` (new Section 4): `CheckCapsLockStuckWatchdog()` polls physical CapsLock state every 1s via `SetTimer`, yielding whenever `PeekState`/`XRayState` is non-IDLE (both already run their own 10s-capped watchdogs in `Lib\WindowPeekEngine.ahk`, so this never fights a real long hold). If CapsLock reads continuously down for 12s+ outside those legitimate sessions, `ForceReleaseStuckCapsLock()` sends a synthetic `{CapsLock Up}` via `SendInput` (injected input still passes through the low-level hook and resyncs AHK's internal physical-key state — this is what actually clears the condition without a logoff), resets `CapsLockPressTick`/`CapsLockChordFired`, logs the event via `LogAppError` so it's now visible in telemetry, and shows a toast.
 - Wired into startup via `InitCapsLockStuckWatchdog()` in `InitApp()` (`office_productivity_palette_v2.0.1.ahk:86`). Added the two new module-owned globals (`CapsLockStuckSince`, `CapsLockStuckThresholdMs`) to the Global State Registry in `Lib\Globals.ahk` per the project's own documentation convention.
 - Verified with `AutoHotkey64.exe /validate` (clean load) and the full Zero-Trust Master Test Suite: **1,377/1,377** unchanged — no regressions, since the change is purely additive (new timer + new functions) and doesn't alter any existing hotkey or control-flow path.
-- **Not yet done**: no DEFECT-0XX regression test was added (a real stuck-physical-CapsLock condition isn't reproducible through the suite's normal `GetKeyState` test harness the way other defects are); the fix is **uncommitted** (no branch/PR opened); the `.exe` has not been recompiled since. Full handoff detail in `Docs/PENDING_NEXT_SESSION.md`.
+- **Not yet done**: no DEFECT-0XX regression test was added (a real stuck-physical-CapsLock condition isn't reproducible through the suite's normal `GetKeyState` test harness the way other defects are); the `.exe` has not been recompiled since. Committed together with the `CleanPlainText` fix and the README refresh as `ebdd4ac` (`fix: stuck-CapsLock watchdog, CleanPlainText table rejoin, README refresh`) — not yet pushed to `origin/master`.
 
 | Timestamp | Instruction | Status |
 | :--- | :--- | :--- |
 | 2026-09-18 | Diagnose keyboard-input freeze incident (required a logoff/logon to recover) via telemetry logs and give reasons. | Completed — root-caused to stuck physical CapsLock state hijacking the `#HotIf` hotkeys in `Lib\WindowPeekHotkeys.ahk` |
 | 2026-09-18 | Implement a stuck-key watchdog so this self-recovers without a logoff next time. | Completed (1,377/1,377 pass, no regressions; uncommitted) |
 | 2026-09-18 | Prepare handoff and update checkpoint. | Completed — `subject_tracker.md` and `Docs/PENDING_NEXT_SESSION.md` updated |
+| 2026-09-18 | Commit all three pending pieces of work (this watchdog, the `CleanPlainText` fix, and the README refresh) together. | Completed — commit `ebdd4ac`, 1,381/1,381 pass, closed-world manifest clean |
+| 2026-09-18 | Have a clean tree and checkpoint update. | Completed — tree was already clean post-commit; `subject_tracker.md` and `Docs/PENDING_NEXT_SESSION.md` updated to reflect committed state |
 
 ## Subject: docs\README_office_productivity_palette.md
-- **Status**: 🔴 Active
+- **Status**: 🔴 Active (committed as `ebdd4ac`, unpushed)
 - **Initial Score**: 6.0/10 (stale — dated v2.0.0, 3 test suites, 199 assertions, missing whole feature areas)
 - **Final Score**: TBD
 - **Satisfaction Level**: TBD (user has not yet given closing feedback)
@@ -219,6 +221,28 @@
 | :--- | :--- | :--- |
 | 2026-09-18 | Update `docs\README_office_productivity_palette.md`. | Clarified scope via 3-option question; user chose "Full refresh" |
 | 2026-09-18 | Full refresh: sync version/test numbers, add missing feature sections (Workflow Composer, Date Format Converter, CorpusSetEngine), document the stuck-CapsLock watchdog, and correct factually wrong tool/hotkey claims found while cross-checking against source. | Completed |
+| 2026-09-18 | Commit together with the stuck-CapsLock watchdog and the `CleanPlainText` fix. | Completed — commit `ebdd4ac`, unpushed |
+
+## Subject: CleanPlainText Flattened HTML-Table Cell Rejoin (Lib\Actions_Text.ahk)
+- **Status**: 🔴 Active (committed as `ebdd4ac`, unpushed)
+- **Initial Score**: 9.0/10
+- **Final Score**: TBD
+- **Satisfaction Level**: TBD (user has not yet given closing feedback)
+
+### Remarks
+- User first asked for a general code-intention analysis of "Paste Clean Plain Text not working as intended." Traced `CleanPlainText()` (`Lib\Actions_Text.ahk`) and its `[PROGRESSIVE 2-PASS TRANSFORMATION]` design comment: Pass 1 normalizes whitespace, Pass 2 (meant to trigger only on a deliberate second press) unwraps single line breaks into a flowing paragraph. Found the Pass-2 trigger (`cleanT == text`) is a content-based heuristic that can't distinguish "this is Pass 1's own output" from "this text just happened to already be whitespace-clean" — the latter fires Pass 2 on the very first press, an inconsistency locked into the suite's own `test_suite_runner.ahk:252` assertion. Also flagged that the tool's registered description ("Strips HTML, font styles & excess whitespace") over-promises: `CleanPlainText()` has zero HTML-tag-stripping logic; format-stripping is a side effect of the plain-text clipboard round-trip in `TransformSelectedText`/`InsertText`, not this function.
+- User then supplied a concrete real-world reproduction: a copied HTML table (browser-rendered), where each `<td>` flattens to its own line on paste, with a lone leftover tab character stranded on the line where the column boundary used to be. Traced this input through the existing 5-step pipeline and showed the trailing-whitespace-strip step (step 3) destroys the tell-tale tab before anything could recognize the table structure, leaving every cell permanently isolated on its own line — destroying the label/value association rather than fixing it.
+- Implemented the fix: added `RejoinFlattenedTableCells()` (new function, `Lib\Actions_Text.ahk`), wired in as `CleanPlainText()` step 2.5 — after CRLF normalization but *before* the trailing-whitespace strip, so the tell-tale tab is still there to detect. Pattern: a line consisting of nothing but tab/space characters, sandwiched between two content lines. Deliberately requires at least one real `[ \t]` char on the separator line (not a bare empty line) so it can never fire on an ordinary blank-line paragraph break. Loops to a fixpoint (`RegExReplace`'s `&joinCount` output var) so a 3+ column row chains fully — `RegExReplace` only finds non-overlapping matches in one left-to-right pass, so adjacent cell-pairs can't all join in a single call, matching the same fixpoint-loop pattern already used for chained percentages in `MathEvaluator` (D5).
+- Added **DEFECT-053** in `Tests\test_regression_defects.ahk`: the reported 2-column/2-row table case, a direct `RejoinFlattenedTableCells()` unit test for a 3-column chain, and a guard asserting ordinary paragraph blank-lines (zero characters, no tab) are never touched. Verified by temporarily disabling the new step and confirming the suite drops to 257/258 (the exact new assertion failing), then re-enabling and confirming 258/258 — the project's own "prove the test actually flips fail→pass" convention.
+- Scope note: only the table-rejoin gap was fixed, per the user's explicit ask. The broader Pass-2-heuristic inconsistency (plain clean multi-line text collapsing to one paragraph on press 1) was diagnosed and explained but deliberately left alone — not requested, and fixing it is a separate, larger design decision (state tracking vs. splitting into two honestly-named tools) flagged for the user to decide on separately.
+- Final verified state: **1,381/1,381** across all 8 suites, closed-world manifest clean.
+
+| Timestamp | Instruction | Status |
+| :--- | :--- | :--- |
+| 2026-09-18 | Paste Clean Plain Text not working as intended; go through the code and determine coder intention. | Completed — traced the 2-pass design intent and the content-heuristic gap that breaks it; no code changed yet |
+| 2026-09-18 | Reported a concrete repro: pasting a copied HTML table produces a jumbled per-cell-per-line block instead of clean, structured text. | Completed — traced the exact regex step that destroys the tell-tale tab, confirmed root cause |
+| 2026-09-18 | Extend `CleanPlainText` to detect and rejoin table cells. | Completed (1,381/1,381 pass, DEFECT-053, verified fail-without-fix) |
+| 2026-09-18 | Commit together with the stuck-CapsLock watchdog and the README refresh. | Completed — commit `ebdd4ac`, unpushed |
 
 ## Archived Subjects
 | Subject | Final Score | Date Archived |
