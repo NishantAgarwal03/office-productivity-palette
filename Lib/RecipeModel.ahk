@@ -13,6 +13,9 @@
 #Requires AutoHotkey v2.0
 
 class RecipeModel {
+    ; ==================================================================================================================
+    ; Recipe Contract Validation (8-point contract: see subject_tracker.md "Recipe contract validation")
+    ; ==================================================================================================================
     /**
      * Validates a recipe structure against ToolCatalog contracts and type compatibility
      * @param {Object} recipe
@@ -92,6 +95,11 @@ class RecipeModel {
         }
     }
 
+    ; ------------------------------------------------------------------------------------------------------------------
+    ; Per-Step Validation (recursed into for loop-container sub-steps; the bulk of the contract checks
+    ; live here: id/tool_id presence, binding type-compatibility against upstream scopeOutputs, loop
+    ; nesting rules, and duplicate step-id detection)
+    ; ------------------------------------------------------------------------------------------------------------------
     static _ValidateStep(step, sIdx, scopeOutputs, seenStepIds, errors, stepErrors := "", loopContext := false, loopStack := "") {
         if (!IsObject(step) || !step.HasOwnProp("id") || Trim(String(step.id)) = "") {
             errors.Push(Format("Step [{1}]: Missing or empty 'id'", sIdx))
@@ -457,6 +465,7 @@ class RecipeModel {
         }
     }
 
+    ; --- Persistence (CRUD against RecipesDir JSON files) ---
     static Save(recipe) {
         valRes := RecipeModel.Validate(recipe)
         if !valRes.valid {

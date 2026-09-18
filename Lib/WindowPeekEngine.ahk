@@ -6,6 +6,8 @@
 
 #Requires AutoHotkey v2.0
 
+; Module-owned global state (X-Ray/Window-Peek state machine). Catalogued in the "Global State
+; Registry" in Lib/Globals.ahk — update that list if you add, rename, or remove any global below.
 global IsWindowPeekEnabled := true
 global PeekState           := { status: "IDLE", origHwnd: 0, targetHwnd: 0, targetWasMinimized: false, startTick: 0 }
 global CapsLockPressTick   := 0

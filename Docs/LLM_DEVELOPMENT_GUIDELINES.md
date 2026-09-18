@@ -44,6 +44,16 @@ This document is written to be read by an LLM (or human) before the next edit to
 | A9 | Toast/tooltip notification logic and CSV parsing are **correctly single-sourced** with no competing implementations found — a genuine architectural strength worth preserving as a model for other subsystems. | 🟢 Good | `ClipboardHelper.ahk:236-354`, `CSVParser.ahk` |
 | A10 | Include order in the main file is a legitimate, correct topological sort matching actual call dependencies — not a source of fragility by itself. | 🟢 Good | `office_productivity_palette_v2.0.1.ahk:19-57` |
 
+**Resolution status (2026-09-18, `refactor/architecture-a1-a4-a8` branch):**
+
+- **A1 — Fixed.** `ToolAdapters_Builtin.ahk`'s email/URL/phone/GSTIN adapters now delegate to `Actions_Extraction.ahk`'s canonical functions instead of retyping the regexes. `ExecuteExtractDates` and `ExecuteSumNumbers`/`ExecuteAverageNumbers` were deliberately left alone (different contracts, not true duplicates — see the commit message for the reasoning).
+- **A4/A5 — Documented, not restructured.** Added a "Global State Registry" block to `Lib/Globals.ahk` cataloguing every module-owned global declared outside that file (`WorkflowComposerGui.ahk`, `SnippetGui.ahk`, `WindowPeekEngine.ahk`, `DateFormatGui.ahk`, `RunHistoryGui.ahk`), plus a one-line pointer comment above each of those files' own global declarations. Physically moving ~30 globals into `Globals.ahk` wouldn't change their scope in AHK v2 (there's one flat global namespace regardless of which file declares them) — it would just add indirection. The re-declared `global A, B, C, ...` lists in `Core.ahk` (A5) are inherent to AHK v2 function scoping and were left as-is for the same reason.
+- **A6 — Documented.** Added a "File Naming & Module Organization Convention" block to `Lib/Globals.ahk` explicitly writing down the `Actions_*.ahk` / `*Engine.ahk`-or-bare / `*Gui.ahk` split, which was previously real-but-implicit. Renaming ~46 existing files to retrofit a stricter scheme was judged too high-risk (breaks every `#Include`) for the benefit.
+- **A7 — Fixed** for the 3 flagged sites. Added `ApplyDarkListViewTheme()` to `Lib/Globals.ahk`; `DateFormatGui.ahk`, `PaletteGui.ahk`, `SnippetGui.ahk` now call it instead of repeating the `uxtheme\SetWindowTheme` `DllCall`. The separate `.BackColor := ThemeBg`-vs-`ThemeSurface` inconsistency was left alone — unifying it would change each window's actual background color by design choice, not just deduplicate identical code, and isn't something the non-visual test suite can verify.
+- **A8 — Fixed** for `PipelineRunner.ahk` and `RecipeModel.ahk` (added banners at the genuinely sparse boundaries). On closer inspection, `ToolAdapters_Builtin.ahk` and `WorkflowComposerGui.ahk` already had denser sectioning than this audit estimated (27 and 18 section comments respectively) — left unchanged to avoid comment churn with no real benefit.
+
+All changes in this pass verified via the full suite (1,328/1,328 across 8 suites) after each individual commit, plus (for A7) confirmation that the extracted helper is a byte-identical `DllCall` at the same call site, not a behavior change.
+
 ---
 
 ## 3. Progress & Evidence Audit

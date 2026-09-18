@@ -12,6 +12,9 @@
 #Requires AutoHotkey v2.0
 
 class PipelineRunner {
+    ; ------------------------------------------------------------------------------------------------------------------
+    ; 1. Top-Level Recipe Execution (public entry point)
+    ; ------------------------------------------------------------------------------------------------------------------
     /**
      * Executes a validated recipe
      * @param {Object} recipe
@@ -281,6 +284,9 @@ class PipelineRunner {
         }
     }
 
+    ; ------------------------------------------------------------------------------------------------------------------
+    ; 2. Single-Step Execution (invoked once per non-loop step by Execute())
+    ; ------------------------------------------------------------------------------------------------------------------
     static _ExecuteStep(step, results, stepSnapshots) {
         stepId := (Type(step) = "Map") ? step["id"] : step.id
         stepStart := A_TickCount
@@ -360,6 +366,10 @@ class PipelineRunner {
         }
     }
 
+    ; ------------------------------------------------------------------------------------------------------------------
+    ; 3. Loop Container Execution (isolated immutable per-iteration scoping, see subject_tracker.md
+    ;    "Flat-flow Loop architecture" for the design intent behind LOOP START / LOOP END blocks)
+    ; ------------------------------------------------------------------------------------------------------------------
     static _ExecuteLoop(loopId, itemsRef, subSteps, returnRef, results, stepSnapshots) {
         stepStart := A_TickCount
         items := PipelineRunner._ResolveReference(itemsRef, results)
@@ -513,6 +523,10 @@ class PipelineRunner {
         })
     }
 
+    ; ------------------------------------------------------------------------------------------------------------------
+    ; 4. Binding Resolution ("step_id.field" -> value, used by _ExecuteStep/_ExecuteLoop to wire
+    ;    a step's declared bindings against prior steps' namespaced results)
+    ; ------------------------------------------------------------------------------------------------------------------
     static _ResolveReference(refStr, results) {
         clean := Trim(refStr)
         dotPos := InStr(clean, ".")

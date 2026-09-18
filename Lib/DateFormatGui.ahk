@@ -11,6 +11,8 @@
 ; Everyday conversions occur in-place silently with zero toast and zero HUD.
 ; ======================================================================================================================
 
+; Module-owned global state. Catalogued in the "Global State Registry" in Lib/Globals.ahk —
+; update that list if you add, rename, or remove any global below.
 global DateFormatGui := ""
 global DateFormatListView := ""
 global DateFormatCurrentItems := []
@@ -53,9 +55,7 @@ ShowDateFormatSettingsGui() {
     DateFormatGui.SetFont("s9 norm c" . ThemeText, "Segoe UI")
     DateFormatListView := DateFormatGui.AddListView("x14 y52 w392 h155 Background" . ThemeBg . " c" . ThemeText . " -Multi +Report +LV0x14000 -Hdr", ["Key", "Sample Output", "Format Spec"])
     
-    try {
-        DllCall("uxtheme\SetWindowTheme", "ptr", DateFormatListView.Hwnd, "str", "DarkMode_Explorer", "str", "Explorer")
-    }
+    ApplyDarkListViewTheme(DateFormatListView)
 
     for item in DateFormatCurrentItems {
         prefix := "[" . item["id"] . "]"

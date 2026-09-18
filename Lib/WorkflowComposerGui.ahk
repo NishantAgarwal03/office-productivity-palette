@@ -12,6 +12,9 @@
 
 #Requires AutoHotkey v2.0
 
+; Module-owned global state (GUI handles & panel-local UI state for this composer window).
+; Catalogued in the "Global State Registry" in Lib/Globals.ahk — update that list if you add,
+; rename, or remove any global declared below.
 global WorkflowComposerGui := ""
 global WcStepsListView := ""
 global WcCurrentRecipe := ""
