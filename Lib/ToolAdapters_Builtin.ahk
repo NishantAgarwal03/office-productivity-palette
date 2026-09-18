@@ -783,99 +783,50 @@ class ToolAdapters {
     }
 
     ; --- Extraction Handlers ---
+    ; These delegate to the canonical Extract*() functions in Actions_Extraction.ahk instead of
+    ; reimplementing the regex patterns, so a future pattern fix (e.g. the GSTIN structure) only
+    ; needs to happen in one place. Those functions return a newline-joined string of matches, or
+    ; an exact "No <Type> found" sentinel when nothing matches — _ExtractedTextToItems() converts
+    ; that string contract back into the items<text>/count contract this adapter layer expects.
+    static _ExtractedTextToItems(resultStr, emptySentinel) {
+        if (resultStr = "" || resultStr = emptySentinel)
+            return []
+        return StrSplit(resultStr, "`n")
+    }
+
     static ExecuteExtractEmails(inputs, settings) {
         txt := inputs.Has("text") ? String(inputs["text"]) : ""
-        emails := []
-        pos := 1
-        while RegExMatch(txt, "i)\b[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}\b", &m, pos) {
-            val := m[0]
-            found := false
-            for e in emails {
-                if (StrLower(e) = StrLower(val)) {
-                    found := true
-                    break
-                }
-            }
-            if !found
-                emails.Push(val)
-            pos := m.Pos + m.Len
-        }
-
+        items := ToolAdapters._ExtractedTextToItems(ExtractEmails(txt), "No emails found")
         res := Map()
-        res["items"] := emails
-        res["count"] := emails.Length
+        res["items"] := items
+        res["count"] := items.Length
         return res
     }
 
     static ExecuteExtractUrls(inputs, settings) {
         txt := inputs.Has("text") ? String(inputs["text"]) : ""
-        urls := []
-        pos := 1
-        while RegExMatch(txt, "i)\b(?:https?://|www\.)[^\s<>'`"]+", &m, pos) {
-            val := RTrim(m[0], " .,;:!?'`"")
-            found := false
-            for u in urls {
-                if (u = val) {
-                    found := true
-                    break
-                }
-            }
-            if !found
-                urls.Push(val)
-            pos := m.Pos + m.Len
-        }
-
+        items := ToolAdapters._ExtractedTextToItems(ExtractUrls(txt), "No URLs found")
         res := Map()
-        res["items"] := urls
-        res["count"] := urls.Length
+        res["items"] := items
+        res["count"] := items.Length
         return res
     }
 
     static ExecuteExtractPhones(inputs, settings) {
         txt := inputs.Has("text") ? String(inputs["text"]) : ""
-        phones := []
-        pos := 1
-        while RegExMatch(txt, "(?:\+91[\-\s]?)?[6-9]\d{9}|\b\d{3,5}[\-\s]\d{6,8}\b", &m, pos) {
-            val := Trim(m[0])
-            found := false
-            for p in phones {
-                if (p = val) {
-                    found := true
-                    break
-                }
-            }
-            if !found
-                phones.Push(val)
-            pos := m.Pos + m.Len
-        }
-
+        items := ToolAdapters._ExtractedTextToItems(ExtractPhones(txt), "No phone numbers found")
         res := Map()
-        res["items"] := phones
-        res["count"] := phones.Length
+        res["items"] := items
+        res["count"] := items.Length
         return res
     }
 
     static ExecuteExtractGstin(inputs, settings) {
         txt := inputs.Has("text") ? String(inputs["text"]) : ""
-        gstins := []
-        pos := 1
-        while RegExMatch(txt, "i)\b\d{2}[a-z]{5}\d{4}[a-z]{1}[a-z\d]{1}[z]{1}[a-z\d]{1}\b", &m, pos) {
-            val := StrUpper(m[0])
-            found := false
-            for g in gstins {
-                if (g = val) {
-                    found := true
-                    break
-                }
-            }
-            if !found
-                gstins.Push(val)
-            pos := m.Pos + m.Len
-        }
-
+        items := ToolAdapters._ExtractedTextToItems(ExtractGstin(txt), "No GSTINs found")
         res := Map()
-        res["items"] := gstins
-        res["count"] := gstins.Length
+        res["items"] := items
+        res["count"] := items.Length
         return res
     }
 
