@@ -10,6 +10,8 @@
 
 #Requires AutoHotkey v2.0
 
+; Module-owned global state. Catalogued in the "Global State Registry" in Lib/Globals.ahk —
+; update that list if you add, rename, or remove any global below.
 global RunHistoryGui := ""
 global HistoryListView := ""
 global HistoryRunsList := []

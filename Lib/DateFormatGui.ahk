@@ -11,6 +11,8 @@
 ; Everyday conversions occur in-place silently with zero toast and zero HUD.
 ; ======================================================================================================================
 
+; Module-owned global state. Catalogued in the "Global State Registry" in Lib/Globals.ahk —
+; update that list if you add, rename, or remove any global below.
 global DateFormatGui := ""
 global DateFormatListView := ""
 global DateFormatCurrentItems := []

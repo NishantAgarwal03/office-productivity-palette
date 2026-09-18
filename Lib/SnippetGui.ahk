@@ -6,6 +6,8 @@
 #Requires AutoHotkey v2.0
 
 ; --- Global References for Layout & Events ---
+; Catalogued in the "Global State Registry" in Lib/Globals.ahk — update that list if you add,
+; rename, or remove any global declared below.
 global SnippetGui        := ""
 global SnippetListView   := ""
 global SnippetSearchEdit := ""
