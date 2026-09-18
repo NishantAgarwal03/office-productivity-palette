@@ -3,6 +3,7 @@
 ; ======================================================================================================================
 
 #Requires AutoHotkey v2.0
+#Include "CorpusSetEngine.ahk"
 
 RegisterTextActions() {
     RegisterAction("Word & Character Statistics", "🔤 Transform", "[Needs Selection] Shows Words, Characters with/without spaces & Lines", "count, words, characters, stats, length, word count, char count, character count, wc", (*) => (IsSet(ShowTextStats) ? ShowTextStats() : ""), "", "Ctrl+Shift+G")
@@ -22,6 +23,7 @@ RegisterTextActions() {
     RegisterAction("Convert Lines to Checklist ([ ])", "🔤 Transform", "[Needs Selection] Formats lines as markdown checkbox items", "check, checkbox, checklist, task, box, todo", (*) => TransformSelectedText((txt) => FormatChecklist(txt)), "x")
     RegisterAction("Deduplicate Lines (Remove Duplicates)", "🔤 Transform", "[Needs Selection] Removes duplicate lines while preserving original order", "dedupe, duplicate, dup, dupl, remove duplicates, unique, distinct, lines, filter", (*) => TransformSelectedText((txt) => DeduplicateLines(txt)))
     RegisterAction("Insert Lorem Ipsum Dummy Text", "🔤 Transform", "Inserts standard 2-paragraph placeholder filler text", "lorem, lipsum, random text, dummy, filler, placeholder, text", (*) => InsertText("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.`n`nDuis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."))
+    RegisterAction("Set Intersect & Difference (Corpus Comparison)", "🔤 Transform", "[Needs 2+ Lines/Files/Selection] Computes 100% common baseline & unique deviations", "intersect, intersection, difference, set, compare, boilerplate, distinct, deviation, clause, bids, corpus", (*) => ExecuteSetIntersectAction())
 }
 
 CycleTextCase(text) {
@@ -229,4 +231,55 @@ GetTextStatistics(text) {
         "result", summary,
         "text", summary
     )
+}
+
+
+; ======================================================================================================================
+; SCOPE & DESIGN BOUNDARY [SET INTERSECT & DIFFERENCE - INTENTIONAL NON-GOALS]:
+; 1. Zero In-Place Mutation: The default 1-click action is strictly NON-DESTRUCTIVE and read-only.
+;    It delivers an informative 6.5s Toast HUD count only; it must NEVER overwrite, delete, or alter user text/cells.
+; 2. Ingest Fallback: Reads selected text -> newline-separated file paths in clipboard -> user input prompt.
+; 3. Engine Delegation: All mathematical set operations and 5-tier profiling (>75% & <100% Common, etc.) are delegated
+;    to CorpusSetEngine (see Lib\CorpusSetEngine.ahk for full mathematical invariants).
+; ======================================================================================================================
+ExecuteSetIntersectAction() {
+    selText := SafeGetSelection()
+    if (Trim(selText) = "") {
+        ; Check if clipboard contains newline-separated existing file paths
+        clipVal := Trim(A_Clipboard)
+        if (clipVal != "") {
+            lines := StrSplit(clipVal, "`n", "`r")
+            isFiles := (lines.Length >= 2)
+            for l in lines {
+                s := Trim(l)
+                if (s == "")
+                    continue
+                if (!(InStr(s, "\") || InStr(s, "/")) || !FileExist(s)) {
+                    isFiles := false
+                    break
+                }
+            }
+            if (isFiles)
+                selText := clipVal
+        }
+    }
+
+    if (Trim(selText) = "") {
+        ib := OfficeInputBox("Enter or paste 2+ paragraphs or file paths to compare:", AppTitle . " - Corpus Set Comparison")
+        if (ib.Result != "OK" || Trim(ib.Value) = "")
+            return
+        selText := ib.Value
+    }
+
+    try {
+        docs := CorpusSetEngine.Ingest(selText)
+        analysis := CorpusSetEngine.Analyze(docs)
+
+        ; Sovereign count-only toast with 6500ms duration for comfortable statistical reading
+        ShowToast(CorpusSetEngine.FormatToastMessage(analysis.tierCounts), 6500)
+    } catch as err {
+        if IsSet(LogAppError)
+            LogAppError("ExecuteSetIntersectAction", err)
+        ShowToast("Corpus Set Error: " . err.Message, 4000)
+    }
 }

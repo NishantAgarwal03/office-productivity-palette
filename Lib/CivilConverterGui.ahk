@@ -155,6 +155,9 @@ ShowCivilResultHud(exprStr, resultStr, categoryStr, targetHwnd, isSuccess := tru
     global CivilResultHudGui
     global ThemeBg, ThemeSurface, ThemeText, ThemeMuted, ThemeAccent, ThemeBorder
 
+    if IsSet(NotifyVisualFeedbackDispatched)
+        NotifyVisualFeedbackDispatched()
+
     ; Always copy cleanly to clipboard
     if (isSuccess) {
         try A_Clipboard := resultStr

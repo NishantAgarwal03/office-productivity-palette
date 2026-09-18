@@ -237,8 +237,16 @@ _DismissCursorTooltipSlot1() {
     ActiveTooltipTimerSlot1 := false
 }
 
+NotifyVisualFeedbackDispatched() {
+    global GlobalFeedbackEpoch
+    if !IsSet(GlobalFeedbackEpoch)
+        GlobalFeedbackEpoch := 0
+    GlobalFeedbackEpoch++
+}
+
 ShowCursorTooltip(msg, durationMs := 0, which := 1) {
     global ActiveTooltipTimerSlot1
+    NotifyVisualFeedbackDispatched()
     dur := CalculateErgonomicDuration(msg, durationMs)
     ToolTip(msg,,, which)
     if (which == 1) {
@@ -265,7 +273,7 @@ _DismissToastHudTimer() {
 
 ShowToast(msg, durationMs := 0, pos := "BottomRight") {
     global ToastHudGui, ToastTextCtrl, ThemeSurface, ThemeBorder, ThemeText, ThemeMuted, ThemeAccent
-    
+    NotifyVisualFeedbackDispatched()
     dur := CalculateErgonomicDuration(msg, durationMs)
     
     posX := 0, posY := 0

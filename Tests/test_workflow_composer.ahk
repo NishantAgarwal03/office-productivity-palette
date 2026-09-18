@@ -20,6 +20,7 @@ LogAppError(*) => ""
 #Include "..\Lib\MathEvaluator.ahk"
 #Include "..\Lib\Actions_Math.ahk"
 #Include "..\Lib\Actions_DateTime.ahk"
+#Include "..\Lib\CorpusSetEngine.ahk"
 #Include "..\Lib\Actions_Text.ahk"
 #Include "..\Lib\Actions_Finance.ahk"
 #Include "..\Lib\Actions_Extraction.ahk"
@@ -308,6 +309,30 @@ try {
     failedStep := (Type(failHistoryRecord) = "Map") ? failHistoryRecord["failed_step"] : failHistoryRecord.failed_step
     AssertEqual("RunHistory", "Failure recorded in history", failStatus, "failed")
     AssertEqual("RunHistory", "Failed step identified", failedStep, "step_1")
+
+    ; 11. Corpus Set Analyzer Pipeline Step Execution
+    corpusRecipe := {
+        id: "recipe_test_corpus_set",
+        name: "Test Corpus Set Recipe",
+        description: "Tests corpus set analyzer tool step",
+        input_source: "text",
+        output_sink: "silent",
+        steps: [
+            {
+                id: "step_corpus",
+                tool_id: "corpus_set_analyzer",
+                tool_version: 1,
+                settings: Map("operation", "difference", "filter_stopwords", true),
+                bindings: Map("source", "input.text")
+            }
+        ]
+    }
+    ; Docs share only "Standard disclaimer text" - party-specific terms are fully unique per doc
+    corpusInput := "Standard disclaimer text. Alpha Contractor confirms agreement.`n`nStandard disclaimer text. Beta Supplier disputes payment."
+    corpusRunRes := PipelineRunner.Execute(corpusRecipe, corpusInput)
+    AssertTrue("PipelineRunner", "corpus_set_analyzer pipeline execution succeeds", corpusRunRes.success)
+    AssertTrue("PipelineRunner", "corpus_set_analyzer output contains unique term Alpha", InStr(corpusRunRes.output, "Alpha"))
+    AssertFalse("PipelineRunner", "corpus_set_analyzer stripped universal text", InStr(corpusRunRes.output, "Standard disclaimer text"))
 
 } catch as testErr {
     FailCount++

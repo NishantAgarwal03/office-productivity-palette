@@ -32,6 +32,7 @@ A_MenuMaskKey := "vk07" ; Prevent Win/Alt masking from injecting synthetic Contr
 #Include "Lib\DateFormatConverter.ahk"
 #Include "Lib\DateFormatGui.ahk"
 #Include "Lib\Actions_DateTime.ahk"
+#Include "Lib\CorpusSetEngine.ahk"
 #Include "Lib\Actions_Text.ahk"
 #Include "Lib\Actions_Email.ahk"
 #Include "Lib\Actions_Math.ahk"
