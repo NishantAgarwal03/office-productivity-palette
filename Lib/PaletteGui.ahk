@@ -48,9 +48,7 @@ ShowCommandPalette() {
     PaletteListView.OnEvent("DoubleClick", (*) => PaletteExecuteSelection())
     PaletteListView.Visible := false
 
-    try {
-        DllCall("uxtheme\SetWindowTheme", "ptr", PaletteListView.Hwnd, "str", "DarkMode_Explorer", "str", "Explorer")
-    }
+    ApplyDarkListViewTheme(PaletteListView)
 
     PaletteGui.SetFont("s9 c" . ThemeMuted, "Segoe UI")
     PaletteStatus := PaletteGui.Add("Text", "x14 y358 w770 h24", "Tap [1..9] or [Enter] to Execute | [↑↓] Navigate | [Esc] Dismiss")
@@ -322,4 +320,4 @@ IsPaletteActive() {
 HasPaletteResults() {
     global PaletteListView, PaletteItems
     return IsPaletteActive() && IsObject(PaletteListView) && PaletteListView.Visible && PaletteItems.Length > 0
-}
+}

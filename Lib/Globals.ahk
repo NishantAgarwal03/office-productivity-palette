@@ -33,6 +33,17 @@ HexToBGR(hexStr) {
         : 0
 }
 
+; --- Presentation Helper Primitive (Dark-mode row/header theming for a ListView control) ---
+; A .BackColor/font set on the Gui or the ListView itself does not reach the native header and
+; row-selection chrome Windows draws for a ListView — that still needs the Explorer dark visual
+; style applied via uxtheme. Every *Gui.ahk file that adds a ListView should call this once, right
+; after AddListView(), instead of repeating the DllCall inline.
+ApplyDarkListViewTheme(listViewCtrl) {
+    try {
+        DllCall("uxtheme\SetWindowTheme", "ptr", listViewCtrl.Hwnd, "str", "DarkMode_Explorer", "str", "Explorer")
+    }
+}
+
 
 ; --- Core Directories & File Paths ---
 global IsTestMode         := (EnvGet("OPH_TEST_MODE") == "1")

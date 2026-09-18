@@ -78,9 +78,7 @@ CreateSnippetGui() {
     SnippetListView.OnEvent("DoubleClick", (*) => EditSelectedSnippet())
     SnippetListView.OnEvent("ContextMenu", (lv, item, isRightClick, x, y) => ShowSnippetContextMenu(item, x, y))
 
-    try {
-        DllCall("uxtheme\SetWindowTheme", "ptr", SnippetListView.Hwnd, "str", "DarkMode_Explorer", "str", "Explorer")
-    }
+    ApplyDarkListViewTheme(SnippetListView)
 
     ; Responsive Bottom Action Buttons
     SnippetGui.SetFont("s9.5 bold c" . ThemeText, "Segoe UI")
