@@ -151,9 +151,33 @@ JoinLinesIntoParagraph(text) {
 }
 
 ; ======================================================================================================================
+; SCOPE & DESIGN BOUNDARY [FLATTENED HTML-TABLE CELL REJOIN - NARROW, TAB-GATED DETECTION]:
+; Copying an HTML <table> (browser, Word, Outlook) and pasting as plain text drops the column grid but
+; leaves each <td> on its own line, with a lone run of tab/space characters — the leftover cell
+; delimiter — stranded on its own line between them. That pattern is the signal: a line that is
+; NOTHING BUT horizontal whitespace, sandwiched between two lines that have real content.
+; Deliberately requires at least one actual [ \t] char on the separator line (not a bare empty line)
+; so this NEVER fires on an ordinary blank line between two paragraphs — that stays a paragraph break.
+; Loops to a fixpoint so a 3+ column row (Cell1, tab-line, Cell2, tab-line, Cell3, ...) chains into one
+; tab-delimited row instead of only rejoining the first pair (RegExReplace finds non-overlapping matches
+; in a single left-to-right pass, so adjacent cell-pairs can't all match in one call).
+; ======================================================================================================================
+RejoinFlattenedTableCells(text) {
+    static cellSeparatorPattern := "([^\r\n]+)\r\n[ \t]+\r\n([^\r\n]+)"
+    loop {
+        t := RegExReplace(text, cellSeparatorPattern, "$1`t$2", &joinCount)
+        if (joinCount = 0)
+            break
+        text := t
+    }
+    return text
+}
+
+; ======================================================================================================================
 ; ARCHITECTURAL INTENT [PROGRESSIVE 2-PASS TRANSFORMATION - DO NOT REMOVE]:
 ; 2-pass behavior is intentional:
-; - Pass 1: Cleans Unicode artifacts, strips trailing spaces, normalizes CRLF, and collapses excessive whitespace.
+; - Pass 1: Rejoins flattened HTML-table cells, cleans Unicode artifacts, strips trailing spaces,
+;   normalizes CRLF, and collapses excessive whitespace.
 ; - Pass 2 (Repeated invocation on already-clean text): Un-wraps single line breaks into a flowing paragraph
 ;   while preserving double line breaks (paragraphs).
 ; Toggling between structured lines and flowing paragraphs on repeated execution is a core design feature.
@@ -161,13 +185,16 @@ JoinLinesIntoParagraph(text) {
 CleanPlainText(text) {
     if (text == "")
         return ""
-    
+
     ; 1. Normalize Unicode non-breaking & zero-width spaces to ASCII space
     t := RegExReplace(text, "[\x{00A0}\x{200B}\x{200C}\x{200D}\x{FEFF}]", " ")
-    
+
     ; 2. Normalize linebreaks to Windows CRLF standard
     t := RegExReplace(t, "\R", "`r`n")
-    
+
+    ; 2.5. Rejoin flattened HTML-table cells BEFORE the tell-tale separator tab is stripped below
+    t := RejoinFlattenedTableCells(t)
+
     ; 3. Strip trailing spaces/tabs from every individual line
     t := RegExReplace(t, "m)[ \t]+$", "")
     

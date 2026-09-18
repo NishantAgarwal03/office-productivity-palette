@@ -226,7 +226,13 @@ PaletteExecuteSelection(targetIndex := 0) {
     CloseCommandPalette()
 
     if (TargetWindowHwnd && WinExist("ahk_id " . TargetWindowHwnd)) {
-        WinActivate("ahk_id " . TargetWindowHwnd)
+        ; DEFECT-052 (R5): WinActivate can throw (e.g. target window closed/became inaccessible in the
+        ; instant between WinExist and WinActivate) — guarded here to match the pattern already used
+        ; for every other WinActivate call in the codebase (see WindowPeekEngine.ahk).
+        try
+            WinActivate("ahk_id " . TargetWindowHwnd)
+        catch as err
+            LogAppError("PaletteExecuteSelection (WinActivate)", err)
         Sleep(50)
     }
 

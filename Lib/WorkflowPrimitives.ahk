@@ -344,6 +344,10 @@ class WorkflowPrimitives {
         } else if (mode = "range") {
             startIdx := Max(1, Integer(settings.Has("start") ? settings["start"] : 1))
             endIdx := Min(total, Integer(settings.Has("end") ? settings["end"] : total))
+            ; DEFECT-047: end < start used to silently produce an empty slice with no error — an
+            ; inverted range is a recipe-configuration mistake, not a valid "zero items" request.
+            if (endIdx < startIdx)
+                throw Error(Format("Workflow Slice: invalid range — end ({1}) is before start ({2})", endIdx, startIdx))
             idx := startIdx
             while (idx <= endIdx) {
                 sliced.Push(items[idx])
@@ -386,7 +390,9 @@ class WorkflowPrimitives {
         ; 1. Context from input (if provided)
         if (inputs.Has("context") && inputs["context"] != "") {
             contextVal := inputs["context"]
-            valStr := (Type(contextVal) = "Map") ? JsonHelper.Stringify(contextVal) : String(contextVal)
+            ; "context" is declared type "any" — it can arrive as an Array/Map bound from an upstream
+            ; multi-value output, not just a String, so String(contextVal) would throw (DEFECT-044).
+            valStr := (Type(contextVal) = "Map" || Type(contextVal) = "Array") ? JsonHelper.Stringify(contextVal) : String(contextVal)
             outStr := StrReplace(outStr, "{item}", valStr)
             outStr := StrReplace(outStr, "{loop.item}", valStr)
 

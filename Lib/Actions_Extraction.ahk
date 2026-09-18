@@ -4,6 +4,16 @@
 
 #Requires AutoHotkey v2.0
 
+; Shared regex bodies for the ID/contact formats this module recognizes — reused by both the ExtractX
+; functions below (which return matches) and RedactSensitiveData() (which masks matches before RunHistory
+; persists them), so the format definitions are maintained in exactly one place.
+class SensitivePatterns {
+    static GSTIN := "\b\d{2}[a-z]{5}\d{4}[a-z]{1}[a-z\d]{1}[z]{1}[a-z\d]{1}\b"
+    static PAN := "\b[a-z]{5}\d{4}[a-z]{1}\b"
+    static PHONE := "(?:\+91[\-\s]?)?[6-9]\d{9}|\b\d{3,5}[\-\s]\d{6,8}\b"
+    static EMAIL := "\b[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}\b"
+}
+
 RegisterExtractionActions() {
     RegisterAction("Extract All Email Addresses", "🔍 Extraction", "[Needs Selection] Pulls clean list of all emails from messy text", "extract, email, emails, mail, filter, list", (*) => ProcessExtraction("Emails", (txt) => ExtractEmails(txt)))
     RegisterAction("Extract All URLs & Web Links", "🔍 Extraction", "[Needs Selection] Pulls clean list of all web URLs and links", "extract, url, urls, links, web, http, list", (*) => ProcessExtraction("URLs", (txt) => ExtractUrls(txt)))
@@ -41,7 +51,7 @@ ProcessExtraction(itemType, extractorFunc) {
 ExtractEmails(text) {
     emails := []
     pos := 1
-    while RegExMatch(text, "i)\b[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}\b", &m, pos) {
+    while RegExMatch(text, "i)" . SensitivePatterns.EMAIL, &m, pos) {
         val := m[0]
         found := false
         for e in emails {
@@ -89,7 +99,7 @@ ExtractUrls(text) {
 ExtractPhones(text) {
     phones := []
     pos := 1
-    while RegExMatch(text, "(?:\+91[\-\s]?)?[6-9]\d{9}|\b\d{3,5}[\-\s]\d{6,8}\b", &m, pos) {
+    while RegExMatch(text, SensitivePatterns.PHONE, &m, pos) {
         val := Trim(m[0])
         found := false
         for p in phones {
@@ -120,7 +130,7 @@ ExtractPhones(text) {
 ExtractGstin(text) {
     gstins := []
     pos := 1
-    while RegExMatch(text, "i)\b\d{2}[a-z]{5}\d{4}[a-z]{1}[a-z\d]{1}[z]{1}[a-z\d]{1}\b", &m, pos) {
+    while RegExMatch(text, "i)" . SensitivePatterns.GSTIN, &m, pos) {
         val := StrUpper(m[0])
         found := false
         for g in gstins {
@@ -151,7 +161,7 @@ ExtractGstin(text) {
 ExtractPan(text) {
     pans := []
     pos := 1
-    while RegExMatch(text, "i)\b[a-z]{5}\d{4}[a-z]{1}\b", &m, pos) {
+    while RegExMatch(text, "i)" . SensitivePatterns.PAN, &m, pos) {
         val := StrUpper(m[0])
         found := false
         for p in pans {
@@ -170,6 +180,28 @@ ExtractPan(text) {
     for idx, p in pans
         res .= (idx > 1 ? "`n" : "") . p
     return res
+}
+
+; ======================================================================================================================
+; SCOPE & DESIGN BOUNDARY [SENSITIVE DATA REDACTION - defense-in-depth for RunHistory persistence, DEFECT-051 / D3]:
+; 1. Reuses this module's own GSTIN/PAN/phone/email detection patterns (SensitivePatterns above) to mask matches
+;    with a constant [REDACTED:<TYPE>] tag before Lib\RunHistory.ahk writes run snapshots to disk.
+; 2. Order matters: GSTIN is masked before PAN, since a GSTIN's 3rd-12th characters are themselves PAN-shaped —
+;    masking GSTIN first prevents a leftover, still-readable PAN fragment surviving inside an already-redacted GSTIN.
+; 3. Known-pattern coverage only — this is a defense-in-depth measure for the specific ID/contact formats this
+;    module already recognizes, not a guarantee that all sensitive text is caught. Arbitrary clipboard text
+;    (names, unlisted account formats, free-text financial figures) is NOT redacted by this function; see D3
+;    in Docs/PENDING_NEXT_SESSION.md for the full acknowledged scope of this limitation.
+; ======================================================================================================================
+RedactSensitiveData(text) {
+    if (Type(text) != "String" || text = "")
+        return text
+    redacted := text
+    redacted := RegExReplace(redacted, "i)" . SensitivePatterns.GSTIN, "[REDACTED:GSTIN]")
+    redacted := RegExReplace(redacted, "i)" . SensitivePatterns.PAN, "[REDACTED:PAN]")
+    redacted := RegExReplace(redacted, SensitivePatterns.PHONE, "[REDACTED:PHONE]")
+    redacted := RegExReplace(redacted, "i)" . SensitivePatterns.EMAIL, "[REDACTED:EMAIL]")
+    return redacted
 }
 
 ; ======================================================================================================================
@@ -299,6 +331,11 @@ CalculateDateDifference(dateStr1, dateStr2) {
     return res
 }
 
+; DEFECT-050 (R6): this function used to fall back to its own independent set of date-parsing regexes
+; (day-first textual, month-first textual, ISO, DD-MM-YYYY, DD-MM-YY) whenever DateFormatConverter's
+; parser didn't match — a second, weaker date parser (no calendar-validity checks, no weekday-prefix
+; stripping) duplicating logic DateFormatConverter.ParseIndianDate already covers as a strict superset
+; (see its Patterns A-E), violating the project's "zero role duplication" standard. Delegates fully now.
 ParseAnyDateToYyyyMmDd(dStr) {
     s := Trim(dStr)
     if (s == "")
@@ -309,45 +346,8 @@ ParseAnyDateToYyyyMmDd(dStr) {
         if (p.valid)
             return p.yyyymmdd
     }
-    
-    if RegExMatch(s, "i)^(\d{1,2})[-/\s]+([a-z]{3})[a-z]*[-/\s,]+(\d{2,4})$", &m) {
-        day := Integer(m[1])
-        monStr := StrLower(SubStr(m[2], 1, 3))
-        monthNum := GetMonthNumFromName(monStr)
-        year := Integer(m[3])
-        if (year < 100)
-            year += 2000
-        return Format("{:04d}{:02d}{:02d}", year, monthNum, day)
-    }
-    
-    ; Intended Lenience: ',?\s*' allows optional comma & whitespace to gracefully extract dates from 
-    ; compressed/noisy OCR scans and stripped PDF text (e.g., 'August 21, 2026', 'Aug 15 2026', or concatenated 'August 212026')
-    if RegExMatch(s, "i)^([a-z]{3})[a-z]*\s+(\d{1,2})(?:st|nd|rd|th)?,?\s*(\d{2,4})$", &m) {
-        monStr := StrLower(SubStr(m[1], 1, 3))
-        monthNum := GetMonthNumFromName(monStr)
-        day := Integer(m[2])
-        year := Integer(m[3])
-        if (year < 100)
-            year += 2000
-        return Format("{:04d}{:02d}{:02d}", year, monthNum, day)
-    }
-    
-    if RegExMatch(s, "^(\d{4})[-/\.](?:(\d{1,2})[-/\.](\d{1,2}))$", &m)
-        return Format("{}{:02d}{:02d}", m[1], Integer(m[2]), Integer(m[3]))
-        
-    if RegExMatch(s, "^(\d{1,2})[-/\.](\d{1,2})[-/\.](\d{4})$", &m)
-        return Format("{}{:02d}{:02d}", m[3], Integer(m[2]), Integer(m[1]))
-        
-    if RegExMatch(s, "^(\d{1,2})[-/\.](\d{1,2})[-/\.](\d{2})$", &m)
-        return Format("20{}{:02d}{:02d}", m[3], Integer(m[2]), Integer(m[1]))
-        
+
     return ""
 }
 
-GetMonthNumFromName(mStr) {
-    m := StrLower(mStr)
-    static months := Map("jan", 1, "feb", 2, "mar", 3, "apr", 4, "may", 5, "jun", 6,
-                         "jul", 7, "aug", 8, "sep", 9, "oct", 10, "nov", 11, "dec", 12)
-    return months.Has(m) ? months[m] : 0
-}
 

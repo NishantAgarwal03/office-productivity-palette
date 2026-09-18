@@ -204,7 +204,17 @@ PreprocessMathExpression(rawExpr) {
     expr := RegExReplace(expr, "i)(\d+(?:\.\d+)?)\s*(?:billion|b)\b", "($1 * 1000000000)")
 
     ; 6. Real-World Percentage Calculations
-    expr := RegExReplace(expr, "(\d+(?:\.\d+)?|\([^\(\)]+\))\s*([\+\-])\s*(\d+(?:\.\d+)?)\s*%", "$1 $2 ($1 * ($3 / 100))")
+    ; DEFECT-045: chained percentages ("100 - 10% - 5%") must apply each successive "% of" against the
+    ; running result so far (5% of 90, not 5% of 100) — a single RegExReplace pass only ever sees the
+    ; original leftmost operand, so each link is looped until stable. The balanced-paren recursive
+    ; subpattern lets the replacement (itself wrapped in parens) act as the "base" operand for the next
+    ; link in the chain.
+    pctChainPattern := "(\d+(?:\.\d+)?|(?<paren>\((?:[^\(\)]|(?&paren))*\)))\s*([\+\-])\s*(\d+(?:\.\d+)?)\s*%"
+    Loop 25 {
+        expr := RegExReplace(expr, pctChainPattern, "($1 $3 ($1 * ($4 / 100)))", &pctMatches)
+        if (!pctMatches)
+            break
+    }
     expr := RegExReplace(expr, "(\d+(?:\.\d+)?)\s*%", "($1 / 100)")
 
     ; 7. Implicit Multiplication (e.g. 2(3+4) -> 2*(3+4) and (2)(3) -> (2)*(3))
