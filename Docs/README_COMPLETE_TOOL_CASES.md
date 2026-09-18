@@ -1,8 +1,8 @@
 # Office Productivity Palette & Action Hub — Complete Tool Cases
 
-Source audited: `office_productivity_palette_v2.0.0.ahk` and all reachable included modules on 2026-08-28. Current source SHA-256: `CE7C195B1BDC585195BA9A64C3167BD7BCA82BBDFC80E8367A5EE76C88D0EA2E`.
+Source audited: `office_productivity_palette_v2.0.1.ahk` and all reachable included modules on 2026-09-18. Current source SHA-256: `A82474034756CCEC87AD95A244CD73739BCB469195347EC2C78C655ED48BCE88`.
 
-This is a behavior audit, not just a feature list. It records what the current source covers, what only partially works, what is not covered, and what should be added. The AHK source was not modified; this README was updated to match the audited 2026-08-28 source.
+This is a behavior audit, not just a feature list. It records what the current source covers, what only partially works, what is not covered, and what should be added. The AHK source was not modified; this README was updated to match the audited 2026-09-18 v2.0.1 source. The previous revision of this document audited `v2.0.0.ahk`; a full recount against v2.0.1 turned up a stale duplicate-registration defect that no longer exists and several tool inventories that had drifted (see "Version and inventory discrepancies" below).
 
 ## Status legend
 
@@ -16,13 +16,13 @@ This is a behavior audit, not just a feature list. It records what the current s
 ## Contents
 
 1. [Shared behavior and access](#1-shared-behavior-and-access)
-2. [Date and time — 10 tools](#2-date-and-time-tools-10)
+2. [Date and time — 12 tools](#2-date-and-time-tools-12)
 3. [Email — 10 tools](#3-email-tools-10)
-4. [Text — 15 tools](#4-text-tools-15)
-5. [Math — 11 tools](#5-math-tools-11)
+4. [Text — 18 tools](#4-text-tools-18)
+5. [Math — 9 tools](#5-math-tools-9)
 6. [Finance — 8 tools](#6-finance-tools-8)
 7. [Extraction — 7 tools](#7-extraction-tools-7)
-8. [Utility — 12 registrations](#8-utility-tools-12)
+8. [Utility — 11 registrations](#8-utility-tools-11)
 9. [Window Peek and X-Ray — 3 tools](#9-window-peek-and-x-ray-3-tools)
 10. [Action Board — 4 tools](#10-action-board-tools-4)
 11. [Find & Replace in Selection — 1 external tool](#11-find--replace-in-selection-1-external-tool)
@@ -30,6 +30,7 @@ This is a behavior audit, not just a feature list. It records what the current s
 13. [Hotstrings and replacement manager](#13-hotstrings-and-replacement-manager)
 14. [Global/context hotkeys](#14-global-and-context-hotkeys)
 15. [Highest-priority missing cases](#15-highest-priority-cases-that-should-be-included)
+16. [Workflow Composer primitives — 9 registrations](#16-workflow-composer-primitives-9-registrations)
 
 ## 1. Shared behavior and access
 
@@ -55,9 +56,14 @@ This is a behavior audit, not just a feature list. It records what the current s
 
 ### Version and inventory discrepancies
 
-- Version metadata is now consistent: the main header and `Lib/Globals.ahk` both declare `2.0.0`.
-- **Working (source-verified):** local modules make **85 registration calls**: Date 10, Email 10, Text 15, Math 11, Finance 8, Extraction 7, Utility 12, Action Board 4, Window Peek/X-Ray 3, and Civil 5. The reachable external Find/Replace module registers 1 more row, for **86 reachable palette rows**.
-- There are **85 unique action names**, not 86: `Configure Civil Converter Defaults` is registered twice (once by Utility and once by Civil), so the palette contains a duplicate entry. The duplicate callbacks open the same INI file.
+- Version metadata is now consistent: the main header and `Lib/Globals.ahk` both declare `2.0.1`.
+- **Working (source-verified):** local modules make **91 fixed `RegisterAction()` calls**: Date/Time 12, Email 10, Text 18, Math 9, Finance 8, Extraction 7, Utility 11, Action Board 4, Window Peek/X-Ray 3, Civil 5, and Workflow Hub 3 (`Workflow: Open Composer`, `Workflow: Edit Saved Recipe...`, `Workflow: Run History & Diagnostics`). The reachable external Find/Replace module registers 1 more row, for **92 fixed reachable palette rows**.
+- On top of the fixed rows, `Lib\Actions_Workflow.ahk`'s `LoadAndRegisterSavedRecipes()` dynamically registers one `Recipe: <name>` row per valid file under `Recipes\` at startup — **4 more rows** as of this audit (`Recipes\*.json`), for **96 total reachable palette rows** right now. This count is not fixed; it grows or shrinks as recipes are saved/deleted, so it should not be cited as a static figure in future audits.
+- The prior revision's headline claim — "85 unique action names, not 86: `Configure Civil Converter Defaults` is registered twice" — **no longer holds**. That action is now registered exactly once, in `Lib\Actions_CivilConvert.ahk:44` under the `🏗️ Civil` category; `Lib\Actions_Utility.ahk` never registers it. (Per `.agents\skills\subject_tracker\ARCHIVE.md`, this was deliberately fixed after the prior audit, alongside removing a redundant "Word & Character Counter" registration from `Actions_Math.ahk`.) All 96 currently reachable rows have unique names.
+- `Lib\Actions_DateTime.ahk` no longer registers "Work Week Date Range" (the function `GetCurrentWorkWeekRange()` still exists but is dead code — nothing calls it). It now registers three tools the prior audit never covered: `Convert Date Format`, `Configure Default Date Format` (filed under `⚙️ Settings`, not `📅 Date/Time`), and `Cycle Date Format (9 Formats)`.
+- `Lib\Actions_Math.ahk` no longer registers "Word & Character Counter" or "Format Number with Commas" — neither exists in that file (the character-count tool lives in Text as `Word & Character Statistics`; number-comma formatting lives in Finance as `Format Number: Indian Lakhs (...)` / `Format Number: International Millions (...)`).
+- `Lib\Actions_Text.ahk` registers three tools the prior audit never covered: `Deduplicate Lines (Remove Duplicates)`, `Insert Lorem Ipsum Dummy Text`, and `Set Intersect & Difference (Corpus Comparison)` (the last backed by a new `Lib\CorpusSetEngine.ahk` module).
+- `Lib\Actions_Finance.ahk`'s comma-formatting actions are registered as `Format Number: Indian Lakhs (12,34,567)` and `Format Number: International Millions (1,234,567)` — not the generic names ("Format Number with Indian/International Commas") used lower in this document; behavior is otherwise unchanged.
 - Several module comments and UI claims have stale action counts or shortcuts.
 
 ### Verification evidence (2026-08-28)
@@ -77,9 +83,9 @@ This is a behavior audit, not just a feature list. It records what the current s
 
 ---
 
-## 2. Date and time tools (10)
+## 2. Date and time tools (12)
 
-All insert at the caret, require no selection, use local system time, and replace the clipboard.
+All insert-type entries insert at the caret, require no selection, use local system time, and replace the clipboard. The three added-since-last-audit tools (2.10–2.12) instead transform a selection or open a settings dialog; they do not insert or touch the clipboard. **`Work Week Date Range` from the prior revision of this document no longer exists as a registered action** — `Lib\Actions_DateTime.ahk` no longer calls `RegisterAction` for it, though the underlying `GetCurrentWorkWeekRange()` function is still present as dead code.
 
 Palette descriptions containing a computed date/time are snapshots created during registration. If the app remains running across a date/time boundary, the description can be stale while the callback still inserts a freshly calculated value.
 
@@ -136,11 +142,20 @@ Palette descriptions containing a computed date/time are snapshots created durin
 - **Partially working:** month language is locale-dependent.
 - **Should be included:** `yyyy-MM` option and explicit locale.
 
-### 2.10 Work Week Date Range
+### 2.10 Convert Date Format
 
-- **Working:** Monday through Friday of the current Monday–Sunday week; e.g. `2026-08-24 to 2026-08-28`.
-- Sunday maps back six days; weekends still show the surrounding Monday–Friday range.
-- **Not covered:** holidays, configurable workweek/week start, timezone.
+- **Working (source-verified):** `[Needs Selection]` — `ConvertSelectedDateInPlace()` parses the selected date via `DateFormatConverter.ParseIndianDate()` and replaces it in place with the user's remembered default target format (from `office_productivity_settings.ini`), prompting via the settings GUI if no default is set yet.
+- Parser (`Lib\DateFormatConverter.ahk`) accepts day-first textual (`5th of Sep 2026`), month-first textual, ISO (`YYYY-MM-DD`), strict Indian numeric (`DD/MM/YYYY` and 2-digit-year variants), and compact 8-digit forms; 2-digit years pivot to `20xx`; leap years and per-month day bounds are validated.
+- **Not covered:** American `MM/DD/YYYY` is a deliberate non-goal per the module's own header comment ("DELIBERATE SCOPE LIMITATION — DO NOT MODIFY"), to avoid day/month ambiguity.
+
+### 2.11 Configure Default Date Format
+
+- **Working (source-verified):** filed under `⚙️ Settings`, not `📅 Date/Time`. Opens `ShowDateFormatSettingsGui()` to pick and persist the default target format used by 2.10 and 2.12.
+
+### 2.12 Cycle Date Format (9 Formats)
+
+- **Working (source-verified):** `[Needs Selection]` — `DateFormatConverter.Cycle()` detects the selected date's current format via `DetectFormat()` and advances it to the next of the 9 canonical formats (`DD/MM/YYYY → DD-MM-YYYY → DD.MM.YYYY → DD/MM/YY → DD-MM-YY → DD Month YYYY → Month DD, YYYY → DD Month, YYYY → DDDD, dd Month YYYY → wraps to DD/MM/YYYY`).
+- **Partially working:** `DetectFormat()` cannot distinguish formats 6–9 from unrecognized textual input as precisely as the numeric formats; an already-unusual textual date not matching one of the 9 canonical patterns falls through to format 1 on the next cycle rather than erroring.
 
 ---
 
@@ -165,7 +180,7 @@ All insert literal text, require no selection, overwrite the clipboard, and do n
 
 ---
 
-## 4. Text tools (15)
+## 4. Text tools (18)
 
 ### 4.1 Word & Character Statistics
 
@@ -266,9 +281,26 @@ All insert literal text, require no selection, overwrite the clipboard, and do n
 - Leader chord: `x`.
 - **Partially working:** completion state is lost; uppercase `[X]` is not recognized; nesting/metadata are destroyed.
 
+### 4.16 Deduplicate Lines (Remove Duplicates)
+
+- **Working (source-verified):** `[Needs Selection]` — `DeduplicateLines()` splits on `\n`/`\r\n`, keeps only the first occurrence of each line (case-insensitive by default), and rejoins using whichever line ending (`\r\n` vs `\n`) the original text used.
+- Not documented in the prior audit revision at all.
+
+### 4.17 Insert Lorem Ipsum Dummy Text
+
+- **Working (source-verified):** inserts placeholder text; registered in `Lib\Actions_Text.ahk`. Not documented in the prior audit revision at all — full parameter/output behavior not independently re-derived in this pass.
+
+### 4.18 Set Intersect & Difference (Corpus Comparison)
+
+- **Working (source-verified):** `[Needs 2+ Lines/Files/Selection]` — reads a selection first, then falls back to newline-separated existing file paths on the clipboard, then to a user-input prompt (`ExecuteSetIntersectAction()`, `Lib\Actions_Text.ahk:272`). Delegates the actual set math and a 5-tier common/deviation profile (`>75%`, `<100%` common, etc.) to a new module, `Lib\CorpusSetEngine.ahk`.
+- The module's own header comment states this is deliberately **non-destructive**: the default one-click action only shows a 6.5s toast with counts and never overwrites, deletes, or alters user text/cells.
+- Not documented in the prior audit revision at all; `Lib\CorpusSetEngine.ahk` itself is a new module this audit did not exhaustively re-derive (its internal set-math invariants were not independently re-verified here).
+
 ---
 
-## 5. Math tools (11)
+## 5. Math tools (9)
+
+Two tools from the prior audit revision of this document — **"Word & Character Counter"** and **"Format Number with Commas"** — are no longer registered anywhere in `Lib\Actions_Math.ahk`. Per `.agents\skills\subject_tracker\ARCHIVE.md`, the redundant `Word & Character Counter` registration was deliberately removed from Math after the prior audit (the surviving tool is [4.1 Word & Character Statistics](#41-word--character-statistics) in Text). Comma-number formatting now lives only in Finance as [6.7](#67-format-number-indian-lakhs-123456) `Format Number: Indian Lakhs (12,34,567)` and [6.8](#68-format-number-international-millions-1234567) `Format Number: International Millions (1,234,567)`. The remaining Math sections below (5.1–5.9, renumbered from the prior 5.1–5.11 minus the two removed entries) are otherwise unchanged from the current source.
 
 ### Cross-tool math input coverage
 
@@ -276,8 +308,7 @@ All insert literal text, require no selection, overwrite the clipboard, and do n
 | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
 | Evaluate Math Expression         | raw integers/decimals, currency symbols/codes, grouped commas, operator aliases, percentages, unary signs, parentheses and right-associative powers | locale comma-decimal notation and named functions are not supported            |
 | GST / Tax Breakdown (18%)        | selection or prompt accepts the shared number/currency parser, including lakh/crore/k/m/b and accounting notation                                   | zero and negative bases are rejected                                           |
-| Percentage Difference Calculator | first two rich numeric tokens, including grouped/currency/signed/unit values                                                                        | extra numbers are silently ignored; standalone `L` suffix is not expanded      |
-| Format Number with Commas        | shared parser expands currency and `k/lakh/crore/m/b`, preserves negative sign, and emits international commas without forced decimals              | invalid input is returned unchanged; no invalid-input feedback                 |
+| Percentage Change & Growth Calculator | first two rich numeric tokens, including grouped/currency/signed/unit values                                                                    | extra numbers are silently ignored; standalone `L` suffix is not expanded      |
 | Round Number to 2 Decimals       | shared parser accepts currency, grouped numbers, signs and suffix units; output is fixed-width                                                      | invalid input is returned unchanged without feedback                           |
 | Sum Column of Selected Numbers   | all rich tokens across lines/prose, including Indian/international groups, signs, currencies and supported suffixes                                 | standalone `L` suffix is not expanded; rejected-token details are not reported |
 | Unix Timestamp to Readable Date  | unsigned epoch seconds of at least 9 digits                                                                                                         | sign, milliseconds, timezone choice and separated prose numbers                |
@@ -311,13 +342,13 @@ All insert literal text, require no selection, overwrite the clipboard, and do n
 - Zero, negative, and invalid bases are rejected with a toast.
 - **Should be included:** make “exclusive base” explicit in the registered tool description and allow a custom rate from this action.
 
-### 5.3 Percentage Difference Calculator
+### 5.3 Percentage Change & Growth Calculator
 
-- Actually directional percentage change: `100 125` → `100.00 -> 125.00 (+25.00%)`.
+- Registered name is `Percentage Change & Growth Calculator` (the prior audit revision called this "Percentage Difference Calculator" — that is not the action's actual palette name). Directional percentage change: `100 125` → `100.00 -> 125.00 (+25.00%)`.
 - `ExtractAllNumbers` preserves grouped, currency, signed and supported unit tokens; the first two are used and extra values are ignored.
 - Old value zero shows warning and stops.
 - **Partially working:** the prompt advertises `1L`, but the multi-token extractor omits standalone `l`; `1L 1.25L` is read as `1` and `1.25`, not lakh values.
-- **Should be included:** rename to Percentage Change or add symmetric percentage difference, add the `l` alias, and warn on extra tokens.
+- **Should be included:** add the `l` alias and warn on extra tokens.
 
 ### 5.4 Generate 16-Char Secure Password
 
@@ -333,25 +364,13 @@ All insert literal text, require no selection, overwrite the clipboard, and do n
 - API failure returns blank with no user-visible error.
 - **Should be included:** failure feedback.
 
-### 5.6 Word & Character Counter
-
-- Delegates to the same tooltip behavior documented under Word & Character Statistics; clipboard preserved.
-
-### 5.7 Format Number with Commas
-
-- International 3-digit grouping without forced decimals; uses the shared parser.
-- `1250000` → `1,250,000`.
-- `1 cr` → `10,000,000`; `10000k` → `10,000,000`; `-5000` → `-5,000`.
-- Invalid input is returned unchanged.
-- **Should be included:** explicit “international” name and visible invalid-input feedback.
-
-### 5.8 Round Number to 2 Decimals
+### 5.6 Round Number to 2 Decimals
 
 - Uses the shared number/currency parser and fixed-width formatting; suffix units and accounting signs are supported.
 - `1.235` → `1.24`; `1.2` → `1.20`; `1` → `1.00`.
 - Invalid input is returned unchanged without feedback.
 
-### 5.9 Sum Column of Selected Numbers
+### 5.7 Sum Column of Selected Numbers
 
 - Uses `ExtractAllNumbers` across the selected text; grouped numbers, currencies, signs, multiple space-separated values and supported units are consumed, and zeros are included in the count.
 - Output: Itemized receipt format:
@@ -360,13 +379,13 @@ All insert literal text, require no selection, overwrite the clipboard, and do n
 - **Runtime-verified:** `1,25,000 + 50,000 + 2,00,000` → total `375000`; mixed currency/sign/accounting/unit tokens are also covered.
 - **Partially working:** standalone `L` suffix is not expanded, and rejected-token details are not reported.
 
-### 5.10 Unix Timestamp to Readable Date
+### 5.8 Unix Timestamp to Readable Date
 
 - Keeps digits only; requires at least 9; outputs `yyyy-MM-dd HH:mm:ss` from epoch seconds.
 - Negative sign is lost; prose digits concatenate; 13-digit milliseconds are treated as seconds; no timezone label.
 - **Should be included:** signed epoch, 10/13-digit detection, bounds, UTC/local choice and label.
 
-### 5.11 Number to Words (Indian Rupees)
+### 5.9 Number to Words (Indian Rupees)
 
 - Uses the strict shared number/currency parser; currency, grouped numbers and `k/lakh/crore/m/b` units are expanded before conversion. Paise is rounded to two digits, including carry into rupees.
 - `1250000` → `Rupees Twelve Lakh Fifty Thousand Only`.
@@ -494,9 +513,9 @@ Additional **Working** suffix examples:
 
 **Not covered:** scientific notation, `mn`/`bn`, word-only amounts, multiple values, and arbitrary prose. `INR` is detected as currency metadata: `INR 5000` → `5000`; `INR 1.25 Lakh` → `125000`.
 
-### 6.7 Format Number with Indian Commas
+### 6.7 Format Number: Indian Lakhs (12,34,567)
 
-This is the current closest tool to the requested “Format Currency → Indian system.” It uses the shared parser, preserves negative signs, applies Indian 3-then-2 grouping, and rounds to exactly two displayed decimals by default.
+Registered palette name is `Format Number: Indian Lakhs (12,34,567)`, not the generic "Format Number with Indian Commas" used in earlier revisions of this document. This is the current closest tool to the requested “Format Currency → Indian system.” It uses the shared parser, preserves negative signs, applies Indian 3-then-2 grouping, and rounds to exactly two displayed decimals by default.
 
 | Input       | Actual working output |
 | ----------- | --------------------- |
@@ -512,7 +531,9 @@ This is the current closest tool to the requested “Format Currency → Indian 
 - **Working (source-verified):** the complete absolute value is rounded before grouping; `999.999` → `1,000.00` and negative carry is preserved correctly.
 - **Should be included:** a dedicated **Format Currency — Indian System** action that outputs `₹`, reports invalid input, and supports symbol/accounting choices.
 
-### 6.8 Format Number with International Commas
+### 6.8 Format Number: International Millions (1,234,567)
+
+Registered palette name is `Format Number: International Millions (1,234,567)`, not the generic "Format Number with International Commas" used in earlier revisions of this document.
 
 - Same shared normalization, sign preservation and rounded two-decimal display, grouping by threes.
 - `1250000` → `1,250,000.00`.
@@ -597,7 +618,9 @@ List extractors preserve first-seen order and return one item per LF line. Blank
 
 ---
 
-## 8. Utility tools (12)
+## 8. Utility tools (11)
+
+The prior audit revision listed a 12th entry here, "8.12 Configure Civil Converter Defaults," and described it as a duplicate registration shared with Civil. That is no longer accurate: `Lib\Actions_Utility.ahk` registers exactly 11 actions (8.1–8.11 below) and never registers `Configure Civil Converter Defaults`. That action now lives solely under [§12.5](#125-configure-civil-converter-defaults) in the Civil section, registered once, in `🏗️ Civil` category.
 
 ### 8.1 Export Diagnostic & Analytics Report
 
@@ -665,13 +688,6 @@ List extractors preserve first-seen order and return one item per LF line. Blank
 
 - Immediately calls `LockWorkStation`.
 - **Should be included:** failure feedback only; immediate behavior is appropriate for a privacy shortcut.
-
-### 8.12 Configure Civil Converter Defaults
-
-- Opens `CivilEngineeringDefaults.ini` in Notepad if it exists; otherwise shows a warning.
-- The INI controls geometry fallbacks, densities, packaging, force/pressure defaults, rebar, hydraulic/slope defaults, regional land values, cost tiers, package rates and material multipliers.
-- **Duplicate registration:** the Civil module registers the same action name and callback again. Both rows are functional, but only one should be exposed.
-- **Should be included:** schema/range validation, comments-preserving settings UI, reload confirmation, and removal of the duplicate registration.
 
 ---
 
@@ -830,7 +846,10 @@ This is the complete router. It recognizes the following current case families:
 
 ### 12.5 Configure Civil Converter Defaults
 
-- Same action and callback as Utility 8.12; it is registered a second time. See that entry for covered settings and gaps.
+- Registered once, here, by `Lib\Actions_CivilConvert.ahk:44` under `🏗️ Civil`. The prior audit revision described this as duplicated with a Utility registration; that duplicate no longer exists (see the note at the top of [§8](#8-utility-tools-11)).
+- Opens `CivilEngineeringDefaults.ini` in Notepad if it exists; otherwise shows a warning.
+- The INI controls geometry fallbacks, densities, packaging, force/pressure defaults, rebar, hydraulic/slope defaults, regional land values, cost tiers, package rates and material multipliers.
+- **Should be included:** schema/range validation, comments-preserving settings UI, and reload confirmation.
 
 ---
 
@@ -917,7 +936,7 @@ Context keys:
 4. **Protect window state:** capture and restore original X-Ray alpha, then add real-window tests for Peek/X-Ray Z-order, focus denial, minimized restoration, destroyed handles, rapid release and multi-monitor overlap.
 5. **Protect destructive state:** add confirmation/undo/result checking for Recycle Bin purge, file rename, task delete/import/archive, plus atomic replace/locking for task and snippet files.
 6. Tighten GST custom-rate policy: `-100` and lower are now rejected, but zero, negative rates above -100, and implausible positive rates through 500 remain accepted.
-7. Remove the duplicate `Configure Civil Converter Defaults` registration and validate/reload the INI with bounds and a safe settings UI.
+7. ~~Remove the duplicate `Configure Civil Converter Defaults` registration~~ — **already fixed** as of v2.0.1; still add validate/reload for the INI with bounds and a safe settings UI.
 8. Label every Civil cross-dimensional assumption and thumb-rule estimate; add regional land-unit choice, rate provenance/date/location, and professional-estimate warnings.
 9. Add standalone `L` to rich token extraction and validate labeled/extra numbers in CAGR and percentage tools.
 10. Correct the date extractor’s false `[VALID] / [INVAL]` description, require a separator before month-first years, and add explicit locale/ambiguity policy.
@@ -926,17 +945,55 @@ Context keys:
 13. Make clipboard restoration the default or an explicit per-action choice; guarantee restoration on all optional-restore exception paths.
 14. Add static/dynamic hotstring collision detection, deterministic master dedupe, schema/checksum validation, and sensitive-body redaction.
 
+## 16. Workflow Composer primitives (9 registrations)
+
+Source: `Lib\WorkflowPrimitives.ahk`. These are generic pipeline nodes surfaced under the `Primitives` category inside the Workflow Composer (`Lib\WorkflowComposerGui.ahk`), not the flat command-palette action list audited above. They are not grouped into four families in the source — each is its own `ToolCatalog.Register` entry with its own id, settings, and handler.
+
+### 16.1 Split Lines / Delimiter (`primitive_split`)
+Tokenizes `Text` into `Items<Text>`. Delimiter defaults to newline; also offers blank line, comma, semicolon, and tab. Blank/whitespace-only lines are dropped after `Trim()`, so `count` can be lower than the raw line count. **Working (source-verified).**
+
+### 16.2 Join Items (`primitive_join`)
+Renders `Items<T>` as one `Text` string with a configured separator (default newline). Map-typed items are JSON-stringified rather than concatenated as `[object]`. **Working (source-verified).**
+
+### 16.3 Filter Items (`primitive_filter`)
+Keeps or excludes items by plain substring or regex, with case-sensitivity and regex toggles. An empty `query` matches everything (so an empty filter in `keep` mode is a no-op, and in `exclude` mode discards all items). **Working (source-verified).**
+
+### 16.4 Deduplicate Items (`primitive_dedupe`)
+Removes duplicates while preserving original order; case-insensitive by default. Reports both `count` (unique) and `removed_count`. **Working (source-verified).**
+
+### 16.5 Slice / Limit Items (`primitive_slice`)
+Extracts `top_n`, `last_n`, or an inclusive `[start, end]` `range`. Count/indices are clamped into `[0, total]`; an inverted range (`end < start`) throws rather than silently returning an empty slice (`DEFECT-047`). **Working (source-verified).** This primitive is not covered by the earlier four-category description of the composer and is easy to miss.
+
+### 16.6 Interactive Interceptor (`primitive_interceptor`)
+Pauses recipe execution and opens `OfficeInputBox` to collect a manual value mid-pipeline. Cancelling throws (aborts the recipe run). `output_type: "number"` validates via `IsNumber()` and throws on non-numeric input instead of coercing. **Working (source-verified).**
+
+### 16.7 Template / Combine (`primitive_template_combine`)
+Builds `Text` from a template string, substituting `{item}` / `{loop.item}` from the `context` input (Map/Array contexts are JSON-stringified, not `String()`-cast, avoiding a throw — `DEFECT-044`), per-field `{key}` / `{item.key}` tokens for Map contexts, and `{namespace.field}` references resolved against upstream step outputs via `PipelineRunner._ResolveReference`. **Working (source-verified).**
+
+### 16.8 Loop Start — For Each (`loop_start`)
+Structural boundary marking the start of an iteration over `Items<T>`; exposes `item`, `index`, `count` per iteration. Its registered handler only returns zeroed placeholders — actual iteration state is driven by the pipeline runner, not this handler. **Working (source-verified), structural only.**
+
+### 16.9 Loop End — Collect (`loop_end`)
+Structural boundary marking the end of a loop; collects per-iteration `collect` values into an `items` array and a newline-joined `text`. Like Loop Start, its own handler returns empty placeholders — the runner performs the actual collection. **Working (source-verified), structural only.**
+
+### Correction to prior "4 primitives" summaries
+Earlier framing of this composer as **Split/Join, Filter/Dedupe, Interactive Interceptor, Loop & Template** understates the source: it is **9 distinct registrations**, and it omits **Slice / Limit Items** entirely. Loop is also two separate structural nodes (Start and End), not one.
+
 ## Audit conclusion
 
-The palette exposes **86 reachable registered rows** from **85 unique action names**: 85 local registration calls plus external Find/Replace, with one duplicated Civil-defaults action name. The 2026-08-28 source and full include graph compile successfully. The older **148/148**, **81/81**, and **52/52** figures remain historical, not current proof; the current runners did not complete cleanly in this audit. The Indian normalizer and Indian comma formatter cover all five requested numeric/unit cases and carry rounding is fixed, but the formatter still does not prepend `₹`. The largest 80/20 risks are snippet migration/recovery, non-self-proving test runners, destructive file/window-state handling, and unlabelled Civil estimation assumptions.
+**Full re-audit of the 2026-09-18 v2.0.1 source (superseding the 2026-08-28 v2.0.0-era counts below).** The palette exposes **91 fixed reachable registered rows** (`Actions_*.ahk` local registrations plus the external Find/Replace module) **plus a variable number of dynamic `Recipe: <name>` rows** — 4 as of this audit — for **96 total reachable rows right now**, all with unique names. Fixed-row breakdown: Date/Time 12, Email 10, Text 18, Math 9, Finance 8, Extraction 7, Utility 11, Action Board 4, Window Peek/X-Ray 3, Civil 5, Workflow Hub 3, external Find/Replace 1. The prior revision's **85 unique / 86 reachable** figures, and its central "duplicated Civil-defaults action name" defect, are stale: that duplicate was fixed after the prior audit (per `.agents\skills\subject_tracker\ARCHIVE.md`), and the true fixed-row count had already drifted upward by 6 (new Date/Time, Text tools) before this pass. The dynamic recipe-row mechanism (`Lib\Actions_Workflow.ahk:47`) was never mentioned in the prior revision at all.
 
-### Current code rating: 40/50
+The current source and full include graph were not independently recompiled in this pass (no `Ahk2Exe` run performed here); treat the 2026-08-28 compile-verified claim as historical only. The older **148/148**, **81/81**, and **52/52** test-pass figures remain historical, not current proof. The Indian normalizer and Indian comma formatter cover all five requested numeric/unit cases and carry rounding is fixed, but the formatter still does not prepend `₹`. The largest 80/20 risks are unchanged from the prior revision: snippet migration/recovery, non-self-proving test runners, destructive file/window-state handling, and unlabelled Civil estimation assumptions — none of those areas were touched between v2.0.0 and v2.0.1 as far as this pass could tell.
+
+### Current code rating: 41/50
+
+The prior 40/50 score deducted a point in "Architecture and maintainability" specifically for duplicate registration; that defect is fixed, so this dimension moves 7/8 → 8/8. No other dimension was re-scored in this pass — the underlying evidence for Reliability, Input validation, and Verification (peek/X-Ray state handling, snippet recovery, test-runner completion) was not re-run against v2.0.1 and should be treated as carried over, not re-verified.
 
 | Area                             | Score     | Audit basis                                                                                                                                                               |
 | -------------------------------- | ---------:| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Functionality and correctness    | 14/15     | Broad 85-unique-action coverage, fixed formatter carry/GST crash path, and a substantial Civil engine; ambiguity and duplicate-registration issues remain.                |
-| Reliability and state safety     | 7/10      | Peek FSM and multi-slot snippet design are thoughtful, but the actual rich legacy backup is undiscoverable, replacement is delete-then-move, and X-Ray loses prior alpha. |
-| Input validation and data safety | 7/10      | Strict number parsing and incompatible-dimension rejection are good; destructive actions, permissive GST rates, assumptions and catalog conflicts need stronger controls. |
-| Architecture and maintainability | 7/8       | Domain modules and centralized helpers are strong; global state, duplicate registration, large modules and external relative includes increase coupling.                  |
-| Verification and documentation   | 5/7       | Current main include graph compiles and test sources are broad, but fresh runners did not terminate/report; historical pass counts cannot certify this revision.          |
-| **Total**                        | **40/50** | Feature-rich and compile-clean, with the biggest deduction for recovery truth and executable verification—not for missing breadth.                                        |
+| Functionality and correctness    | 14/15     | Broad 91-fixed-row + dynamic-recipe coverage, fixed formatter carry/GST crash path, and a substantial Civil engine; ambiguity issues remain (carried over, not re-verified). |
+| Reliability and state safety     | 7/10      | Carried over from the prior audit — not re-verified against v2.0.1 in this pass. Peek FSM and multi-slot snippet design are thoughtful, but the actual rich legacy backup is undiscoverable, replacement is delete-then-move, and X-Ray loses prior alpha. |
+| Input validation and data safety | 7/10      | Carried over from the prior audit — not re-verified against v2.0.1 in this pass. Strict number parsing and incompatible-dimension rejection are good; destructive actions, permissive GST rates, assumptions and catalog conflicts need stronger controls. |
+| Architecture and maintainability | 8/8       | Domain modules and centralized helpers are strong; the duplicate-registration defect that previously cost a point here is fixed. Global state, large modules and external relative includes still increase coupling. |
+| Verification and documentation   | 5/7       | Carried over from the prior audit — not re-verified against v2.0.1 in this pass. Historical pass counts cannot certify this revision, and this revision's own inventory drift (see above) shows the doc itself needs periodic recount, not just narrative review. |
+| **Total**                        | **41/50** | Feature-rich, with one defect resolved since the prior audit; the biggest remaining deduction is still recovery truth and executable verification, and now also documentation staleness risk. |
