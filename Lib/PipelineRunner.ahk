@@ -312,11 +312,15 @@ class PipelineRunner {
         if (Type(stepBindings) = "Map") {
             for inpName, refStr in stepBindings {
                 val := PipelineRunner._ResolveReference(refStr, results)
+                if (val == "" && !PipelineRunner._ReferenceExists(refStr, results) && IsSet(LogAppError))
+                    LogAppError("PipelineRunner", Error("Broken binding: step '" . stepId . "' input '" . inpName . "' references unresolved '" . refStr . "'"))
                 inputsMap[inpName] := val
             }
         } else if IsObject(stepBindings) {
             for inpName, refStr in stepBindings.OwnProps() {
                 val := PipelineRunner._ResolveReference(refStr, results)
+                if (val == "" && !PipelineRunner._ReferenceExists(refStr, results) && IsSet(LogAppError))
+                    LogAppError("PipelineRunner", Error("Broken binding: step '" . stepId . "' input '" . inpName . "' references unresolved '" . refStr . "'"))
                 inputsMap[inpName] := val
             }
         }
@@ -549,5 +553,35 @@ class PipelineRunner {
             return nsMap.%fieldName%
 
         return ""
+    }
+
+    /**
+     * Reports whether a "step_id.field" reference actually resolves to something in results,
+     * distinguishing a broken/stale reference (unknown step id or field name) from a field that
+     * genuinely exists but happens to be empty — _ResolveReference() alone can't make that
+     * distinction, since both cases return "" from ordinary field access (DEFECT-046).
+     * @param {String} refStr
+     * @param {Map} results
+     * @returns {Boolean}
+     */
+    static _ReferenceExists(refStr, results) {
+        clean := Trim(refStr)
+        dotPos := InStr(clean, ".")
+        if (dotPos = 0)
+            return results.Has(clean)
+
+        namespace := SubStr(clean, 1, dotPos - 1)
+        fieldName := SubStr(clean, dotPos + 1)
+
+        if !results.Has(namespace)
+            return false
+
+        nsMap := results[namespace]
+        if (Type(nsMap) = "Map")
+            return nsMap.Has(fieldName)
+        if (IsObject(nsMap))
+            return nsMap.HasOwnProp(fieldName)
+
+        return false
     }
 }

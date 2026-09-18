@@ -202,8 +202,31 @@ class RecipeModel {
                 retStep := (Type(lastSub) = "Map") ? lastSub["id"] : lastSub.id
             }
 
+            ; DEFECT-049: return-type inference used to hardcode ".text" as the return field name,
+            ; so a tool whose primary output is named anything else (e.g. "value", "result") fell
+            ; through to a Map-iteration-order guess instead of the tool's actually-declared primary
+            ; output. Resolve the designated return step's own tool definition and use its declared
+            ; `primary: true` output name instead.
+            primaryOutName := "text"
+            for subStep in subSteps {
+                subId := (Type(subStep) = "Map") ? subStep["id"] : subStep.id
+                if (subId != retStep)
+                    continue
+                subIsContainer := (Type(subStep) = "Map") ? (subStep.Has("is_container") && subStep["is_container"]) : (subStep.HasOwnProp("is_container") && subStep.is_container)
+                subToolId := (Type(subStep) = "Map") ? (subStep.Has("tool_id") ? subStep["tool_id"] : "") : (subStep.HasOwnProp("tool_id") ? subStep.tool_id : "")
+                if (!subIsContainer && subToolId != "" && ToolCatalog.Has(subToolId)) {
+                    for outDef in ToolCatalog.Get(subToolId).outputs {
+                        if (outDef.HasOwnProp("primary") && outDef.primary) {
+                            primaryOutName := outDef.name
+                            break
+                        }
+                    }
+                }
+                break
+            }
+
             retType := "any"
-            retKey := retStep . ".text"
+            retKey := retStep . "." . primaryOutName
             if innerScope.Has(retKey)
                 retType := innerScope[retKey]
             else {

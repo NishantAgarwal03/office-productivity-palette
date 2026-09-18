@@ -221,7 +221,11 @@ class CorpusSetEngine {
             }
 
             tier := ""
-            if (cov > 0.75) {
+            if (df == totalDocs) {
+                ; 100% coverage is the universal baseline (already tracked in universalTokens),
+                ; not part of the "Common" tier — header spec bounds Common as "> 75% and < 100%".
+                tier := "Universal (Baseline)"
+            } else if (cov > 0.75) {
                 tier := "Common"
                 tierCounts.common++
             } else if (cov > 0.50) {
@@ -452,6 +456,15 @@ class CorpusSetEngine {
         local analysis := this.Analyze(docs, {filterStopwords: filterStopwords})
         local delim := this.DetectDelimiter(source)
 
+        ; DEFECT-048: compute the per-document differences once and reuse them — ComputeDifferences()
+        ; re-runs the full Analyze() tokenization/scoring pass internally, so calling it here (for the
+        ; "difference" op) and again below (for outMap["differences"]) was tripling the analysis work
+        ; on every single ExecutePipeline invocation. Stripping directly off the already-computed
+        ; analysis.universalTokens gets the identical result for one Analyze() call instead of three.
+        local diffsArr := []
+        for doc in docs
+            diffsArr.Push(this.StripUniversalTokens(doc, analysis.universalTokens))
+
         resultText := ""
         if (op == "intersection") {
             commonList := []
@@ -469,21 +482,18 @@ class CorpusSetEngine {
             resultText := this.FormatStatsTable(analysis)
         } else {
             ; Default: "difference"
-            diffs := this.ComputeDifferences(docs, {filterStopwords: filterStopwords})
-            for idx, diff in diffs
+            for idx, diff in diffsArr
                 resultText .= (idx > 1 ? delim : "") . diff
         }
 
         local outMap := Map()
         outMap["result"] := resultText
         outMap["stats_table"] := this.FormatStatsTable(analysis)
-        
+
         intersectionArr := []
         for key, disp in analysis.universalTokens
             intersectionArr.Push(disp)
         outMap["intersection"] := intersectionArr
-
-        diffsArr := this.ComputeDifferences(docs, {filterStopwords: filterStopwords})
         outMap["differences"] := diffsArr
 
         return outMap

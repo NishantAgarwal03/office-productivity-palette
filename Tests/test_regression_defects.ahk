@@ -3,7 +3,7 @@
 ; Part of Office Productivity Hub (v2.0.1) - Zero-Trust Quality Harness
 ;
 ; ARCHITECTURAL INVARIANTS:
-; 1. Numbered, traceable defect reproduction cases (DEFECT-001 through DEFECT-036).
+; 1. Numbered, traceable defect reproduction cases (DEFECT-001 through DEFECT-050).
 ; 2. Every historical, edge-case, and recently discovered bug has an isolated, permanent regression guard.
 ; 3. Zero UI dialog popups; outputs clean structured logs and schema-versioned results.json via TestHarness.
 ; ======================================================================================================================
@@ -1455,6 +1455,155 @@ try {
     AssertTrue("DEFECT-042", "GenerateUUID returns non-empty 36-char formatted GUID", StrLen(uuid1) == 36 && RegExMatch(uuid1, "^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$"))
     uuid2 := GenerateUUID()
     AssertTrue("DEFECT-042", "GenerateUUID produces distinct values across successive calls", uuid1 != uuid2)
+
+    ; --------------------------------------------------------------------------------------------------
+    ; DEFECT-043: CorpusSetEngine tier classifier must not double-count 100%-coverage tokens as "Common"
+    ; Header spec (CorpusSetEngine.ahk:10) bounds Common as "> 75% and < 100%" — a token present in
+    ; every document (the universal baseline) is a distinct category, not "Common".
+    ; --------------------------------------------------------------------------------------------------
+    d043Docs := ["alpha beta", "alpha gamma", "alpha delta"]
+    d043Analysis := CorpusSetEngine.Analyze(d043Docs)
+    AssertEqual("DEFECT-043", "100%-coverage token 'alpha' is tagged Universal, not Common", d043Analysis.words["alpha"].tier, "Universal (Baseline)")
+    AssertEqual("DEFECT-043", "tierCounts.common excludes the 100%-coverage token", d043Analysis.tierCounts.common, 0)
+
+    ; --------------------------------------------------------------------------------------------------
+    ; DEFECT-044: WorkflowPrimitives.ExecuteTemplate's "context" input is typed "any" in its tool
+    ; definition, so it can arrive as an Array/Map from an upstream multi-value output, not just a
+    ; String — same bug class as DEFECT-001 (CorpusSetEngine.DetectDelimiter type-assumed String).
+    ; --------------------------------------------------------------------------------------------------
+    d044ArrayThrew := false
+    d044ArrayRes := ""
+    try {
+        d044ArrayRes := WorkflowPrimitives.ExecuteTemplate(Map("context", ["x", "y"]), Map("template", "Items: {item}"))
+    } catch {
+        d044ArrayThrew := true
+    }
+    AssertFalse("DEFECT-044", "ExecuteTemplate does not throw when context is an Array", d044ArrayThrew)
+    AssertTrue("DEFECT-044", "ExecuteTemplate serializes an Array context instead of crashing", IsSet(d044ArrayRes) && InStr(d044ArrayRes["text"], "x") > 0)
+
+    d044MapThrew := false
+    try {
+        WorkflowPrimitives.ExecuteTemplate(Map("context", Map("k", "v")), Map("template", "Ctx: {item}"))
+    } catch {
+        d044MapThrew := true
+    }
+    AssertFalse("DEFECT-044", "ExecuteTemplate does not throw when context is a Map", d044MapThrew)
+
+    ; --------------------------------------------------------------------------------------------------
+    ; DEFECT-045: MathEvaluator chained-percentage regex was single-pass, so "100 - 10% - 5%" silently
+    ; evaluated the second "%" against the original base (100) instead of the running result (90).
+    ; --------------------------------------------------------------------------------------------------
+    d045a := SafeEvaluateMath("100 - 10% - 5%")
+    AssertEqual("DEFECT-045", "Chained subtraction percentages apply to the running result (100 -10% -5% = 85.5)", d045a.resultStr, "85.5")
+
+    d045b := SafeEvaluateMath("100 + 10% + 10%")
+    AssertEqual("DEFECT-045", "Chained addition percentages compound (100 +10% +10% = 121)", d045b.resultStr, "121")
+
+    d045c := SafeEvaluateMath("1000 - 20% + 5%")
+    AssertEqual("DEFECT-045", "Mixed chained percentages compound correctly (1000 -20% +5% = 840)", d045c.resultStr, "840")
+
+    d045d := SafeEvaluateMath("1500 - 10%")
+    AssertEqual("DEFECT-045", "Single (non-chained) percentage still evaluates correctly", d045d.resultStr, "1350")
+
+    ; --------------------------------------------------------------------------------------------------
+    ; DEFECT-046: PipelineRunner._ResolveReference can't distinguish "broken/stale reference" from
+    ; "field is genuinely empty" — both silently return "". _ReferenceExists() closes that gap.
+    ; --------------------------------------------------------------------------------------------------
+    d046Results := Map("step1", Map("text", "", "count", 5))
+    AssertTrue("DEFECT-046", "_ReferenceExists is true for a field that exists but is genuinely empty", PipelineRunner._ReferenceExists("step1.text", d046Results))
+    AssertEqual("DEFECT-046", "_ResolveReference still returns '' for the genuinely-empty field", PipelineRunner._ResolveReference("step1.text", d046Results), "")
+
+    AssertFalse("DEFECT-046", "_ReferenceExists is false for an unknown field on a known step", PipelineRunner._ReferenceExists("step1.nonexistent_field", d046Results))
+    AssertEqual("DEFECT-046", "_ResolveReference also returns '' for the unknown field (same surface, different cause)", PipelineRunner._ResolveReference("step1.nonexistent_field", d046Results), "")
+
+    AssertFalse("DEFECT-046", "_ReferenceExists is false for an entirely unknown step id", PipelineRunner._ReferenceExists("ghost_step.text", d046Results))
+    AssertTrue("DEFECT-046", "_ReferenceExists is true for a known field with a real value", PipelineRunner._ReferenceExists("step1.count", d046Results))
+
+    ; --------------------------------------------------------------------------------------------------
+    ; DEFECT-047: WorkflowPrimitives.ExecuteSlice silently returned an empty result (no error) when
+    ; the "range" mode's end index is before its start index — now throws instead.
+    ; --------------------------------------------------------------------------------------------------
+    d047Threw := false
+    try {
+        WorkflowPrimitives.ExecuteSlice(Map("items", [10, 20, 30, 40, 50]), Map("mode", "range", "start", 4, "end", 2))
+    } catch {
+        d047Threw := true
+    }
+    AssertTrue("DEFECT-047", "ExecuteSlice throws on an inverted range (end < start) instead of silently returning empty", d047Threw)
+
+    d047Valid := WorkflowPrimitives.ExecuteSlice(Map("items", [10, 20, 30, 40, 50]), Map("mode", "range", "start", 2, "end", 4))
+    AssertEqual("DEFECT-047", "ExecuteSlice still slices a valid range correctly", d047Valid["count"], 3)
+
+    ; --------------------------------------------------------------------------------------------------
+    ; DEFECT-048: CorpusSetEngine.ExecutePipeline used to re-run the full Analyze() pass up to 3x per
+    ; invocation (once directly, once inside ComputeDifferences() for the "difference" op, once more
+    ; for the always-populated "differences" output field). Verifies the dedup preserves correctness:
+    ; the "result" text (difference op) and the "differences" array must describe the same stripped
+    ; documents.
+    ; --------------------------------------------------------------------------------------------------
+    d048Inputs := Map("source", ["Standard disclaimer text. Alpha unique.", "Standard disclaimer text. Beta unique."])
+    d048Out := CorpusSetEngine.ExecutePipeline(d048Inputs, Map("operation", "difference"))
+    AssertTrue("DEFECT-048", "ExecutePipeline result text strips universal tokens", InStr(d048Out["result"], "Alpha") > 0 && !InStr(d048Out["result"], "Standard disclaimer text"))
+    AssertEqual("DEFECT-048", "differences array has one entry per input document", d048Out["differences"].Length, 2)
+    AssertTrue("DEFECT-048", "differences[1] matches the leading segment of the joined result text", InStr(d048Out["result"], d048Out["differences"][1]) > 0)
+
+    ; --------------------------------------------------------------------------------------------------
+    ; DEFECT-049: RecipeModel's loop-container return-type inference hardcoded ".text" as the return
+    ; field name. "parse_number"'s primary output is "number" (it also happens to expose a secondary
+    ; "text" output), so the old code inferred "items<text>" for the loop and incorrectly REJECTED a
+    ; legitimately valid recipe feeding that loop's items into a tool that requires "items<number>".
+    ; --------------------------------------------------------------------------------------------------
+    recipeD049 := {
+        id: "recipe_defect_049",
+        name: "Loop Return Type Inference Test",
+        version: 1,
+        input_source: "selection",
+        steps: [
+            {
+                id: "step_1",
+                tool_id: "primitive_split",
+                tool_version: 1,
+                bindings: Map("text", "input.text"),
+                settings: Map("delimiter", "\n")
+            },
+            {
+                id: "step_2",
+                is_container: true,
+                bindings: Map("items", "step_1.items"),
+                loop_return_step: "step_2_1",
+                sub_steps: [
+                    {
+                        id: "step_2_1",
+                        tool_id: "parse_number",
+                        tool_version: 1,
+                        bindings: Map("text", "loop.item"),
+                        settings: Map()
+                    }
+                ]
+            },
+            {
+                id: "step_3",
+                tool_id: "sum_numbers",
+                tool_version: 1,
+                bindings: Map("items", "step_2.items"),
+                settings: Map()
+            }
+        ]
+    }
+    valD049 := RecipeModel.Validate(recipeD049)
+    AssertTrue("DEFECT-049", "Loop returning parse_number's primary 'number' output validates against a downstream items<number> input", valD049.valid)
+
+    ; --------------------------------------------------------------------------------------------------
+    ; DEFECT-050 (R6): Actions_Extraction.ParseAnyDateToYyyyMmDd used to carry its own independent
+    ; fallback date-parsing regexes, duplicating DateFormatConverter.ParseIndianDate. Now it delegates
+    ; fully — verify the formats the old fallback used to handle still resolve correctly.
+    ; --------------------------------------------------------------------------------------------------
+    AssertEqual("DEFECT-050", "ParseAnyDateToYyyyMmDd delegates for 'DD-Mon-YYYY'", ParseAnyDateToYyyyMmDd("21-Aug-2026"), "20260821")
+    AssertEqual("DEFECT-050", "ParseAnyDateToYyyyMmDd delegates for 'Month DD, YYYY'", ParseAnyDateToYyyyMmDd("August 21, 2026"), "20260821")
+    AssertEqual("DEFECT-050", "ParseAnyDateToYyyyMmDd delegates for ISO 'YYYY-MM-DD'", ParseAnyDateToYyyyMmDd("2026-08-21"), "20260821")
+    AssertEqual("DEFECT-050", "ParseAnyDateToYyyyMmDd delegates for 'DD-MM-YYYY'", ParseAnyDateToYyyyMmDd("21-08-2026"), "20260821")
+    AssertEqual("DEFECT-050", "ParseAnyDateToYyyyMmDd delegates for 'DD-MM-YY'", ParseAnyDateToYyyyMmDd("21-08-26"), "20260821")
+    AssertEqual("DEFECT-050", "ParseAnyDateToYyyyMmDd now rejects a calendar-invalid date (Feb 30) instead of blindly formatting it", ParseAnyDateToYyyyMmDd("30-02-2026"), "")
 
 } catch as testErr {
     FailCount++

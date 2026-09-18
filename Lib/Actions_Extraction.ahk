@@ -299,6 +299,11 @@ CalculateDateDifference(dateStr1, dateStr2) {
     return res
 }
 
+; DEFECT-050 (R6): this function used to fall back to its own independent set of date-parsing regexes
+; (day-first textual, month-first textual, ISO, DD-MM-YYYY, DD-MM-YY) whenever DateFormatConverter's
+; parser didn't match — a second, weaker date parser (no calendar-validity checks, no weekday-prefix
+; stripping) duplicating logic DateFormatConverter.ParseIndianDate already covers as a strict superset
+; (see its Patterns A-E), violating the project's "zero role duplication" standard. Delegates fully now.
 ParseAnyDateToYyyyMmDd(dStr) {
     s := Trim(dStr)
     if (s == "")
@@ -309,45 +314,8 @@ ParseAnyDateToYyyyMmDd(dStr) {
         if (p.valid)
             return p.yyyymmdd
     }
-    
-    if RegExMatch(s, "i)^(\d{1,2})[-/\s]+([a-z]{3})[a-z]*[-/\s,]+(\d{2,4})$", &m) {
-        day := Integer(m[1])
-        monStr := StrLower(SubStr(m[2], 1, 3))
-        monthNum := GetMonthNumFromName(monStr)
-        year := Integer(m[3])
-        if (year < 100)
-            year += 2000
-        return Format("{:04d}{:02d}{:02d}", year, monthNum, day)
-    }
-    
-    ; Intended Lenience: ',?\s*' allows optional comma & whitespace to gracefully extract dates from 
-    ; compressed/noisy OCR scans and stripped PDF text (e.g., 'August 21, 2026', 'Aug 15 2026', or concatenated 'August 212026')
-    if RegExMatch(s, "i)^([a-z]{3})[a-z]*\s+(\d{1,2})(?:st|nd|rd|th)?,?\s*(\d{2,4})$", &m) {
-        monStr := StrLower(SubStr(m[1], 1, 3))
-        monthNum := GetMonthNumFromName(monStr)
-        day := Integer(m[2])
-        year := Integer(m[3])
-        if (year < 100)
-            year += 2000
-        return Format("{:04d}{:02d}{:02d}", year, monthNum, day)
-    }
-    
-    if RegExMatch(s, "^(\d{4})[-/\.](?:(\d{1,2})[-/\.](\d{1,2}))$", &m)
-        return Format("{}{:02d}{:02d}", m[1], Integer(m[2]), Integer(m[3]))
-        
-    if RegExMatch(s, "^(\d{1,2})[-/\.](\d{1,2})[-/\.](\d{4})$", &m)
-        return Format("{}{:02d}{:02d}", m[3], Integer(m[2]), Integer(m[1]))
-        
-    if RegExMatch(s, "^(\d{1,2})[-/\.](\d{1,2})[-/\.](\d{2})$", &m)
-        return Format("20{}{:02d}{:02d}", m[3], Integer(m[2]), Integer(m[1]))
-        
+
     return ""
 }
 
-GetMonthNumFromName(mStr) {
-    m := StrLower(mStr)
-    static months := Map("jan", 1, "feb", 2, "mar", 3, "apr", 4, "may", 5, "jun", 6,
-                         "jul", 7, "aug", 8, "sep", 9, "oct", 10, "nov", 11, "dec", 12)
-    return months.Has(m) ? months[m] : 0
-}
 
