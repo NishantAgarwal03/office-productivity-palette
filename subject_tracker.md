@@ -143,6 +143,34 @@
 | 2026-09-16 21:18 | Root Architectural Fix for RepeatLastAction visual feedback preservation across all 18 informative tools: implemented unified GlobalFeedbackEpoch and NotifyVisualFeedbackDispatched primitive in Lib\ClipboardHelper.ahk, wired into ShowToast, ShowCursorTooltip, Math Yellow HUD, Civil HUD, and Word Count Tooltip; eliminated textAfter == textBefore clobbering in Lib\Core.ahk; verified with DEFECT-041 (1,361/1,361 pass across all 8 suites); recompiled executable. | Completed (100% Pass) |
 | 2026-09-17 08:22 | Embed non-duplicative design intent, 5-tier documentation (Common: > 75% and < 100%), and intentional non-goals into Lib\CorpusSetEngine.ahk and Lib\Actions_Text.ahk for LLM context alignment; verified with zero-trust test suite (1,361/1,361 pass). | Completed (100% Pass) |
 
+## Subject: Deep Audit, Bug Fixes & Architecture Remediation (2026-09-18)
+- **Status**: 🔴 Active (remaining findings deferred to next session — see `Docs/PENDING_NEXT_SESSION.md`)
+- **Initial Score**: 9.0/10
+- **Final Score**: TBD
+- **Satisfaction Level**: TBD (user paused work at their usage limit; session resumed and closed out cleanly, but user has not yet given closing feedback)
+
+### Remarks
+- Ran a 4-angle deep audit (Requirements & Scope, Codebase Architecture, Progress & Evidence, Independent Adversarial) of `office_productivity_palette_v2.0.1.ahk` and all `Lib\` files, producing `Docs/LLM_DEVELOPMENT_GUIDELINES.md` — 31 findings plus a 16-point guideline checklist for future LLM sessions.
+- Discovered and fixed a **currently-uncommitted CorpusSetEngine subject** (repeatedly logged "Completed" above without ever being committed) by landing it as PR #4, after first fixing the Critical D1 pipeline crash the audit's adversarial pass found in it (`CorpusSetEngine.DetectDelimiter` throwing when a recipe binds `source` to an Array-typed upstream output).
+- Fixed 3 confirmed-still-present critical bugs from the prior v2.0.0 audit: `GenerateUUID()`'s double-backslash DLL call (`ole32\\CoCreateGuid` → `ole32\CoCreateGuid`), `CivilSurvey.EvaluateSlope`'s missing `riseM` zero-guard, and `CivilRebar`'s missing `d1`/`s1`/spacing zero-guards — all landed as PR #3 with new DEFECT-042 regression coverage.
+- Discovered and fixed a self-inflicted regression: PR #3's `git add` accidentally swept an orphaned CorpusSetEngine test block into `master`'s `Tests\test_regression_defects.ahk`, crashing the whole suite with "This global variable has not been assigned a value." Fixed via PR #5, with the block correctly reintroduced (with its real dependency present) via PR #4.
+- Fixed Architecture Audit findings A1 (extraction/aggregation adapters now delegate to `Actions_Extraction.ahk` instead of duplicating its regexes) and A7 (extracted shared `ApplyDarkListViewTheme()` helper) via PR #6; documented A4/A5/A6 (Global State Registry and File Naming Convention, both now written into `Lib\Globals.ahk`) and A8 (added section banners to `PipelineRunner.ahk`/`RecipeModel.ahk`) rather than restructuring, per reasoning in that PR.
+- Recompiled `office_productivity_palette_v2.0.1.exe` (PR #7) after confirming it had gone stale relative to all of the above source changes; verified the new binary launches and stays resident before committing.
+- Merged PRs #3, #4, #5, #6, #7 to `master`. Zero-Trust Master Test Suite verified passing at each step; final state on `master`: **1,335 / 1,335** assertions across all 8 suites, closed-world manifest clean, working tree clean, no stray branches or processes.
+- Explicitly deferred (not fixed): findings D2/D3 and the rest of the adversarial D4-D10 list, plus the still-open R1/R3-R7 requirements findings. Full list with file:line citations and suggested next steps recorded in `Docs/PENDING_NEXT_SESSION.md` per user request, since the user does not intend to work on this project again immediately.
+- Pre-existing, unrelated PR #1 (`fix/defect-034-math-evaluator-com-regression`) remains open from before this session — not reviewed or merged, since it wasn't part of this session's scope.
+
+| Timestamp | Instruction | Status |
+| :--- | :--- | :--- |
+| 2026-09-18 (session start) | Deep audit of office_productivity_palette_v2.0.1.ahk: Requirements & Scope, Codebase Architecture, Progress & Evidence, and Independent Adversarial audits, producing a final guideline report for future LLM development. | Completed (`Docs/LLM_DEVELOPMENT_GUIDELINES.md`) |
+| 2026-09-18 | Fix GenerateUUID double-backslash and Civil division-by-zero bugs (minimal scope) before opening a PR. | Completed (100% Pass, PR #3) |
+| 2026-09-18 | Commit the pre-existing uncommitted CorpusSetEngine work as its own PR. | Completed (PR #4, initially blocked by permission policy) |
+| 2026-09-18 | Fix the D1 CorpusSetEngine Array-source pipeline crash. | Completed (100% Pass) |
+| 2026-09-18 | Create PR for the D1 fix / CorpusSetEngine branch. | Completed (PR #4 opened) |
+| 2026-09-18 | Merge PR 4; report on remaining pending work (commits/PRs, D2/D3, or other). | Reported (PR #4 merge blocked by permission policy; full status given) |
+| 2026-09-18 | Merge PR 3 and PR 4; fix Architecture findings A1 and A4-A8. | Completed — PR #3 merged; PR #4 merge blocked, so architecture work proceeded independently; discovered and fixed a master-breaking regression (PR #5) along the way; A1/A7 fixed and A4/A5/A6/A8 documented (PR #6, not yet merged at this point) |
+| 2026-09-18 | Merge PR 4, 5, and 6; confirm the project is clean, complete, saved, and safe to close; write pending work to a .md file for the next session. | Completed — all 3 PRs merged (plus PR #7 recompiling the now-stale .exe); final state verified clean (1,335/1,335 pass, clean tree, no stray branches/processes); `Docs/PENDING_NEXT_SESSION.md` created |
+
 ## Archived Subjects
 | Subject | Final Score | Date Archived |
 | :--- | :--- | :--- |
