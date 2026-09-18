@@ -1439,6 +1439,169 @@ try {
     AssertTrue("DEFECT-037", "ResolveCurrentFilePath with invalid HWND returns empty or valid string", Type(resInvalidHwnd) = "String")
     TargetWindowHwnd := 0
 
+    ; --------------------------------------------------------------------------------------------------
+    ; DEFECT-038: CorpusSetEngine Universal Intersection & Deviation Analyzer
+    ; --------------------------------------------------------------------------------------------------
+    docs := [
+        "Providing and laying in position specified grade of reinforced cement concrete, excluding the cost of centering, shuttering, finishing and reinforcement - all work up to plinth level: 1:1.5:3 (1 cement : 1.5 coarse sand : 3 graded stone aggregate 20 mm nominal size) M-25 grade.",
+        "Providing and laying in position specified grade of reinforced cement concrete, excluding the cost of centering, shuttering, finishing and reinforcement - all work up to plinth level: 1:2:4 (1 cement : 2 coarse sand : 4 graded stone aggregate 20 mm nominal size) M-15 grade.",
+        "Providing and laying in position specified grade of reinforced cement concrete, excluding the cost of centering, shuttering, finishing and reinforcement - all work up to plinth level: 1:2:4 mix."
+    ]
+    analysis := CorpusSetEngine.Analyze(docs)
+    AssertEqual("DEFECT-038", "CorpusSetEngine total docs", analysis.totalDocs, 3)
+    AssertTrue("DEFECT-038", "100% universal token 'concrete' identified", analysis.universalTokens.Has("concrete"))
+    AssertTrue("DEFECT-038", "100% universal token 'providing' identified", analysis.universalTokens.Has("providing"))
+    AssertTrue("DEFECT-038", "100% universal token 'laying' identified", analysis.universalTokens.Has("laying"))
+    AssertFalse("DEFECT-038", "English stopword 'and' excluded from vocabulary", analysis.words.Has("and"))
+    AssertFalse("DEFECT-038", "English stopword 'with' excluded from vocabulary", analysis.words.Has("with"))
+    AssertTrue("DEFECT-038", "'mix' in words map", analysis.words.Has("mix"))
+    AssertEqual("DEFECT-038", "'mix' is Distinctive", analysis.words["mix"].tier, "Distinctive")
+    
+    cDiffs := CorpusSetEngine.ComputeDifferences(docs, analysis.universalTokens)
+    AssertTrue("DEFECT-038", "cDiffs has 3 results", cDiffs.Length = 3)
+    AssertTrue("DEFECT-038", "Doc 1 retains M-25", InStr(cDiffs[1], "M-25"))
+    AssertTrue("DEFECT-038", "Doc 3 retains 1:2:4", InStr(cDiffs[3], "1:2:4"))
+    AssertFalse("DEFECT-038", "Doc 1 stripped 'concrete'", InStr(cDiffs[1], "concrete"))
+    
+    dupDocs := ["Alpha beta gamma sentence fragment.", "Alpha beta delta sentence fragment."]
+    dupAnalysis := CorpusSetEngine.Analyze(dupDocs)
+    cDupDiffs := CorpusSetEngine.ComputeDifferences(dupDocs, dupAnalysis.universalTokens)
+    AssertTrue("DEFECT-038", "cDupDiffs preserves sentence fragment", InStr(cDupDiffs[1], "gamma"))
+
+    ingestDocs := CorpusSetEngine.Ingest("Doc 1`nDoc 2`nDoc 3")
+    AssertEqual("DEFECT-038", "Ingest multiline returns 3 docs", ingestDocs.Length, 3)
+
+    tmpFile1 := A_Temp . "\cset_test1.txt"
+    tmpFile2 := A_Temp . "\cset_test2.txt"
+    try FileDelete(tmpFile1)
+    try FileDelete(tmpFile2)
+    FileAppend("universal clause alpha", tmpFile1, "UTF-8")
+    FileAppend("universal clause beta", tmpFile2, "UTF-8")
+    fileDocs := CorpusSetEngine.Ingest(tmpFile1 . "`n" . tmpFile2)
+    AssertEqual("DEFECT-038", "Ingest file paths returns 2 docs", fileDocs.Length, 2)
+    fileAnalysis := CorpusSetEngine.Analyze(fileDocs)
+    AssertTrue("DEFECT-038", "File analysis universal token 'universal'", fileAnalysis.universalTokens.Has("universal"))
+    AssertTrue("DEFECT-038", "File analysis universal token 'clause'", fileAnalysis.universalTokens.Has("clause"))
+    try FileDelete(tmpFile1)
+    try FileDelete(tmpFile2)
+
+    foundCSetAction := false
+    for act in BuiltInActions {
+        if (act.name == "Set Intersect & Difference (Corpus Comparison)") {
+            foundCSetAction := true
+            break
+        }
+    }
+    AssertTrue("DEFECT-038", "Set Intersect & Difference action registered", foundCSetAction)
+    AssertTrue("DEFECT-038", "ToolCatalog has corpus_set_analyzer", ToolCatalog.Has("corpus_set_analyzer"))
+
+    ; --------------------------------------------------------------------------------------------------
+    ; DEFECT-039: Delimiter Preservation & Excel Multi-Line Formatting
+    ; --------------------------------------------------------------------------------------------------
+    excelInput := "Row 1`r`nRow 2`r`nRow 3"
+    excelDelim := CorpusSetEngine.DetectDelimiter(excelInput)
+    AssertEqual("DEFECT-039", "DetectDelimiter identifies single CRLF for Excel rows", excelDelim, "`r`n")
+    rebuiltExcel := "Row 1" . excelDelim . "Row 2" . excelDelim . "Row 3"
+    AssertFalse("DEFECT-039", "Rebuilt Excel output has zero double blank rows", InStr(rebuiltExcel, "`r`n`r`n"))
+    AssertEqual("DEFECT-039", "Rebuilt line count matches original row count", StrSplit(rebuiltExcel, "`r`n").Length, 3)
+
+    paraInput := "Paragraph 1`r`n`r`nParagraph 2"
+    paraDelim := CorpusSetEngine.DetectDelimiter(paraInput)
+    AssertEqual("DEFECT-039", "DetectDelimiter identifies double CRLF for paragraphs", paraDelim, "`r`n`r`n")
+
+    unixInput := "Line 1`nLine 2"
+    unixDelim := CorpusSetEngine.DetectDelimiter(unixInput)
+    AssertEqual("DEFECT-039", "DetectDelimiter identifies single LF", unixDelim, "`n")
+
+    ; --------------------------------------------------------------------------------------------------
+    ; DEFECT-040: RepeatLastAction Toast Preservation & 5-Tier Common Classification
+    ; --------------------------------------------------------------------------------------------------
+    ; Case A: FormatToastMessage formats strictly the 5 tiers without any Universal (100%) tier
+    tierSample := {common: 4, moderate: 2, distinctive: 3, low: 4, veryLow: 0}
+    toastSample := CorpusSetEngine.FormatToastMessage(tierSample)
+    AssertTrue("DEFECT-040", "Toast includes Common count", InStr(toastSample, "Common: 4"))
+    AssertFalse("DEFECT-040", "Toast excludes Universal (100%)", InStr(toastSample, "Universal"))
+
+    ; Case B: 2-document comparison maps shared terms directly to Common tier (>75%)
+    twoDocAnalysis := CorpusSetEngine.Analyze(["Alpha concrete foundation", "Beta concrete plinth"])
+    AssertEqual("DEFECT-040", "Shared term concrete is Common", twoDocAnalysis.words["concrete"].tier, "Common")
+    AssertEqual("DEFECT-040", "tierCounts.common counts shared term", twoDocAnalysis.tierCounts.common, 1)
+
+    ; Case C: RepeatLastAction does not clobber custom action toast (even on repeated consecutive calls)
+    testCustomAction := {
+        name: "Test Custom Action",
+        category: "Test",
+        callback: () => ShowToast("📊 Unique Statistical Report", 5000)
+    }
+    LastExecutedAction := testCustomAction
+    RepeatLastAction()
+    AssertTrue("DEFECT-040", "RepeatLastAction preserves custom action toast", InStr(ToastTextCtrl.Text, "Unique Statistical Report"))
+    ; Repeat again immediately to test identical textBefore == textAfter preservation
+    RepeatLastAction()
+    AssertTrue("DEFECT-040", "RepeatLastAction preserves custom toast on consecutive repeat", InStr(ToastTextCtrl.Text, "Unique Statistical Report"))
+    DismissToastHud()
+
+    ; --------------------------------------------------------------------------------------------------
+    ; DEFECT-041: Unified Visual Feedback Epoch & Multi-Modal HUD Preservation
+    ; --------------------------------------------------------------------------------------------------
+    ; Case A: Cursor tooltip action increments GlobalFeedbackEpoch and does not show generic repeat toast
+    epochStart := GlobalFeedbackEpoch
+    testTooltipAction := {
+        name: "Test Tooltip Action",
+        category: "Test",
+        callback: () => ShowCursorTooltip("Words: 42 (Unique: 30)")
+    }
+    LastExecutedAction := testTooltipAction
+    RepeatLastAction()
+    AssertTrue("DEFECT-041", "ShowCursorTooltip increments GlobalFeedbackEpoch", GlobalFeedbackEpoch > epochStart)
+    AssertFalse("DEFECT-041", "Cursor tooltip not clobbered by generic toast", IsToastHudVisible())
+    DismissCursorTooltip(1)
+
+    ; Case B: Math Yellow HUD increments GlobalFeedbackEpoch and preserves HUD without repeat toast
+    epochMath := GlobalFeedbackEpoch
+    testMathAction := {
+        name: "Test Math Action",
+        category: "Test",
+        callback: () => ShowCalculationResult("100 + 200", "300")
+    }
+    LastExecutedAction := testMathAction
+    RepeatLastAction()
+    AssertTrue("DEFECT-041", "ShowCalculationResult increments GlobalFeedbackEpoch", GlobalFeedbackEpoch > epochMath)
+    AssertTrue("DEFECT-041", "Yellow HUD remains visible", IsYellowHudVisible())
+    AssertFalse("DEFECT-041", "Yellow HUD not clobbered by generic toast", IsToastHudVisible())
+    DismissYellowHud()
+
+    ; Case C: Custom visual feedback increments GlobalFeedbackEpoch and preserves display without repeat toast
+    epochCustom := GlobalFeedbackEpoch
+    testCustomFeedbackAction := {
+        name: "Test Custom Feedback Action",
+        category: "Test",
+        callback: () => NotifyVisualFeedbackDispatched()
+    }
+    LastExecutedAction := testCustomFeedbackAction
+    RepeatLastAction()
+    AssertTrue("DEFECT-041", "Custom feedback increments GlobalFeedbackEpoch", GlobalFeedbackEpoch > epochCustom)
+    AssertFalse("DEFECT-041", "Custom feedback not clobbered by generic toast", IsToastHudVisible())
+
+    ; Case D: Silent action (zero feedback dispatched) correctly displays generic "Repeated" toast
+    silentTracker := { executed: false }
+    testSilentAction := {
+        name: "Convert to UPPERCASE",
+        category: "Transform",
+        callback: () => (silentTracker.executed := true)
+    }
+    LastExecutedAction := testSilentAction
+    RepeatLastAction()
+    AssertTrue("DEFECT-041", "Silent action executed", silentTracker.executed)
+    AssertTrue("DEFECT-041", "Silent action displays generic repeat toast", IsToastHudVisible() && InStr(ToastTextCtrl.Text, "Repeated: Convert to UPPERCASE"))
+    DismissToastHud()
+
+    ; DEFECT-042: GenerateUUID DLL call uses correct single-backslash DLL path ("ole32\CoCreateGuid", not "ole32\\CoCreateGuid")
+    uuid1 := GenerateUUID()
+    AssertTrue("DEFECT-042", "GenerateUUID returns non-empty 36-char formatted GUID", StrLen(uuid1) == 36 && RegExMatch(uuid1, "^[0-9A-F]{8}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{4}-[0-9A-F]{12}$"))
+    uuid2 := GenerateUUID()
+    AssertTrue("DEFECT-042", "GenerateUUID produces distinct values across successive calls", uuid1 != uuid2)
+
 } catch as testErr {
     FailCount++
     TestLogs.Push("[FATAL_REGRESSION_CRASH] " . testErr.Message . " (Line: " . testErr.Line . ")")

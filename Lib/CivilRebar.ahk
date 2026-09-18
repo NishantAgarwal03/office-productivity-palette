@@ -39,9 +39,16 @@ class CivilRebar {
                 d2 := (d1 == 10) ? 12 : ((d1 == 8) ? 10 : 16)
             }
 
+            if (d1 <= 0)
+                return {success: false, message: "Existing rebar diameter cannot be zero"}
+            if (s1 <= 0)
+                return {success: false, message: "Existing rebar spacing cannot be zero"}
+
             s2Exact := s1 * ((d2 * d2) / (d1 * d1))
             pitchRound := cfg.Has("RebarSpacingPitchRoundMM") ? cfg["RebarSpacingPitchRoundMM"] : 5.0
             s2Practical := Floor(s2Exact / pitchRound) * pitchRound
+            if (s2Practical <= 0)
+                return {success: false, message: "Computed replacement spacing rounds to zero — increase pitch or diameter"}
 
             as1 := (3.14159265 * d1 * d1 / 4.0) * (1000.0 / s1)
             as2 := (3.14159265 * d2 * d2 / 4.0) * (1000.0 / s2Practical)
