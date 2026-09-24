@@ -1,0 +1,408 @@
+; ======================================================================================================================
+; Zero-Trust Automated Test Suite for Workflow Composer & Pipeline Runner
+; Part of Office Productivity Hub (v2.0.1)
+; ======================================================================================================================
+
+#Requires AutoHotkey v2.0
+#SingleInstance Force
+Persistent(false)
+
+; Mock UI callbacks for headless test mode
+ShowTextStats(*) => ""
+LogAppError(*) => ""
+
+; --- Core Test Harness & Production Libraries ---
+#Include "..\Lib\TestHarness.ahk"
+#Include "..\Lib\Globals.ahk"
+#Include "..\Lib\CSVParser.ahk"
+#Include "..\Lib\ClipboardHelper.ahk"
+#Include "..\Lib\NumberParser.ahk"
+#Include "..\Lib\MathEvaluator.ahk"
+#Include "..\Lib\Actions_Math.ahk"
+#Include "..\Lib\Actions_DateTime.ahk"
+#Include "..\Lib\CorpusSetEngine.ahk"
+#Include "..\Lib\Actions_Text.ahk"
+#Include "..\Lib\Actions_Finance.ahk"
+#Include "..\Lib\Actions_Extraction.ahk"
+#Include "..\Lib\DateFormatConverter.ahk"
+#Include "..\Lib\Core.ahk"
+
+; --- Workflow Suite Inclusions ---
+#Include "..\Lib\JsonHelper.ahk"
+#Include "..\Lib\WorkflowTypes.ahk"
+#Include "..\Lib\ToolCatalog.ahk"
+#Include "..\Lib\WorkflowPrimitives.ahk"
+#Include "..\Lib\ToolAdapters_Builtin.ahk"
+#Include "..\Lib\RecipeModel.ahk"
+#Include "..\Lib\PipelineRunner.ahk"
+#Include "..\Lib\RunHistory.ahk"
+#Include "..\Lib\RunHistoryGui.ahk"
+#Include "..\Lib\WorkflowComposerGui.ahk"
+#Include "..\Lib\Actions_Workflow.ahk"
+
+global PassCount := 0
+global FailCount := 0
+global TestLogs  := []
+global Failures  := []
+global StartTick := A_TickCount
+
+AssertEqual(testCategory, testName, actual, expected) {
+    global PassCount, FailCount, TestLogs, Failures
+    actualStr := String(actual)
+    expectedStr := String(expected)
+    
+    if (actualStr == expectedStr) {
+        PassCount++
+        TestLogs.Push(Format("[PASS] {1:-20} | {2:-40} -> '{3}'", testCategory, testName, actualStr))
+    } else {
+        FailCount++
+        TestLogs.Push(Format("[FAIL] {1:-20} | {2:-40} -> Expected: '{3}', Got: '{4}'", testCategory, testName, expectedStr, actualStr))
+        Failures.Push({category: testCategory, testName: testName, error: "Expected: '" . expectedStr . "', Got: '" . actualStr . "'"})
+    }
+}
+
+AssertTrue(testCategory, testName, condition) {
+    AssertEqual(testCategory, testName, condition ? "TRUE" : "FALSE", "TRUE")
+}
+
+AssertFalse(testCategory, testName, condition) {
+    AssertEqual(testCategory, testName, condition ? "TRUE" : "FALSE", "FALSE")
+}
+
+try {
+    ; ==================================================================================================================
+    ; 1. JsonHelper Tests
+    ; ==================================================================================================================
+    testMap := Map("key1", "value1", "count", 42, "enabled", true)
+    jsonOutput := JsonHelper.Stringify(testMap)
+    parsedMap := JsonHelper.Parse(jsonOutput, true)
+    AssertTrue("JsonHelper", "Map roundtrip is Map", Type(parsedMap) = "Map")
+    AssertEqual("JsonHelper", "Map key1 preserved", parsedMap["key1"], "value1")
+    AssertEqual("JsonHelper", "Map count preserved", parsedMap["count"], 42)
+    AssertEqual("JsonHelper", "Map boolean preserved", parsedMap["enabled"], true)
+
+    testObj := {key1: "value1", count: 42, enabled: true}
+    jsonObjStr := JsonHelper.Stringify(testObj)
+    parsedObj := JsonHelper.Parse(jsonObjStr)
+    AssertTrue("JsonHelper", "Object roundtrip is Object", Type(parsedObj) = "Object")
+    AssertEqual("JsonHelper", "Object key1 preserved", parsedObj.key1, "value1")
+    AssertEqual("JsonHelper", "Object count preserved", parsedObj.count, 42)
+    AssertEqual("JsonHelper", "Object boolean preserved", parsedObj.enabled, true)
+
+    testArr := ["first", "second", 100]
+    jsonArrStr := JsonHelper.Stringify(testArr)
+    parsedArr := JsonHelper.Parse(jsonArrStr)
+    AssertTrue("JsonHelper", "Array roundtrip is Array", Type(parsedArr) = "Array")
+    AssertEqual("JsonHelper", "Array length preserved", parsedArr.Length, 3)
+    AssertEqual("JsonHelper", "Array item 1 preserved", parsedArr[1], "first")
+
+    ; Escapes test
+    escapedJson := JsonHelper.Stringify("Line 1`nLine 2`t`"Quote`"")
+    parsedEscaped := JsonHelper.Parse(escapedJson)
+    AssertEqual("JsonHelper", "Escaped string roundtrip", parsedEscaped, "Line 1`nLine 2`t`"Quote`"")
+
+    ; ==================================================================================================================
+    ; 2. WorkflowTypes Validation & Security Boundaries
+    ; ==================================================================================================================
+    AssertTrue("WorkflowTypes", "Validate Text", WorkflowTypes.ValidateValue("hello world", "text").valid)
+    AssertFalse("WorkflowTypes", "Reject non-text as Text", WorkflowTypes.ValidateValue(12345, "text").valid)
+    AssertTrue("WorkflowTypes", "Validate Number", WorkflowTypes.ValidateValue(12345, "number").valid)
+    AssertTrue("WorkflowTypes", "Validate Items<Text>", WorkflowTypes.ValidateValue(["a", "b", "c"], "items<text>").valid)
+    AssertFalse("WorkflowTypes", "Reject non-array as Items", WorkflowTypes.ValidateValue("not an array", "items<text>").valid)
+    AssertFalse("WorkflowTypes", "Reject wrong item type", WorkflowTypes.ValidateValue(["a", 123], "items<text>").valid)
+
+    ; Compatibility Matrix
+    AssertTrue("WorkflowTypes", "Exact type compatibility", WorkflowTypes.AreCompatible("number", "number"))
+    AssertTrue("WorkflowTypes", "Any targets accept anything", WorkflowTypes.AreCompatible("text", "any"))
+    AssertTrue("WorkflowTypes", "Items<text> compatible with Items<any>", WorkflowTypes.AreCompatible("items<text>", "items<any>"))
+    AssertFalse("WorkflowTypes", "Number incompatible with Text", WorkflowTypes.AreCompatible("number", "text"))
+    AssertFalse("WorkflowTypes", "Items incompatible with scalar", WorkflowTypes.AreCompatible("items<text>", "text"))
+
+    ; FileReference Security Invariant (Zero file reading)
+    fileRef := WorkflowTypes.CreateFileReference("C:\test\sample_document.pdf", 5)
+    AssertTrue("WorkflowTypes", "FileReference conforms", WorkflowTypes.ValidateValue(fileRef, "filereference").valid)
+    AssertEqual("WorkflowTypes", "FileReference name", fileRef.name, "sample_document.pdf")
+    AssertEqual("WorkflowTypes", "FileReference stem", fileRef.stem, "sample_document")
+    AssertEqual("WorkflowTypes", "FileReference extension", fileRef.extension, "pdf")
+    AssertEqual("WorkflowTypes", "FileReference index", fileRef.index, 5)
+
+    ; ==================================================================================================================
+    ; 3. ToolCatalog & Registration Engine
+    ; ==================================================================================================================
+    InitWorkflowEngine()
+
+    AssertTrue("ToolCatalog", "ToolCatalog has primitive_split", ToolCatalog.Has("primitive_split"))
+    AssertTrue("ToolCatalog", "ToolCatalog has primitive_join", ToolCatalog.Has("primitive_join"))
+    AssertTrue("ToolCatalog", "ToolCatalog has normal_gst", ToolCatalog.Has("normal_gst"))
+    AssertTrue("ToolCatalog", "ToolCatalog has date_convert_format", ToolCatalog.Has("date_convert_format"))
+    AssertTrue("ToolCatalog", "ToolCatalog has number_to_words", ToolCatalog.Has("number_to_words"))
+    AssertTrue("ToolCatalog", "ToolCatalog has extract_emails", ToolCatalog.Has("extract_emails"))
+
+    toolGst := ToolCatalog.Get("normal_gst")
+    AssertEqual("ToolCatalog", "normal_gst category", toolGst.category, "Finance & Math")
+    AssertEqual("ToolCatalog", "normal_gst version", toolGst.version, 1)
+
+    ; Auto-Wiring Resolution
+    availableOutputs := [
+        {sourceRef: "input.text", type: "text", label: "Raw Input"},
+        {sourceRef: "step_1.number", type: "number", label: "Step 1 Number"}
+    ]
+    autoWire := ToolCatalog.ResolveDefaultBindings("normal_gst", availableOutputs)
+    AssertFalse("ToolCatalog", "normal_gst needsInput false", autoWire.needsInput)
+    AssertEqual("ToolCatalog", "Auto-wired to latest number", autoWire.bindings["amount"], "step_1.number")
+
+    ; ==================================================================================================================
+    ; 4. Workflow Primitives
+    ; ==================================================================================================================
+    ; Split
+    splitRes := WorkflowPrimitives.ExecuteSplit(Map("text", "Row1`nRow2`nRow3"), Map("delimiter", "\n"))
+    AssertEqual("Primitives", "Split count", splitRes["count"], 3)
+    AssertEqual("Primitives", "Split item 2", splitRes["items"][2], "Row2")
+
+    ; Join
+    joinRes := WorkflowPrimitives.ExecuteJoin(Map("items", ["Alpha", "Beta", "Gamma"]), Map("delimiter", ", "))
+    AssertEqual("Primitives", "Join result", joinRes["text"], "Alpha, Beta, Gamma")
+
+    ; Dedupe
+    dedupeRes := WorkflowPrimitives.ExecuteDedupe(Map("items", ["cat", "dog", "CAT", "bird", "dog"]), Map("match_case", false))
+    AssertEqual("Primitives", "Dedupe count", dedupeRes["count"], 3)
+    AssertEqual("Primitives", "Dedupe duplicates removed", dedupeRes["removed_count"], 2)
+    AssertEqual("Primitives", "Dedupe item 1", dedupeRes["items"][1], "cat")
+
+    ; Slice
+    sliceRes := WorkflowPrimitives.ExecuteSlice(Map("items", [10, 20, 30, 40, 50]), Map("mode", "top_n", "count", 2))
+    AssertEqual("Primitives", "Slice top 2 count", sliceRes["count"], 2)
+    AssertEqual("Primitives", "Slice item 2", sliceRes["items"][2], 20)
+
+    ; Template Combine
+    tmplRes := WorkflowPrimitives.ExecuteTemplate(Map("context", "12500"), Map("template", "Invoice: ₹{item}"))
+    AssertEqual("Primitives", "Template combine simple", tmplRes["text"], "Invoice: ₹12500")
+
+    ; ==================================================================================================================
+    ; 5. Tool Adapters
+    ; ==================================================================================================================
+    ; Normal Forward GST: Base 50,000 @ 18% -> CGST 4,500, SGST 4,500, Total 59,000
+    gstRes := ToolAdapters.ExecuteNormalGst(Map("amount", 50000), Map("rate", 18))
+    AssertEqual("ToolAdapters", "Normal GST Base", gstRes["base"], 50000)
+    AssertEqual("ToolAdapters", "Normal GST Tax", gstRes["gst"], 9000)
+    AssertEqual("ToolAdapters", "Normal GST CGST", gstRes["cgst"], 4500)
+    AssertEqual("ToolAdapters", "Normal GST SGST", gstRes["sgst"], 4500)
+    AssertEqual("ToolAdapters", "Normal GST Total", gstRes["total"], 59000)
+
+    ; Number to Words
+    wordsRes := ToolAdapters.ExecuteNumberToWords(Map("number", 59000), Map())
+    AssertEqual("ToolAdapters", "Number to Words 59000", wordsRes["words"], "Rupees Fifty-Nine Thousand Only")
+
+    ; Email extraction
+    emailText := "Contact admin@example.com or support@office.org for queries."
+    emailsRes := ToolAdapters.ExecuteExtractEmails(Map("text", emailText), Map())
+    AssertEqual("ToolAdapters", "Extract Emails count", emailsRes["count"], 2)
+    AssertEqual("ToolAdapters", "Extract Email 1", emailsRes["items"][1], "admin@example.com")
+
+    ; Convert Date Format Adapter
+    dateConv1 := ToolAdapters.ExecuteConvertDateFormat(Map("text", "5sept2026"), Map("format_id", 1))
+    AssertEqual("ToolAdapters", "ExecuteConvertDateFormat 5sept2026 to F1", dateConv1["result"], "05/09/2026")
+    AssertEqual("ToolAdapters", "ExecuteConvertDateFormat F1 name", dateConv1["format_name"], "DD/MM/YYYY")
+
+    dateConvBatch := ToolAdapters.ExecuteConvertDateFormat(Map("text", "Meeting on 05.09.2026"), Map("format_id", 6))
+    AssertEqual("ToolAdapters", "ExecuteConvertDateFormat batch to F6", dateConvBatch["result"], "Meeting on 05 September 2026")
+
+    ; ==================================================================================================================
+    ; 6. RecipeModel Validation & Empty Catalog Storage
+    ; ==================================================================================================================
+    RecipeModel.EnsureRecipesFolder()
+    allRecipes := RecipeModel.ListAll()
+    AssertEqual("RecipeModel", "Fresh recipe catalog is empty", allRecipes.Length, 0)
+
+    ; Test invalid recipe rejection
+    invalidRecipe := {
+        id: "recipe_broken",
+        name: "Broken Recipe",
+        input_source: "selection",
+        steps: [
+            {
+                id: "step_1",
+                tool_id: "normal_gst",
+                bindings: Map("amount", "step_nonexistent.output")
+            }
+        ]
+    }
+    valInvalid := RecipeModel.Validate(invalidRecipe)
+    AssertFalse("RecipeModel", "Reject recipe with non-existent source", valInvalid.valid)
+    AssertTrue("RecipeModel", "Validation returns error message", valInvalid.errors.Length > 0)
+
+    userRecipe := {
+        id: "user_recipe_survives_catalog_init",
+        name: "User Recipe Survives Catalog Init",
+        version: 1,
+        input_source: "selection",
+        sink: "clipboard",
+        steps: [{
+            id: "step_1",
+            tool_id: "amount_to_rs_words",
+            tool_version: 1,
+            settings: Map(),
+            bindings: Map("text", "input.text")
+        }]
+    }
+    try {
+        RecipeModel.Save(userRecipe)
+        RecipeModel.EnsureDefaultSeedRecipes()
+        recipesAfterInit := RecipeModel.ListAll()
+        loadedUserRecipe := RecipeModel.Load(userRecipe.id)
+        AssertEqual("RecipeModel", "Legacy initializer does not add seed recipes", recipesAfterInit.Length, 1)
+        AssertEqual("RecipeModel", "User recipe ID survives catalog initialization", loadedUserRecipe.id, userRecipe.id)
+        AssertEqual("RecipeModel", "User recipe name survives catalog initialization", loadedUserRecipe.name, userRecipe.name)
+        AssertEqual("RecipeModel", "User recipe sink survives catalog initialization", loadedUserRecipe.sink, userRecipe.sink)
+        AssertEqual("RecipeModel", "User recipe steps survive catalog initialization", loadedUserRecipe.steps.Length, userRecipe.steps.Length)
+    } finally {
+        RecipeModel.Delete(userRecipe.id)
+    }
+
+    ; Tool adapter direct check
+    adpRes := ToolAdapters.ExecuteAmountToRsWords(Map("text", "17400000"), Map())
+    AssertEqual("ToolAdapters", "amount_to_rs_words direct result", adpRes["result"], "Rs.1,74,00,000/- (Rupees One Crore Seventy-Four Lakh Only)")
+    AssertEqual("ToolAdapters", "amount_to_rs_words formatted_amount", adpRes["formatted_amount"], "Rs.1,74,00,000/-")
+    AssertEqual("ToolAdapters", "amount_to_rs_words words", adpRes["words"], "Rupees One Crore Seventy-Four Lakh Only")
+    AssertEqual("ToolAdapters", "amount_to_rs_words number", adpRes["number"], 17400000)
+
+    rRsWords := {
+        id: "recipe_rs_to_words_test",
+        name: "Rs Amount to Words Test Recipe",
+        version: 1,
+        input_source: "selection",
+        sink: "paste",
+        steps: [{
+            id: "step_1",
+            tool_id: "amount_to_rs_words",
+            tool_version: 1,
+            settings: Map(),
+            bindings: Map("text", "input.text")
+        }]
+    }
+    runRsRes := PipelineRunner.Execute(rRsWords, "17400000")
+    AssertTrue("PipelineRunner", "Rs Amount to Words recipe success", runRsRes.success)
+    AssertEqual("PipelineRunner", "Rs Amount to Words output matches exact format", runRsRes.output, "Rs.1,74,00,000/- (Rupees One Crore Seventy-Four Lakh Only)")
+
+    runCrRes := PipelineRunner.Execute(rRsWords, "1.74 Cr")
+    AssertTrue("PipelineRunner", "Rs to Words with 1.74 Cr success", runCrRes.success)
+    AssertEqual("PipelineRunner", "Rs to Words with 1.74 Cr output", runCrRes.output, "Rs.1,74,00,000/- (Rupees One Crore Seventy-Four Lakh Only)")
+
+    ; Pipeline execution with decimal paise "17400000.50"
+    runPaiseRes := PipelineRunner.Execute(rRsWords, "17400000.50")
+    AssertTrue("PipelineRunner", "Rs to Words with paise success", runPaiseRes.success)
+    AssertEqual("PipelineRunner", "Rs to Words with paise output", runPaiseRes.output, "Rs.1,74,00,000.50/- (Rupees One Crore Seventy-Four Lakh and Fifty Paise Only)")
+
+    ; ==================================================================================================================
+    ; 10. Failure Policy & Run History Snapshot Integrity
+    ; ==================================================================================================================
+    historyBefore := RunHistory.LoadAll().Length
+    AssertTrue("RunHistory", "RunHistory recorded executions", historyBefore >= 3)
+
+    lastRun := RunHistory.LoadAll()[1]
+    hasRunId := (Type(lastRun) = "Map") ? (lastRun.Has("run_id") && StrLen(lastRun["run_id"]) > 0) : (lastRun.HasOwnProp("run_id") && StrLen(lastRun.run_id) > 0)
+    runStatus := (Type(lastRun) = "Map") ? lastRun["status"] : lastRun.status
+    hasSnaps := (Type(lastRun) = "Map") ? (lastRun.Has("step_snapshots") && lastRun["step_snapshots"].Length > 0) : (lastRun.HasOwnProp("step_snapshots") && lastRun.step_snapshots.Length > 0)
+    AssertTrue("RunHistory", "Last run has run_id", hasRunId)
+    AssertEqual("RunHistory", "Last run status is success", runStatus, "success")
+    AssertTrue("RunHistory", "Last run has snapshots", hasSnaps)
+
+    ; Stop-on-First-Failure verification
+    failingRecipe := {
+        id: "recipe_failing_test",
+        name: "Failing Test Recipe",
+        version: 1,
+        input_source: "none",
+        steps: [
+            {
+                id: "step_1",
+                tool_id: "parse_number",
+                tool_version: 1,
+                settings: Map(),
+                bindings: Map("text", "input.text") ; text is empty, should fail
+            },
+            {
+                id: "step_2",
+                tool_id: "number_to_words",
+                tool_version: 1,
+                settings: Map(),
+                bindings: Map("number", "step_1.number")
+            }
+        ]
+    }
+    failRunRes := PipelineRunner.Execute(failingRecipe, "not a valid number")
+    AssertFalse("PipelineRunner", "Invalid input fails execution", failRunRes.success)
+
+    failHistoryRecord := RunHistory.LoadAll()[1]
+    failStatus := (Type(failHistoryRecord) = "Map") ? failHistoryRecord["status"] : failHistoryRecord.status
+    failedStep := (Type(failHistoryRecord) = "Map") ? failHistoryRecord["failed_step"] : failHistoryRecord.failed_step
+    AssertEqual("RunHistory", "Failure recorded in history", failStatus, "failed")
+    AssertEqual("RunHistory", "Failed step identified", failedStep, "step_1")
+
+    ; 11. Corpus Set Analyzer Pipeline Step Execution
+    corpusRecipe := {
+        id: "recipe_test_corpus_set",
+        name: "Test Corpus Set Recipe",
+        description: "Tests corpus set analyzer tool step",
+        input_source: "text",
+        output_sink: "silent",
+        steps: [
+            {
+                id: "step_corpus",
+                tool_id: "corpus_set_analyzer",
+                tool_version: 1,
+                settings: Map("operation", "difference", "filter_stopwords", true),
+                bindings: Map("source", "input.text")
+            }
+        ]
+    }
+    ; Docs share only "Standard disclaimer text" - party-specific terms are fully unique per doc
+    corpusInput := "Standard disclaimer text. Alpha Contractor confirms agreement.`n`nStandard disclaimer text. Beta Supplier disputes payment."
+    corpusRunRes := PipelineRunner.Execute(corpusRecipe, corpusInput)
+    AssertTrue("PipelineRunner", "corpus_set_analyzer pipeline execution succeeds", corpusRunRes.success)
+    AssertTrue("PipelineRunner", "corpus_set_analyzer output contains unique term Alpha", InStr(corpusRunRes.output, "Alpha"))
+    AssertFalse("PipelineRunner", "corpus_set_analyzer stripped universal text", InStr(corpusRunRes.output, "Standard disclaimer text"))
+
+    ; DEFECT-042: corpus_set_analyzer must not crash when its "source" input is bound to an
+    ; Array-typed upstream output (e.g. primitive_split.items), which WorkflowTypes legally
+    ; allows since the tool declares its input type as "any".
+    arraySourceRecipe := {
+        id: "recipe_test_corpus_array_source",
+        name: "Test Corpus Set Array Source Recipe",
+        description: "Chains primitive_split.items into corpus_set_analyzer.source",
+        input_source: "text",
+        output_sink: "silent",
+        steps: [
+            {
+                id: "step_split",
+                tool_id: "primitive_split",
+                tool_version: 1,
+                settings: Map("delimiter", "\n\n"),
+                bindings: Map("text", "input.text")
+            },
+            {
+                id: "step_corpus",
+                tool_id: "corpus_set_analyzer",
+                tool_version: 1,
+                settings: Map("operation", "difference", "filter_stopwords", true),
+                bindings: Map("source", "step_split.items")
+            }
+        ]
+    }
+    arraySourceRunRes := PipelineRunner.Execute(arraySourceRecipe, corpusInput)
+    AssertTrue("PipelineRunner", "corpus_set_analyzer does not crash on Array-typed source binding", arraySourceRunRes.success)
+    AssertTrue("PipelineRunner", "corpus_set_analyzer Array source still finds unique term Alpha", InStr(arraySourceRunRes.output, "Alpha"))
+
+    ; DEFECT-042: DetectDelimiter itself must degrade gracefully for non-String input
+    AssertEqual("CorpusSetEngine", "DetectDelimiter falls back to CRLF for Array input", CorpusSetEngine.DetectDelimiter(["a", "b"]), "`r`n")
+    AssertEqual("CorpusSetEngine", "DetectDelimiter still detects double-CRLF for String input", CorpusSetEngine.DetectDelimiter("a`r`n`r`nb"), "`r`n`r`n")
+
+} catch as testErr {
+    FailCount++
+    TestLogs.Push("[FATAL_TEST_CRASH] " . testErr.Message . " (Line: " . testErr.Line . ")")
+    Failures.Push({category: "CRITICAL", testName: "Unhandled Test Exception", error: testErr.Message})
+}
+
+; Emit Final Results via TestHarness
+durationTotal := A_TickCount - StartTick
+EmitTestResults("test_workflow_composer", PassCount + FailCount, PassCount, FailCount, durationTotal, TestLogs, Failures)

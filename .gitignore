@@ -1,0 +1,53 @@
+# Test Sandboxes & Transient Outputs
+**/_test_sandbox/
+_test_sandbox/
+master_test_summary.json
+**/master_test_summary.json
+results.json
+**/results.json
+*.log
+**/*_results.log
+launch_diag.log
+
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Temp, Editor & OS Artifacts
+.worktrees/
+.agents/
+*.tmp
+*.bak
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
+
+# Personal data, runtime state, and generated release artifacts
+Archive/
+Backups/
+Logs/
+Recipes/
+Telemetry/
+Excel sheet for extimation/
+Tools/Screenshots/UI_Screenshots/
+office_productivity_palette_v*.exe
+*.exe
+Docs/*_Audit.pdf
+Docs/superpowers/
+office_productivity_settings.ini
+office_productivity_snippets.csv
+office_productivity_tasks.csv
+office_tasks_archive.csv
+subject_tracker.md
+
+# Test fixtures generated from personal/runtime data
+Tests/Backups/
+Tests/Logs/
+Tests/Recipes/
+Tests/office_productivity_tasks.csv
+Tests/office_tasks_archive.csv
+
+
+
