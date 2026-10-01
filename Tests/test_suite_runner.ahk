@@ -227,7 +227,7 @@ AssertTrue("Finance", "CAGR absolute return +100%", InStr(cagrReport, "Absolute 
 AssertEqual("Extraction", "PAN Extraction", ExtractPan("My PAN is ABCDE1234F and XYZPK9876Q."), "ABCDE1234F`nXYZPK9876Q")
 AssertEqual("Extraction", "GSTIN Extraction", ExtractGstin("GSTIN: 07AAAAA0000A1Z5."), "07AAAAA0000A1Z5")
 AssertEqual("Extraction", "Email Extraction", ExtractEmails("test@example.com and support@company.co.in"), "test@example.com`nsupport@company.co.in")
-AssertEqual("Extraction", "Phone Extraction", ExtractPhones("Call +91 9876543210 or 7983604887"), "+91 9876543210`n7983604887")
+AssertEqual("Extraction", "Phone Extraction", ExtractPhones("Call +91 9876543210 or 9000012345"), "+91 9876543210`n9000012345")
 AssertEqual("Extraction", "URL Extraction", ExtractUrls("Visit https://google.com and http://example.com/test?q=1."), "https://google.com`nhttp://example.com/test?q=1")
 
 AssertTrue("Extraction", "Valid Calendar Date (21-Aug-2026)", IsValidCalendarDate("21-Aug-2026"))
