@@ -59,3 +59,7 @@ The following AutoHotkey modules are vendored in `Lib/` so a clone has a closed 
 - [Lib/WordCountTooltip.ahk](Lib/WordCountTooltip.ahk) — originated in `Word Count Tooltip.ahk`.
 
 For a feature-oriented guide, see [Docs/README_office_productivity_palette.md](Docs/README_office_productivity_palette.md).
+
+## Support
+
+[Donate](https://drive.google.com/file/d/14KBkEcr6j4KaxDHcHyejdYlFDt4GjR6O/view?usp=drive_link)
